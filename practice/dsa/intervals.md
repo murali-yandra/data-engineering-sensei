@@ -1,0 +1,5780 @@
+# Intervals Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/dsa/intervals.md
+```
+
+This guide teaches and drills **interval patterns for Data Engineering interviews**.
+
+This is not a generic math interval document. It is an interview-focused guide for candidates preparing for Data Engineering roles where coding rounds and system-design follow-ups often involve time ranges, date windows, schedules, partitions, backfills, active periods, SLA windows, overlap detection, and merging sorted ranges.
+
+Intervals are high-ROI for Data Engineering because they appear in:
+
+- date range processing
+- backfill windows
+- partition ranges
+- event-time windows
+- SLA windows
+- job schedules
+- pipeline runtime windows
+- incident windows
+- API sync windows
+- data availability periods
+- slowly changing dimension effective dates
+- active subscription periods
+- reconciliation windows
+- calendar conflicts
+- batch processing windows
+- deduplicating overlapping ranges
+- finding gaps in coverage
+- merging adjacent/overlapping windows
+- detecting resource conflicts
+- computing free time
+- validating non-overlapping windows
+
+Use this guide with:
+
+- `docs/dsa-for-data-engineers.md`
+- `docs/python-interview-guide.md`
+- `docs/leetcode-practice-map.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/etl-elt-pipelines-guide.md`
+- `docs/data-modeling-guide.md`
+- `docs/data-warehouse-guide.md`
+- `docs/orchestration-airflow-guide.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/dsa-drill-mode.md`
+- `modes/python-drill-mode.md`
+- `modes/pattern-mapper-mode.md`
+- `modes/tutor-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `modes/interview-mode.md`
+- `practice/dsa/arrays-strings.md`
+- `practice/dsa/hashmaps.md`
+- `practice/dsa/heap-top-k.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering coding standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at interval problems.
+
+The candidate should learn to answer:
+
+```text
+When do intervals overlap?
+When should I sort by start time?
+When should I sort by end time?
+When do I merge?
+When do I count removals?
+When do I use greedy?
+When do I use a heap?
+When do I use two pointers?
+How do I find gaps?
+How do I insert a new interval?
+How do I intersect two interval lists?
+How do I detect conflicts?
+How do I validate schedule coverage?
+How do I handle inclusive vs exclusive boundaries?
+How do I connect intervals to date windows in Data Engineering?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+state interval boundary assumptions
+sort intervals correctly
+identify overlap condition
+merge intervals cleanly
+insert intervals cleanly
+find gaps
+detect meeting conflicts
+count minimum removals
+use greedy by end time
+use heap for concurrent intervals
+use two pointers for interval intersections
+handle adjacent intervals
+handle empty input
+explain complexity
+connect interval logic to data pipeline windows
+```
+
+
+## 2. Why Intervals Matter for Data Engineers
+
+Intervals are extremely practical for Data Engineering.
+
+Data Engineering examples:
+
+```text
+Backfill 2025-01-01 to 2025-01-31.
+Merge overlapping backfill requests.
+Find missing date partitions.
+Detect overlapping SCD Type 2 effective-date rows.
+Find active subscription period for a transaction date.
+Compute downtime windows from incident alerts.
+Find pipeline runtime overlaps to estimate worker slots.
+Validate that hourly sync windows cover a full day.
+Find gaps in API extraction windows.
+Merge late-arrival reprocessing windows.
+Detect duplicate processing for the same partition range.
+Calculate overlap between SLA window and outage window.
+Find free maintenance windows between jobs.
+Count maximum concurrent jobs.
+Determine minimum workers needed for scheduled jobs.
+```
+
+Interviewers ask interval questions because they test whether the candidate can reason about boundaries, ordering, merging, and time windows. These are common failure areas in real data pipelines.
+
+
+## 3. Core Mental Model
+
+An interval represents a range.
+
+Common forms:
+
+```text
+[start, end]
+[start, end)
+```
+
+### Closed interval
+
+```text
+[start, end]
+```
+
+Includes both start and end.
+
+Example:
+
+```text
+[1, 3] includes 1, 2, 3.
+```
+
+### Half-open interval
+
+```text
+[start, end)
+```
+
+Includes start but excludes end.
+
+Example:
+
+```text
+[1, 3) includes 1 and 2, but not 3.
+```
+
+Data Engineering usually prefers half-open intervals for timestamps:
+
+```text
+event_time >= start_time
+event_time < end_time
+```
+
+Example:
+
+```sql
+WHERE event_time >= '2025-01-01'
+  AND event_time <  '2025-02-01'
+```
+
+Reason:
+
+```text
+It avoids double-counting boundary records and handles timestamp precision safely.
+```
+
+Strict interview rule:
+
+```text
+Always clarify whether touching intervals count as overlapping.
+```
+
+
+## 4. Overlap Rules
+
+Overlap logic depends on boundary style.
+
+### Closed intervals `[start, end]`
+
+Two intervals overlap if:
+
+```text
+a_start <= b_end and b_start <= a_end
+```
+
+They do not overlap if:
+
+```text
+a_end < b_start or b_end < a_start
+```
+
+Touching example:
+
+```text
+[1, 3] and [3, 5] overlap at point 3.
+```
+
+### Half-open intervals `[start, end)`
+
+Two intervals overlap if:
+
+```text
+a_start < b_end and b_start < a_end
+```
+
+They do not overlap if:
+
+```text
+a_end <= b_start or b_end <= a_start
+```
+
+Touching example:
+
+```text
+[1, 3) and [3, 5) do not overlap.
+```
+
+Interview line:
+
+```text
+Before coding, I will clarify whether intervals are closed or half-open because that changes whether touching endpoints overlap.
+```
+
+Data Engineering default:
+
+```text
+For timestamps and date windows, prefer half-open intervals.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for every interval problem:
+
+```text
+1. Restate the problem.
+2. Clarify interval boundary type.
+3. Clarify whether intervals are sorted.
+4. Clarify whether intervals can touch.
+5. Clarify output format.
+6. Explain brute force.
+7. Identify pattern:
+   - sort and merge
+   - insert and merge
+   - greedy by end time
+   - two pointers
+   - heap concurrency
+   - sweep line
+8. Explain why the pattern fits.
+9. Write code.
+10. Dry run with overlap and non-overlap examples.
+11. Explain edge cases.
+12. Explain time complexity.
+13. Explain space complexity.
+14. Connect to Data Engineering scenario.
+```
+
+Short coding answer:
+
+```text
+Boundary:
+Sort:
+Overlap condition:
+Algorithm:
+Complexity:
+Edge cases:
+```
+
+Strict rule:
+
+```text
+No interval code before stating overlap condition.
+```
+
+
+## 6. Scoring Rubric
+
+Score each interval attempt from 0 to 5.
+
+### Score 0
+
+No meaningful attempt.
+
+### Score 1
+
+Does not understand intervals or overlap.
+
+### Score 2
+
+Partial logic but fails common edge cases.
+
+### Score 3
+
+Works for simple cases but weak on boundaries, sorting, or complexity.
+
+### Score 4
+
+Interview-ready. Correct pattern, clean code, edge cases, and complexity.
+
+### Score 5
+
+Strong. Handles boundary assumptions, greedy proof, follow-ups, and Data Engineering variants.
+
+Do not give 4+ if:
+
+```text
+candidate cannot state overlap condition
+candidate ignores inclusive/exclusive boundary
+candidate forgets to sort
+candidate sorts by wrong field
+candidate mutates input unexpectedly without saying
+candidate fails adjacent intervals
+candidate fails empty input
+candidate cannot explain greedy choice
+candidate cannot explain heap concurrency
+candidate cannot connect to Data Engineering time windows
+```
+
+
+## 7. Complexity Rules
+
+Common interval complexities:
+
+```text
+Sort intervals: O(n log n)
+Single scan after sorting: O(n)
+Merge intervals: O(n log n) time, O(n) output
+Insert interval into sorted non-overlapping intervals: O(n)
+Interval list intersection: O(n + m)
+Meeting rooms with heap: O(n log n)
+Sweep line with events: O(n log n)
+Greedy removals after sorting by end: O(n log n)
+```
+
+Space:
+
+```text
+Merged output: O(n)
+Heap for concurrent intervals: O(n) worst case
+Sweep-line events: O(n)
+In-place merge can be O(1) extra excluding output if allowed
+```
+
+Interview wording:
+
+```text
+The main cost is sorting by start time, so the total time is O(n log n). The merge scan itself is O(n).
+```
+
+Do not say:
+
+```text
+Merging is O(n)
+```
+
+if input is unsorted and sorting is required.
+
+
+## 8. Edge Case Checklist
+
+Interval edge cases:
+
+```text
+empty list
+one interval
+already sorted
+unsorted intervals
+fully overlapping intervals
+no overlapping intervals
+touching endpoints
+nested intervals
+duplicate intervals
+negative values
+zero-length intervals
+invalid interval start > end
+very large ranges
+same start different end
+same end different start
+all intervals overlap
+all intervals disjoint
+new interval before all
+new interval after all
+new interval covers all
+new interval inside existing
+```
+
+Data Engineering-specific edge cases:
+
+```text
+date boundaries inclusive vs exclusive
+timestamp precision
+timezone differences
+late-arrival windows
+backfill windows touching at midnight
+partition ranges as dates
+SCD rows with overlapping effective dates
+SCD rows with gaps
+API extraction windows missing a period
+pipeline job windows overlapping
+SLA window partially overlapped by outage
+```
+
+
+## 9. Pattern Map
+
+Interval patterns:
+
+```text
+1. Sort by start and merge.
+2. Insert interval into sorted non-overlapping intervals.
+3. Greedy by end time for removals/selection.
+4. Two pointers for interval intersections.
+5. Heap for concurrent intervals/resources.
+6. Sweep line for max overlap/count changes.
+7. Find gaps after sorting.
+8. Validate non-overlap.
+9. Merge adjacent intervals depending boundary.
+10. Remove covered intervals.
+11. Minimum arrows/points to cover intervals.
+12. Partition labels / range grouping.
+13. Calendar booking.
+14. Effective-date/SCD validation.
+15. Date window coverage.
+16. Backfill window consolidation.
+17. Incident/SLA overlap.
+18. Active period lookup.
+19. Range update / difference array.
+20. Interval scheduling.
+```
+
+Pattern selection:
+
+```text
+Need union of ranges → sort by start and merge.
+Need add one range → insert and merge.
+Need max simultaneous ranges → heap or sweep line.
+Need minimum removals → greedy by earliest end.
+Need intersections of two sorted lists → two pointers.
+Need gaps → sort and compare previous end to next start.
+Need cover intervals with minimum points → sort by end.
+```
+
+
+## 10. Common Mistakes
+
+Common interval mistakes:
+
+```text
+Not clarifying boundaries.
+Using <= when < is required or vice versa.
+Forgetting to sort.
+Sorting by end when merge needs start.
+Sorting by start when greedy removal is easier by end.
+Not updating merged end with max.
+Incorrectly merging adjacent half-open intervals.
+Missing nested interval case.
+Returning count instead of intervals.
+Mutating input without saying.
+Using O(n²) overlap checks unnecessarily.
+Using heap when simple merge is enough.
+Using merge when intersection needs two pointers.
+Ignoring timezone/date precision in DE examples.
+Wrong complexity.
+No dry run.
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. Your code works for overlapping intervals, but it fails touching half-open windows, which is a common Data Engineering boundary case.
+```
+
+
+## 11. Pattern: Sort and Merge
+
+Use sort and merge when asked to combine overlapping intervals.
+
+Trigger phrases:
+
+```text
+merge intervals
+combine ranges
+union of intervals
+consolidate windows
+remove overlap by merging
+combine backfill requests
+```
+
+Algorithm:
+
+```text
+1. Sort intervals by start.
+2. Keep current merged interval.
+3. For each next interval:
+   - if it overlaps current, extend current end.
+   - otherwise append current and start new.
+4. Append final current.
+```
+
+Closed interval overlap after sorting:
+
+```text
+next_start <= current_end
+```
+
+Half-open overlap after sorting:
+
+```text
+next_start < current_end
+```
+
+If adjacent half-open intervals should be merged as continuous coverage:
+
+```text
+next_start <= current_end
+```
+
+Clarify this.
+
+Interview line:
+
+```text
+Sorting by start makes overlapping intervals appear next to each other, so one scan is enough.
+```
+
+
+## 12. Problem: Merge Intervals
+
+LeetCode:
+
+```text
+56. Merge Intervals
+Difficulty: Medium
+Pattern: Sort by start + merge
+```
+
+Problem:
+
+```text
+Given intervals, merge all overlapping intervals.
+```
+
+Closed interval version:
+
+```python
+def merge(intervals):
+    if not intervals:
+        return []
+
+    intervals.sort(key=lambda interval: interval[0])
+    merged = []
+
+    current_start, current_end = intervals[0]
+
+    for start, end in intervals[1:]:
+        if start <= current_end:
+            current_end = max(current_end, end)
+        else:
+            merged.append([current_start, current_end])
+            current_start, current_end = start, end
+
+    merged.append([current_start, current_end])
+    return merged
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n) for output
+```
+
+Edge cases:
+
+```text
+empty input
+nested intervals
+duplicate intervals
+touching intervals
+unsorted input
+```
+
+Data Engineering connection:
+
+```text
+Merge overlapping backfill windows so the same partition range is not processed multiple times.
+```
+
+Common mistake:
+
+```text
+When intervals overlap, setting current_end = end instead of max(current_end, end). This fails nested intervals.
+```
+
+
+## 13. Half-Open Merge Variant
+
+For timestamp windows, half-open intervals are common:
+
+```text
+[start, end)
+```
+
+Overlap condition:
+
+```text
+start < current_end
+```
+
+If `[1, 3)` and `[3, 5)` are considered separate but adjacent:
+
+```python
+def merge_half_open(intervals):
+    if not intervals:
+        return []
+
+    intervals.sort(key=lambda interval: interval[0])
+    merged = []
+
+    current_start, current_end = intervals[0]
+
+    for start, end in intervals[1:]:
+        if start < current_end:
+            current_end = max(current_end, end)
+        else:
+            merged.append([current_start, current_end])
+            current_start, current_end = start, end
+
+    merged.append([current_start, current_end])
+    return merged
+```
+
+If adjacent windows should be merged for continuous coverage:
+
+```text
+Use start <= current_end
+```
+
+Data Engineering example:
+
+```text
+[2025-01-01, 2025-01-10) and [2025-01-10, 2025-02-01) are adjacent and may be merged into [2025-01-01, 2025-02-01) if the goal is consolidated coverage.
+```
+
+Interview line:
+
+```text
+For data windows, I would use half-open boundaries and decide separately whether adjacent windows should be merged.
+```
+
+
+## 14. Data Engineering Custom Problem: Merge Backfill Windows
+
+Problem:
+
+```text
+Given backfill windows as [start_date, end_date) strings, merge overlapping or adjacent windows.
+```
+
+Assumption:
+
+```text
+Windows are half-open.
+Adjacent windows should be merged because they represent continuous coverage.
+```
+
+Code:
+
+```python
+def merge_backfill_windows(windows):
+    if not windows:
+        return []
+
+    windows.sort(key=lambda window: window[0])
+    merged = []
+
+    current_start, current_end = windows[0]
+
+    for start, end in windows[1:]:
+        if start <= current_end:
+            current_end = max(current_end, end)
+        else:
+            merged.append([current_start, current_end])
+            current_start, current_end = start, end
+
+    merged.append([current_start, current_end])
+    return merged
+```
+
+Example:
+
+```text
+[2025-01-01, 2025-01-10)
+[2025-01-10, 2025-01-20)
+[2025-02-01, 2025-02-05)
+
+Result:
+[2025-01-01, 2025-01-20)
+[2025-02-01, 2025-02-05)
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-ups:
+
+```text
+What if dates include timezones?
+What if windows are inclusive?
+What if invalid window start >= end appears?
+What if windows belong to different tables?
+```
+
+Expected:
+
+```text
+Group by table first, validate windows, normalize timezone/date type, then merge per group.
+```
+
+
+## 15. Pattern: Insert Interval
+
+Use insert interval pattern when:
+
+```text
+existing intervals are sorted and non-overlapping
+one new interval must be inserted
+result should stay sorted and non-overlapping
+```
+
+Algorithm:
+
+```text
+1. Add intervals ending before new interval starts.
+2. Merge all intervals overlapping new interval.
+3. Add intervals starting after new interval ends.
+```
+
+Closed intervals:
+
+```text
+interval_end < new_start → before
+interval_start > new_end → after
+otherwise overlap
+```
+
+Half-open intervals:
+
+```text
+interval_end <= new_start → before
+interval_start >= new_end → after
+otherwise overlap
+```
+
+Interview line:
+
+```text
+Because existing intervals are already sorted and non-overlapping, I can insert in one O(n) scan without sorting again.
+```
+
+
+## 16. Problem: Insert Interval
+
+LeetCode:
+
+```text
+57. Insert Interval
+Difficulty: Medium
+Pattern: Insert + merge
+```
+
+Closed interval version:
+
+```python
+def insert(intervals, new_interval):
+    result = []
+    i = 0
+    n = len(intervals)
+    new_start, new_end = new_interval
+
+    while i < n and intervals[i][1] < new_start:
+        result.append(intervals[i])
+        i += 1
+
+    while i < n and intervals[i][0] <= new_end:
+        new_start = min(new_start, intervals[i][0])
+        new_end = max(new_end, intervals[i][1])
+        i += 1
+
+    result.append([new_start, new_end])
+
+    while i < n:
+        result.append(intervals[i])
+        i += 1
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(n)
+```
+
+Edge cases:
+
+```text
+new interval before all
+new interval after all
+new interval covers all
+new interval inside existing
+empty intervals
+```
+
+Data Engineering connection:
+
+```text
+Insert a new reprocessing window into existing consolidated backfill windows.
+```
+
+Common mistake:
+
+```text
+Sorting again when the prompt says intervals are already sorted and non-overlapping. Sorting still works but is less optimal.
+```
+
+
+## 17. Data Engineering Custom Problem: Add API Sync Window
+
+Problem:
+
+```text
+Existing API sync windows are sorted, non-overlapping, half-open [start, end).
+Insert a new sync window and merge overlaps/adjacent windows.
+```
+
+Assumption:
+
+```text
+Adjacent windows should merge.
+```
+
+Code:
+
+```python
+def add_api_sync_window(windows, new_window):
+    result = []
+    i = 0
+    n = len(windows)
+    new_start, new_end = new_window
+
+    while i < n and windows[i][1] < new_start:
+        result.append(windows[i])
+        i += 1
+
+    while i < n and windows[i][0] <= new_end:
+        new_start = min(new_start, windows[i][0])
+        new_end = max(new_end, windows[i][1])
+        i += 1
+
+    result.append([new_start, new_end])
+
+    while i < n:
+        result.append(windows[i])
+        i += 1
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(n)
+```
+
+Interview point:
+
+```text
+Clarify whether adjacent API windows should merge. For continuous extraction coverage, usually yes.
+```
+
+Follow-up:
+
+```text
+What if windows are per endpoint?
+```
+
+Expected:
+
+```text
+Group by endpoint and insert into that endpoint's window list.
+```
+
+
+## 18. Pattern: Interval Intersection
+
+Use two pointers when you have two sorted interval lists and need overlaps.
+
+Trigger phrases:
+
+```text
+intersection of intervals
+common available time
+overlap between two schedules
+overlap between outage and SLA
+records active in both windows
+```
+
+Algorithm:
+
+```text
+1. Use pointer i for list A and j for list B.
+2. Intersection start = max(a_start, b_start).
+3. Intersection end = min(a_end, b_end).
+4. If start <= end for closed intervals, intersection exists.
+5. Move the interval with smaller end.
+```
+
+For half-open intervals:
+
+```text
+intersection exists if start < end.
+```
+
+Why move smaller end?
+
+```text
+The interval that ends first cannot overlap future intervals in the other list beyond its end.
+```
+
+Complexity:
+
+```text
+O(n + m)
+```
+
+
+## 19. Problem: Interval List Intersections
+
+LeetCode:
+
+```text
+986. Interval List Intersections
+Difficulty: Medium
+Pattern: Two pointers
+```
+
+Closed interval version:
+
+```python
+def interval_intersection(first_list, second_list):
+    result = []
+    i = 0
+    j = 0
+
+    while i < len(first_list) and j < len(second_list):
+        a_start, a_end = first_list[i]
+        b_start, b_end = second_list[j]
+
+        start = max(a_start, b_start)
+        end = min(a_end, b_end)
+
+        if start <= end:
+            result.append([start, end])
+
+        if a_end < b_end:
+            i += 1
+        else:
+            j += 1
+
+    return result
+```
+
+Half-open variant:
+
+```text
+Use if start < end.
+```
+
+Complexity:
+
+```text
+Time: O(n + m)
+Space: O(output)
+```
+
+Data Engineering connection:
+
+```text
+Find overlap between outage windows and SLA measurement windows.
+```
+
+Common mistake:
+
+```text
+Moving the interval with larger end instead of smaller end.
+```
+
+
+## 20. Data Engineering Custom Problem: SLA Outage Overlap
+
+Problem:
+
+```text
+Given SLA windows and outage windows, both sorted and non-overlapping as half-open [start, end), return all overlapping periods.
+```
+
+Code:
+
+```python
+def sla_outage_overlaps(sla_windows, outage_windows):
+    result = []
+    i = 0
+    j = 0
+
+    while i < len(sla_windows) and j < len(outage_windows):
+        sla_start, sla_end = sla_windows[i]
+        outage_start, outage_end = outage_windows[j]
+
+        start = max(sla_start, outage_start)
+        end = min(sla_end, outage_end)
+
+        if start < end:
+            result.append([start, end])
+
+        if sla_end < outage_end:
+            i += 1
+        else:
+            j += 1
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n + m)
+Space: O(output)
+```
+
+Follow-ups:
+
+```text
+How do you compute total outage minutes inside SLA?
+How do you handle timezone?
+What if windows are not sorted?
+What if outage windows overlap each other?
+```
+
+Expected:
+
+```text
+Normalize timezone, merge each list first if needed, then intersect.
+```
+
+
+## 21. Pattern: Meeting Rooms / Conflict Detection
+
+Use this pattern when checking whether intervals conflict.
+
+Trigger phrases:
+
+```text
+can attend all meetings
+any overlap
+schedule conflict
+overlapping jobs
+non-overlapping windows
+booking conflict
+```
+
+Algorithm:
+
+```text
+1. Sort by start time.
+2. Compare current start with previous end.
+3. If current start < previous end for half-open intervals, conflict.
+```
+
+For closed intervals:
+
+```text
+current_start <= previous_end means conflict.
+```
+
+For half-open intervals:
+
+```text
+current_start < previous_end means conflict.
+```
+
+Data Engineering connection:
+
+```text
+Detect whether two jobs use the same exclusive resource at the same time.
+```
+
+
+## 22. Problem: Meeting Rooms
+
+LeetCode:
+
+```text
+252. Meeting Rooms
+Difficulty: Easy
+Pattern: Sort + conflict detection
+```
+
+Half-open meeting intervals:
+
+```python
+def can_attend_meetings(intervals):
+    intervals.sort(key=lambda interval: interval[0])
+
+    for i in range(1, len(intervals)):
+        previous_end = intervals[i - 1][1]
+        current_start = intervals[i][0]
+
+        if current_start < previous_end:
+            return False
+
+    return True
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Data Engineering connection:
+
+```text
+Check if scheduled pipelines sharing one exclusive resource overlap.
+```
+
+Common mistake:
+
+```text
+Using <= for half-open intervals when back-to-back meetings should be allowed.
+```
+
+
+## 23. Data Engineering Custom Problem: Detect Job Resource Conflict
+
+Problem:
+
+```text
+Given job windows for the same exclusive resource as half-open [start, end), return whether there is any conflict.
+Back-to-back jobs are allowed.
+```
+
+Code:
+
+```python
+def has_resource_conflict(job_windows):
+    job_windows.sort(key=lambda window: window[0])
+
+    for i in range(1, len(job_windows)):
+        previous_end = job_windows[i - 1][1]
+        current_start = job_windows[i][0]
+
+        if current_start < previous_end:
+            return True
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Follow-up:
+
+```text
+Return all conflicting pairs.
+```
+
+Expected:
+
+```text
+Keep previous interval with latest end or use sweep line depending requirement.
+```
+
+
+## 24. Pattern: Meeting Rooms II / Minimum Resources
+
+Use heap when counting minimum resources needed for overlapping intervals.
+
+Trigger phrases:
+
+```text
+minimum meeting rooms
+minimum workers
+maximum concurrent jobs
+minimum machines
+number of parallel slots
+```
+
+Algorithm:
+
+```text
+1. Sort intervals by start.
+2. Use min-heap of end times for active intervals.
+3. If earliest end <= current start, reuse resource.
+4. Push current end.
+5. Maximum heap size is resources needed.
+```
+
+Half-open boundary:
+
+```text
+If earliest_end <= current_start, no overlap; resource can be reused.
+```
+
+Complexity:
+
+```text
+O(n log n)
+```
+
+Data Engineering connection:
+
+```text
+Minimum worker slots required to run scheduled jobs without overlap.
+```
+
+
+## 25. Problem: Meeting Rooms II
+
+LeetCode:
+
+```text
+253. Meeting Rooms II
+Difficulty: Medium
+Pattern: Sort + min-heap end times
+```
+
+Code:
+
+```python
+import heapq
+
+def min_meeting_rooms(intervals):
+    if not intervals:
+        return 0
+
+    intervals.sort(key=lambda interval: interval[0])
+    active_end_times = []
+
+    for start, end in intervals:
+        if active_end_times and active_end_times[0] <= start:
+            heapq.heappop(active_end_times)
+
+        heapq.heappush(active_end_times, end)
+
+    return len(active_end_times)
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Estimate minimum number of worker slots needed for overlapping pipeline runs.
+```
+
+Common mistake:
+
+```text
+Popping only one ended interval is enough for room count when pushing one new meeting, but if you also need active count at each point, you may pop all ended intervals before counting.
+```
+
+Alternative robust active cleanup:
+
+```python
+while active_end_times and active_end_times[0] <= start:
+    heapq.heappop(active_end_times)
+```
+
+
+## 26. Data Engineering Custom Problem: Minimum Workers for Jobs
+
+Problem:
+
+```text
+Given job windows [start, end), return minimum number of workers needed so every job can run.
+```
+
+Code:
+
+```python
+import heapq
+
+def minimum_workers(job_windows):
+    if not job_windows:
+        return 0
+
+    job_windows.sort(key=lambda window: window[0])
+    active = []
+    max_workers = 0
+
+    for start, end in job_windows:
+        while active and active[0] <= start:
+            heapq.heappop(active)
+
+        heapq.heappush(active, end)
+        max_workers = max(max_workers, len(active))
+
+    return max_workers
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-ups:
+
+```text
+Return peak time window.
+Handle jobs grouped by resource pool.
+Handle priority jobs.
+Handle timezone-aware timestamps.
+```
+
+Expected:
+
+```text
+For groups, compute per resource pool. For peak window, track when max increases.
+```
+
+
+## 27. Pattern: Sweep Line
+
+Sweep line is another way to count overlaps.
+
+Use when:
+
+```text
+need maximum overlap
+need timeline of active counts
+need total covered length
+need add/remove events
+need many overlapping ranges
+```
+
+Algorithm:
+
+```text
+Create events:
+(start, +1)
+(end, -1)
+
+Sort events.
+Scan and update active count.
+```
+
+Boundary matters.
+
+For half-open intervals:
+
+```text
+End event should be processed before start event at same time.
+```
+
+This allows:
+
+```text
+[1, 3) and [3, 5) to not overlap.
+```
+
+Event sorting for half-open:
+
+```python
+events.sort(key=lambda event: (event[0], event[1]))
+```
+
+if end is -1 and start is +1.
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Interview line:
+
+```text
+Sweep line converts interval overlaps into ordered start/end events.
+```
+
+
+## 28. Data Engineering Custom Problem: Max Concurrent Pipelines
+
+Problem:
+
+```text
+Given pipeline run windows [start, end), return maximum number of concurrent pipelines.
+```
+
+Pattern:
+
+```text
+Sweep line
+```
+
+Code:
+
+```python
+def max_concurrent_pipelines(windows):
+    events = []
+
+    for start, end in windows:
+        events.append((start, 1))
+        events.append((end, -1))
+
+    # For half-open intervals, process end before start at same timestamp.
+    events.sort(key=lambda event: (event[0], event[1]))
+
+    active = 0
+    max_active = 0
+
+    for time, delta in events:
+        active += delta
+        max_active = max(max_active, active)
+
+    return max_active
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-ups:
+
+```text
+Return timestamps where max concurrency occurs.
+Compute active count timeline.
+Group by environment or team.
+```
+
+Expected:
+
+```text
+Track active after each event and record time ranges between event times.
+```
+
+
+## 29. Pattern: Non-Overlapping Intervals / Minimum Removals
+
+Use greedy by end time for selecting maximum non-overlapping intervals or minimum removals.
+
+Trigger phrases:
+
+```text
+minimum intervals to remove
+make intervals non-overlapping
+maximum number of non-overlapping intervals
+activity selection
+```
+
+Greedy idea:
+
+```text
+Keep the interval that ends earliest.
+```
+
+Why:
+
+```text
+Earliest end leaves the most room for future intervals.
+```
+
+Algorithm:
+
+```text
+1. Sort by end time.
+2. Keep current_end.
+3. For each interval:
+   - if start >= current_end for half-open, keep it and update current_end.
+   - otherwise remove/skip it.
+```
+
+For closed intervals where touching overlaps:
+
+```text
+Use start > current_end to keep.
+```
+
+Complexity:
+
+```text
+O(n log n)
+```
+
+
+## 30. Problem: Non-overlapping Intervals
+
+LeetCode:
+
+```text
+435. Non-overlapping Intervals
+Difficulty: Medium
+Pattern: Greedy by end time
+```
+
+Half-open style code:
+
+```python
+def erase_overlap_intervals(intervals):
+    if not intervals:
+        return 0
+
+    intervals.sort(key=lambda interval: interval[1])
+
+    removals = 0
+    current_end = intervals[0][1]
+
+    for start, end in intervals[1:]:
+        if start < current_end:
+            removals += 1
+        else:
+            current_end = end
+
+    return removals
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Data Engineering connection:
+
+```text
+Remove minimum overlapping processing windows while keeping maximum non-overlapping work windows.
+```
+
+Common mistake:
+
+```text
+Sorting by start and greedily removing wrong interval. Sorting by end makes the greedy choice clear.
+```
+
+
+## 31. Data Engineering Custom Problem: Max Non-Overlapping Maintenance Windows
+
+Problem:
+
+```text
+Given candidate maintenance windows [start, end), return maximum number of non-overlapping windows that can be scheduled.
+```
+
+Pattern:
+
+```text
+Greedy by earliest end
+```
+
+Code:
+
+```python
+def max_non_overlapping_windows(windows):
+    if not windows:
+        return 0
+
+    windows.sort(key=lambda window: window[1])
+
+    count = 0
+    current_end = None
+
+    for start, end in windows:
+        if current_end is None or start >= current_end:
+            count += 1
+            current_end = end
+
+    return count
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Follow-up:
+
+```text
+Return the selected windows.
+```
+
+Code direction:
+
+```text
+Append kept windows when start >= current_end.
+```
+
+
+## 32. Pattern: Minimum Arrows / Points to Cover Intervals
+
+Use greedy by end time when one point can cover intervals containing that point.
+
+Trigger phrases:
+
+```text
+minimum arrows
+minimum points to cover intervals
+burst balloons
+place markers to cover ranges
+```
+
+Greedy idea:
+
+```text
+Sort by end.
+Place point at earliest end.
+This point covers all intervals starting before or at that end.
+When next interval starts after point, place new point.
+```
+
+Closed interval logic:
+
+```text
+if start > current_point:
+    need new point
+```
+
+Half-open interval logic may differ:
+
+```text
+A point at end is not inside [start, end), so use end carefully.
+```
+
+Interview line:
+
+```text
+For closed intervals, placing the arrow at the earliest end maximizes how many future intervals it can cover.
+```
+
+
+## 33. Problem: Minimum Number of Arrows to Burst Balloons
+
+LeetCode:
+
+```text
+452. Minimum Number of Arrows to Burst Balloons
+Difficulty: Medium
+Pattern: Greedy by end
+```
+
+Closed interval code:
+
+```python
+def find_min_arrow_shots(points):
+    if not points:
+        return 0
+
+    points.sort(key=lambda interval: interval[1])
+
+    arrows = 1
+    arrow_position = points[0][1]
+
+    for start, end in points[1:]:
+        if start > arrow_position:
+            arrows += 1
+            arrow_position = end
+
+    return arrows
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Data Engineering connection:
+
+```text
+Minimum checkpoint timestamps needed to cover a set of closed active periods.
+```
+
+Common mistake:
+
+```text
+Using start >= arrow_position for closed intervals. If start == arrow_position, the same arrow still covers it.
+```
+
+
+## 34. Data Engineering Custom Problem: Minimum Checkpoints to Cover Incident Windows
+
+Problem:
+
+```text
+Given closed incident windows [start, end], return minimum checkpoint timestamps needed so each incident has at least one checkpoint inside it.
+```
+
+Pattern:
+
+```text
+Minimum points to cover intervals
+```
+
+Code:
+
+```python
+def min_checkpoints_to_cover_incidents(incidents):
+    if not incidents:
+        return 0
+
+    incidents.sort(key=lambda window: window[1])
+
+    checkpoints = 1
+    checkpoint_time = incidents[0][1]
+
+    for start, end in incidents[1:]:
+        if start > checkpoint_time:
+            checkpoints += 1
+            checkpoint_time = end
+
+    return checkpoints
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Follow-up:
+
+```text
+Return checkpoint timestamps.
+```
+
+Expected:
+
+```text
+Store checkpoint_time each time a new checkpoint is created.
+```
+
+
+## 35. Pattern: Remove Covered Intervals
+
+Covered interval:
+
+```text
+Interval A covers B if A.start <= B.start and A.end >= B.end.
+```
+
+Pattern:
+
+```text
+Sort by start ascending.
+For same start, sort by end descending.
+Scan and count intervals whose end is greater than max_end.
+```
+
+Why end descending for same start?
+
+```text
+Longer interval should appear first and cover shorter intervals with same start.
+```
+
+Common sorting:
+
+```python
+intervals.sort(key=lambda interval: (interval[0], -interval[1]))
+```
+
+Data Engineering connection:
+
+```text
+Remove redundant windows that are fully contained inside larger reprocessing windows.
+```
+
+
+## 36. Problem: Remove Covered Intervals
+
+LeetCode:
+
+```text
+1288. Remove Covered Intervals
+Difficulty: Medium
+Pattern: Sort start asc, end desc
+```
+
+Code:
+
+```python
+def remove_covered_intervals(intervals):
+    intervals.sort(key=lambda interval: (interval[0], -interval[1]))
+
+    remaining = 0
+    max_end = float("-inf")
+
+    for start, end in intervals:
+        if end > max_end:
+            remaining += 1
+            max_end = end
+
+    return remaining
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(1) extra depending sort
+```
+
+Example:
+
+```text
+[1, 4] covers [2, 3].
+```
+
+Common mistake:
+
+```text
+Sorting same-start intervals by end ascending causes shorter interval to be counted before longer covering interval.
+```
+
+
+## 37. Data Engineering Custom Problem: Remove Redundant Backfill Windows
+
+Problem:
+
+```text
+Given backfill windows, remove windows fully covered by another window.
+Return remaining windows.
+```
+
+Code:
+
+```python
+def remove_redundant_windows(windows):
+    if not windows:
+        return []
+
+    windows.sort(key=lambda window: (window[0], -window[1]))
+
+    result = []
+    max_end = float("-inf")
+
+    for start, end in windows:
+        if end > max_end:
+            result.append([start, end])
+            max_end = end
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-up:
+
+```text
+Should adjacent windows be merged too?
+```
+
+Expected:
+
+```text
+Removing covered intervals is different from merging overlapping/adjacent intervals. Clarify expected output.
+```
+
+
+## 38. Pattern: Find Gaps
+
+Use this pattern when asked for missing ranges or uncovered windows.
+
+Trigger phrases:
+
+```text
+find gaps
+missing ranges
+uncovered periods
+missing partitions
+free time
+coverage gaps
+```
+
+Algorithm:
+
+```text
+1. Sort and merge intervals if they can overlap.
+2. Keep expected start.
+3. For each merged interval:
+   - if interval.start > expected_start, gap exists.
+   - update expected_start = max(expected_start, interval.end).
+4. After scan, check final gap to expected end.
+```
+
+Boundary:
+
+```text
+For half-open [start, end), gap is [expected_start, interval_start) when interval_start > expected_start.
+```
+
+Data Engineering connection:
+
+```text
+Find missing extraction windows or missing date partitions.
+```
+
+
+## 39. Problem: Missing Ranges
+
+LeetCode-style:
+
+```text
+Given sorted nums and lower/upper, return missing ranges.
+```
+
+This is not always interval input, but it is interval/gap thinking.
+
+Code for integer closed ranges:
+
+```python
+def find_missing_ranges(nums, lower, upper):
+    result = []
+    previous = lower - 1
+
+    for i in range(len(nums) + 1):
+        current = nums[i] if i < len(nums) else upper + 1
+
+        if current - previous >= 2:
+            result.append([previous + 1, current - 1])
+
+        previous = current
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(output)
+```
+
+Data Engineering connection:
+
+```text
+Find missing numeric partition IDs.
+```
+
+Common mistake:
+
+```text
+Off-by-one errors at lower and upper boundaries.
+```
+
+
+## 40. Data Engineering Custom Problem: Find Missing Date Windows
+
+Problem:
+
+```text
+Given processed windows as half-open [start, end), find gaps inside expected range [expected_start, expected_end).
+Input windows may overlap and be unsorted.
+```
+
+Code:
+
+```python
+def find_missing_windows(windows, expected_start, expected_end):
+    if expected_start >= expected_end:
+        return []
+
+    if not windows:
+        return [[expected_start, expected_end]]
+
+    windows.sort(key=lambda window: window[0])
+
+    merged = []
+
+    for start, end in windows:
+        if end <= expected_start or start >= expected_end:
+            continue
+
+        start = max(start, expected_start)
+        end = min(end, expected_end)
+
+        if not merged or start > merged[-1][1]:
+            merged.append([start, end])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+
+    gaps = []
+    cursor = expected_start
+
+    for start, end in merged:
+        if start > cursor:
+            gaps.append([cursor, start])
+
+        cursor = max(cursor, end)
+
+    if cursor < expected_end:
+        gaps.append([cursor, expected_end])
+
+    return gaps
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Find API extraction gaps or missing partition coverage for a date range.
+```
+
+Follow-ups:
+
+```text
+What if windows belong to multiple tables?
+What if dates are daily partitions?
+What if windows are inclusive?
+```
+
+
+## 41. Pattern: Employee Free Time
+
+Employee free time is a gap-finding problem across multiple schedules.
+
+Approach:
+
+```text
+1. Flatten all busy intervals.
+2. Sort by start.
+3. Merge busy intervals.
+4. Gaps between merged busy intervals are common free time.
+```
+
+Alternative:
+
+```text
+Use heap to merge K sorted employee schedules.
+```
+
+Data Engineering connection:
+
+```text
+Find common maintenance windows when no critical pipelines are running.
+```
+
+Boundary:
+
+```text
+Usually intervals are closed or half-open depending prompt. Clarify.
+```
+
+
+## 42. Problem: Employee Free Time
+
+LeetCode:
+
+```text
+759. Employee Free Time
+Difficulty: Hard
+Pattern: Flatten + merge + gaps
+```
+
+Simplified list version:
+
+```python
+def employee_free_time(schedule):
+    intervals = []
+
+    for employee in schedule:
+        for interval in employee:
+            intervals.append(interval)
+
+    if not intervals:
+        return []
+
+    intervals.sort(key=lambda interval: interval[0])
+
+    free = []
+    current_start, current_end = intervals[0]
+
+    for start, end in intervals[1:]:
+        if start <= current_end:
+            current_end = max(current_end, end)
+        else:
+            free.append([current_end, start])
+            current_start, current_end = start, end
+
+    return free
+```
+
+Complexity:
+
+```text
+Time: O(n log n), where n is total intervals
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Find global maintenance windows between scheduled pipelines.
+```
+
+Follow-up:
+
+```text
+What if each employee schedule is already sorted and n is huge?
+```
+
+Expected:
+
+```text
+Use heap merge K sorted schedules to reduce memory in streaming scenarios.
+```
+
+
+## 43. Pattern: Partition Labels / Range Grouping
+
+Some string/array problems are interval problems in disguise.
+
+Example:
+
+```text
+Partition Labels
+```
+
+Core idea:
+
+```text
+Each character has a last occurrence.
+As you scan, current partition must extend to max last occurrence of all characters seen.
+When index reaches current_end, partition closes.
+```
+
+This is interval-like because each character defines:
+
+```text
+[first occurrence, last occurrence]
+```
+
+Data Engineering analogy:
+
+```text
+Group records into minimal segments where all dependencies/events for each key are contained inside the segment.
+```
+
+
+## 44. Problem: Partition Labels
+
+LeetCode:
+
+```text
+763. Partition Labels
+Difficulty: Medium
+Pattern: Greedy interval partitioning
+```
+
+Code:
+
+```python
+def partition_labels(s):
+    last_index = {}
+
+    for index, char in enumerate(s):
+        last_index[char] = index
+
+    result = []
+    start = 0
+    end = 0
+
+    for index, char in enumerate(s):
+        end = max(end, last_index[char])
+
+        if index == end:
+            result.append(end - start + 1)
+            start = index + 1
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(k), where k is unique characters
+```
+
+Data Engineering connection:
+
+```text
+Create minimal independent processing chunks where all records for keys in a chunk are contained within that chunk.
+```
+
+Common mistake:
+
+```text
+Closing partition too early before seeing last occurrence of all characters in current partition.
+```
+
+
+## 45. Pattern: Calendar Booking
+
+Calendar booking problems are interval conflict problems.
+
+Basic booking:
+
+```text
+Book interval if it does not overlap any existing interval.
+```
+
+Naive:
+
+```text
+Check all existing bookings: O(n) per booking.
+```
+
+Advanced:
+
+```text
+Use balanced tree / sorted list / sweep line depending constraints.
+```
+
+Python interview simple version usually accepts list scan unless strict.
+
+Boundary:
+
+```text
+Calendar intervals are usually half-open [start, end).
+Back-to-back bookings are allowed.
+```
+
+Overlap for half-open:
+
+```text
+start < existing_end and existing_start < end
+```
+
+
+## 46. Problem: My Calendar I
+
+LeetCode:
+
+```text
+729. My Calendar I
+Difficulty: Medium
+Pattern: Interval conflict detection
+```
+
+Simple code:
+
+```python
+class MyCalendar:
+    def __init__(self):
+        self.bookings = []
+
+    def book(self, start, end):
+        for existing_start, existing_end in self.bookings:
+            if start < existing_end and existing_start < end:
+                return False
+
+        self.bookings.append((start, end))
+        return True
+```
+
+Complexity:
+
+```text
+book: O(n)
+space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Book exclusive processing windows for a shared resource.
+```
+
+Follow-up:
+
+```text
+How would you optimize many bookings?
+```
+
+Expected:
+
+```text
+Use sorted intervals and binary search / balanced tree. Python standard library lacks built-in balanced tree.
+```
+
+
+## 47. Problem: My Calendar II
+
+LeetCode:
+
+```text
+731. My Calendar II
+Difficulty: Medium
+Pattern: Overlap tracking / sweep idea
+```
+
+Problem:
+
+```text
+Allow double booking but not triple booking.
+```
+
+Approach:
+
+```text
+Track all bookings.
+Track overlaps between pairs.
+New booking is invalid if it overlaps any existing overlap.
+Otherwise, add new overlaps with existing bookings and add booking.
+```
+
+Code:
+
+```python
+class MyCalendarTwo:
+    def __init__(self):
+        self.bookings = []
+        self.overlaps = []
+
+    def book(self, start, end):
+        for overlap_start, overlap_end in self.overlaps:
+            if start < overlap_end and overlap_start < end:
+                return False
+
+        for booking_start, booking_end in self.bookings:
+            if start < booking_end and booking_start < end:
+                self.overlaps.append([
+                    max(start, booking_start),
+                    min(end, booking_end),
+                ])
+
+        self.bookings.append([start, end])
+        return True
+```
+
+Complexity:
+
+```text
+book: O(n)
+space: O(n²) worst case for overlaps
+```
+
+Data Engineering connection:
+
+```text
+Allow limited concurrency but reject schedules that exceed capacity.
+```
+
+Follow-up:
+
+```text
+Generalize to capacity K.
+```
+
+Expected:
+
+```text
+Use sweep line events to check max active count.
+```
+
+
+## 48. Pattern: SCD Type 2 Effective-Date Validation
+
+Slowly Changing Dimension Type 2 tables use effective-date intervals.
+
+Typical fields:
+
+```text
+business_key
+effective_start
+effective_end
+is_current
+```
+
+Validation needs:
+
+```text
+no overlapping effective intervals for same business key
+optional no gaps depending business rule
+one current row
+effective_start < effective_end
+```
+
+For each business key:
+
+```text
+sort by effective_start
+compare current_start with previous_end
+```
+
+Boundary usually half-open:
+
+```text
+[effective_start, effective_end)
+```
+
+Overlap:
+
+```text
+current_start < previous_end
+```
+
+Gap:
+
+```text
+current_start > previous_end
+```
+
+Data Engineering interview line:
+
+```text
+For SCD2, I would validate intervals per business key to ensure no overlapping effective-date ranges.
+```
+
+
+## 49. Data Engineering Custom Problem: Validate SCD2 No Overlap
+
+Problem:
+
+```text
+Given SCD rows:
+customer_id, effective_start, effective_end
+
+Return customer_ids that have overlapping effective-date intervals.
+Assume half-open [effective_start, effective_end).
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def find_scd2_overlaps(rows):
+    by_customer = defaultdict(list)
+
+    for row in rows:
+        customer_id = row.get("customer_id")
+        start = row.get("effective_start")
+        end = row.get("effective_end")
+
+        if customer_id is None or start is None or end is None:
+            continue
+
+        by_customer[customer_id].append([start, end])
+
+    overlapping_customers = []
+
+    for customer_id, intervals in by_customer.items():
+        intervals.sort(key=lambda interval: interval[0])
+        previous_end = intervals[0][1]
+
+        for start, end in intervals[1:]:
+            if start < previous_end:
+                overlapping_customers.append(customer_id)
+                break
+
+            previous_end = max(previous_end, end)
+
+    return overlapping_customers
+```
+
+Complexity:
+
+```text
+Time: O(n log n) total across groups
+Space: O(n)
+```
+
+Follow-ups:
+
+```text
+Return exact overlapping intervals.
+Detect gaps too.
+Validate one current row per customer.
+Handle open-ended current row.
+```
+
+
+## 50. Data Engineering Custom Problem: Detect SCD2 Gaps
+
+Problem:
+
+```text
+Given SCD2 effective intervals per customer, return gaps between intervals.
+Assume intervals are half-open and gaps are invalid.
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def find_scd2_gaps(rows):
+    by_customer = defaultdict(list)
+
+    for row in rows:
+        customer_id = row.get("customer_id")
+        start = row.get("effective_start")
+        end = row.get("effective_end")
+
+        if customer_id is None or start is None or end is None:
+            continue
+
+        by_customer[customer_id].append([start, end])
+
+    gaps = {}
+
+    for customer_id, intervals in by_customer.items():
+        intervals.sort(key=lambda interval: interval[0])
+        customer_gaps = []
+
+        previous_end = intervals[0][1]
+
+        for start, end in intervals[1:]:
+            if start > previous_end:
+                customer_gaps.append([previous_end, start])
+
+            previous_end = max(previous_end, end)
+
+        if customer_gaps:
+            gaps[customer_id] = customer_gaps
+
+    return gaps
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Interview point:
+
+```text
+Overlap and gap checks are separate. Some business rules allow gaps; some do not.
+```
+
+
+## 51. Pattern: Active Period Lookup
+
+Active period lookup asks:
+
+```text
+Which interval contains this timestamp?
+```
+
+Naive:
+
+```text
+Scan all intervals.
+```
+
+If intervals are sorted and non-overlapping:
+
+```text
+Use binary search.
+```
+
+Half-open condition:
+
+```text
+start <= timestamp < end
+```
+
+Data Engineering examples:
+
+```text
+Find customer segment active at order_date.
+Find subscription active at transaction_time.
+Find price effective at event_time.
+Find SLA policy active at incident time.
+```
+
+SQL equivalent:
+
+```sql
+order_time >= effective_start
+AND order_time < effective_end
+```
+
+Interview line:
+
+```text
+For sorted non-overlapping intervals, binary search can find the candidate interval in O(log n).
+```
+
+
+## 52. Data Engineering Custom Problem: Find Active Segment
+
+Problem:
+
+```text
+Given sorted non-overlapping intervals for one customer:
+[start, end, segment]
+
+Return segment active at timestamp.
+Intervals are half-open [start, end).
+```
+
+Code:
+
+```python
+def find_active_segment(intervals, timestamp):
+    left = 0
+    right = len(intervals) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+        start, end, segment = intervals[mid]
+
+        if start <= timestamp < end:
+            return segment
+
+        if timestamp < start:
+            right = mid - 1
+        else:
+            left = mid + 1
+
+    return None
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if intervals overlap?
+What if intervals are not sorted?
+What if lookup is for many customers?
+```
+
+Expected:
+
+```text
+Validate/merge/sort first; group by customer_id; use binary search per customer.
+```
+
+
+## 53. Pattern: Range Updates / Difference Array
+
+Some interval problems ask for adding values over ranges.
+
+Pattern:
+
+```text
+difference array / sweep line
+```
+
+For each range [start, end):
+
+```text
+diff[start] += value
+diff[end] -= value
+```
+
+Then prefix sum gives active value at each point.
+
+Use when:
+
+```text
+many range updates
+need max active value
+need timeline
+integer positions
+```
+
+Data Engineering examples:
+
+```text
+compute active job count per minute
+compute resource load over time buckets
+apply partition-level adjustments over date ranges
+```
+
+Interview line:
+
+```text
+Range updates can be converted into start/end delta events and then scanned with prefix sums.
+```
+
+
+## 54. Problem: Car Pooling
+
+LeetCode:
+
+```text
+1094. Car Pooling
+Difficulty: Medium
+Pattern: Difference array / sweep line
+```
+
+Problem:
+
+```text
+Trips are [num_passengers, start, end). Check if capacity is exceeded.
+```
+
+Sweep line code:
+
+```python
+def car_pooling(trips, capacity):
+    events = []
+
+    for passengers, start, end in trips:
+        events.append((start, passengers))
+        events.append((end, -passengers))
+
+    events.sort(key=lambda event: (event[0], event[1]))
+
+    current = 0
+
+    for location, delta in events:
+        current += delta
+
+        if current > capacity:
+            return False
+
+    return True
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Check whether concurrent job resource usage exceeds capacity over time.
+```
+
+Common mistake:
+
+```text
+Processing pickup before dropoff at same location for half-open intervals, causing false capacity violation.
+```
+
+
+## 55. Data Engineering Custom Problem: Resource Capacity Over Time
+
+Problem:
+
+```text
+Given job windows [start, end) and required_workers, determine if total workers ever exceed capacity.
+```
+
+Pattern:
+
+```text
+Sweep line with deltas
+```
+
+Code:
+
+```python
+def capacity_exceeded(job_windows, capacity):
+    events = []
+
+    for start, end, workers in job_windows:
+        events.append((start, workers))
+        events.append((end, -workers))
+
+    # end event negative should process before start positive at same time
+    events.sort(key=lambda event: (event[0], event[1]))
+
+    active_workers = 0
+
+    for time, delta in events:
+        active_workers += delta
+
+        if active_workers > capacity:
+            return True
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-up:
+
+```text
+Return time ranges where capacity is exceeded.
+```
+
+Expected:
+
+```text
+Track active value between consecutive event timestamps.
+```
+
+
+## 56. Pattern: Time Boundary Normalization
+
+Data Engineering interval bugs often come from time boundary issues.
+
+Rules:
+
+```text
+Use consistent timezone.
+Prefer UTC internally.
+Use half-open intervals for timestamps.
+Normalize date strings to date/datetime objects in real code.
+Avoid BETWEEN for timestamp month filters.
+Do not mix date and timestamp without clear conversion.
+Be careful with daylight saving transitions.
+```
+
+Interview-safe SQL pattern:
+
+```sql
+WHERE event_time >= '2025-01-01'
+  AND event_time <  '2025-02-01'
+```
+
+Interview-safe Python idea:
+
+```text
+Treat windows as [start, end), and compare start <= event_time < end.
+```
+
+Strict feedback:
+
+```text
+If candidate uses inclusive end timestamp without precision discussion, mark as boundary risk.
+```
+
+
+## 57. Interval Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Merge overlapping backfill windows.
+2. Insert a new sync window into sorted non-overlapping windows.
+3. Find overlap between SLA windows and outage windows.
+4. Check if one person can attend all meetings.
+5. Find minimum workers needed for job windows.
+6. Remove minimum intervals to make non-overlapping.
+7. Find minimum arrows to burst balloons.
+8. Remove intervals fully covered by another.
+9. Find missing extraction windows in expected range.
+10. Find common free maintenance windows.
+11. Detect overlapping SCD2 rows per customer.
+12. Find active customer segment at order time.
+13. Check capacity exceeded by overlapping jobs.
+14. Merge K sorted event files.
+15. Find top K slowest jobs.
+16. Count max concurrent pipelines.
+17. Book calendar without overlap.
+18. Allow double booking but reject triple booking.
+19. Partition string into independent labels.
+20. Find intersections of two sorted interval lists.
+```
+
+Expected patterns:
+
+```text
+1. sort by start + merge
+2. insert interval
+3. two pointers intersection
+4. sort + conflict detection
+5. min-heap end times or sweep line
+6. greedy by end time
+7. greedy by end time
+8. sort start asc/end desc
+9. merge + gap scan
+10. flatten + merge + gaps
+11. group + sort + overlap check
+12. binary search over sorted intervals
+13. sweep line / difference events
+14. heap merge K sorted, not interval pattern
+15. heap/top K, not interval pattern
+16. sweep line or heap
+17. interval overlap scan
+18. overlap tracking/sweep
+19. greedy interval partitioning
+20. two pointers
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed interval mocks.
+```
+
+
+## 58. High-ROI LeetCode List
+
+Practice these first.
+
+| No. | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 56 | Merge Intervals | Medium | Sort + merge |
+| 57 | Insert Interval | Medium | Insert + merge |
+| 986 | Interval List Intersections | Medium | Two pointers |
+| 252 | Meeting Rooms | Easy | Conflict detection |
+| 253 | Meeting Rooms II | Medium | Min-heap end times |
+| 435 | Non-overlapping Intervals | Medium | Greedy by end |
+| 452 | Minimum Number of Arrows to Burst Balloons | Medium | Greedy by end |
+| 1288 | Remove Covered Intervals | Medium | Sort start asc/end desc |
+| 759 | Employee Free Time | Hard | Merge + gaps |
+| 729 | My Calendar I | Medium | Interval booking |
+| 731 | My Calendar II | Medium | Overlap tracking |
+| 1094 | Car Pooling | Medium | Sweep line |
+| 763 | Partition Labels | Medium | Greedy interval partition |
+| 1229 | Meeting Scheduler | Medium | Two pointers / intersection |
+| 1851 | Minimum Interval to Include Each Query | Hard | Sort + heap |
+
+
+## 59. Problem: Meeting Scheduler
+
+LeetCode:
+
+```text
+1229. Meeting Scheduler
+Difficulty: Medium
+Pattern: Two pointers / interval intersection
+```
+
+Problem:
+
+```text
+Given availability slots for two people and duration, find earliest time slot that works.
+```
+
+Approach:
+
+```text
+Sort both slot lists.
+Use two pointers.
+For each pair, compute overlap.
+If overlap length >= duration, return earliest slot.
+Move interval that ends first.
+```
+
+Code:
+
+```python
+def min_available_duration(slots1, slots2, duration):
+    slots1.sort()
+    slots2.sort()
+
+    i = 0
+    j = 0
+
+    while i < len(slots1) and j < len(slots2):
+        start = max(slots1[i][0], slots2[j][0])
+        end = min(slots1[i][1], slots2[j][1])
+
+        if end - start >= duration:
+            return [start, start + duration]
+
+        if slots1[i][1] < slots2[j][1]:
+            i += 1
+        else:
+            j += 1
+
+    return []
+```
+
+Complexity:
+
+```text
+Time: O(n log n + m log m)
+Space: O(1) extra depending sort
+```
+
+Data Engineering connection:
+
+```text
+Find earliest shared maintenance window across two teams/systems.
+```
+
+
+## 60. Problem: Minimum Interval to Include Each Query
+
+LeetCode:
+
+```text
+1851. Minimum Interval to Include Each Query
+Difficulty: Hard
+Pattern: Sort intervals and queries + heap
+```
+
+Problem:
+
+```text
+For each query, find size of smallest interval containing it.
+```
+
+Approach:
+
+```text
+Sort intervals by start.
+Sort queries ascending with original index.
+For each query:
+  add intervals whose start <= query to min-heap by interval size
+  remove intervals whose end < query
+  heap top is smallest interval containing query
+```
+
+Code:
+
+```python
+import heapq
+
+def min_interval(intervals, queries):
+    intervals.sort(key=lambda interval: interval[0])
+    indexed_queries = sorted((query, index) for index, query in enumerate(queries))
+
+    result = [-1] * len(queries)
+    heap = []
+    i = 0
+
+    for query, original_index in indexed_queries:
+        while i < len(intervals) and intervals[i][0] <= query:
+            start, end = intervals[i]
+            size = end - start + 1
+            heapq.heappush(heap, (size, end))
+            i += 1
+
+        while heap and heap[0][1] < query:
+            heapq.heappop(heap)
+
+        if heap:
+            result[original_index] = heap[0][0]
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O((n + q) log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+For each event timestamp, find smallest active policy/window containing it.
+```
+
+Common mistake:
+
+```text
+Forgetting to preserve original query order.
+```
+
+
+## 61. Practice Ladder
+
+### Level 1: Core merge and conflict
+
+```text
+Merge Intervals
+Meeting Rooms
+Data Engineering: merge backfill windows
+Data Engineering: detect job conflict
+```
+
+Exit:
+
+```text
+Candidate can state overlap condition and sort by start.
+```
+
+### Level 2: Insert and intersections
+
+```text
+Insert Interval
+Interval List Intersections
+Meeting Scheduler
+SLA outage overlap custom
+```
+
+Exit:
+
+```text
+Candidate can use one-pass insert and two-pointer intersection.
+```
+
+### Level 3: Greedy intervals
+
+```text
+Non-overlapping Intervals
+Minimum Arrows
+Remove Covered Intervals
+Partition Labels
+```
+
+Exit:
+
+```text
+Candidate can choose sort by end or start/end-desc correctly.
+```
+
+### Level 4: Resources and sweep line
+
+```text
+Meeting Rooms II
+Car Pooling
+Max concurrent pipelines
+Capacity exceeded custom
+```
+
+Exit:
+
+```text
+Candidate can use heap or sweep line and explain boundary order.
+```
+
+### Level 5: Data Engineering date windows
+
+```text
+Find missing windows
+Validate SCD2 overlaps/gaps
+Active segment lookup
+Employee free time
+Minimum interval to include query
+```
+
+Exit:
+
+```text
+Candidate can apply intervals to real date/time pipeline scenarios.
+```
+
+
+## 62. 7-Day Intervals Plan
+
+### Day 1: Overlap and merge basics
+
+Problems:
+
+```text
+Merge Intervals
+Meeting Rooms
+Merge backfill windows custom
+```
+
+Focus:
+
+```text
+boundary assumptions
+sort by start
+overlap condition
+```
+
+### Day 2: Insert and intersection
+
+Problems:
+
+```text
+Insert Interval
+Interval List Intersections
+SLA outage overlap custom
+```
+
+Focus:
+
+```text
+one-pass insertion
+two pointers
+move smaller end
+```
+
+### Day 3: Greedy by end
+
+Problems:
+
+```text
+Non-overlapping Intervals
+Minimum Arrows
+Max maintenance windows custom
+```
+
+Focus:
+
+```text
+earliest end greedy
+minimum removals
+selection proof
+```
+
+### Day 4: Concurrent intervals
+
+Problems:
+
+```text
+Meeting Rooms II
+Max concurrent pipelines
+Capacity exceeded custom
+```
+
+Focus:
+
+```text
+heap of end times
+sweep line
+resource capacity
+```
+
+### Day 5: Gaps and coverage
+
+Problems:
+
+```text
+Employee Free Time
+Find missing date windows
+Missing ranges
+```
+
+Focus:
+
+```text
+merge first
+gap scan
+coverage validation
+```
+
+### Day 6: Data Engineering intervals
+
+Problems:
+
+```text
+Validate SCD2 no overlap
+Detect SCD2 gaps
+Find active segment
+Add API sync window
+```
+
+Focus:
+
+```text
+half-open intervals
+effective-date logic
+binary search
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run Interval Mock Set 2 or 3.
+Review mistakes.
+Repair weakest interval pattern.
+Update progress.
+```
+
+
+## 63. 30-Day Intervals Plan
+
+### Week 1: Foundations
+
+Focus:
+
+```text
+overlap conditions
+closed vs half-open boundaries
+sort by start
+merge
+conflict detection
+```
+
+Problems:
+
+```text
+56, 252, merge backfill, detect job conflict
+```
+
+Exit:
+
+```text
+Candidate can solve merge/conflict problems with correct boundaries.
+```
+
+### Week 2: Insert, intersection, gaps
+
+Focus:
+
+```text
+insert interval
+two pointers
+gap detection
+free time
+```
+
+Problems:
+
+```text
+57, 986, 1229, 759, missing windows
+```
+
+Exit:
+
+```text
+Candidate can solve two-list and coverage problems.
+```
+
+### Week 3: Greedy and resource counting
+
+Focus:
+
+```text
+greedy by end
+minimum removals
+minimum arrows
+remove covered intervals
+heap/sweep concurrency
+```
+
+Problems:
+
+```text
+435, 452, 1288, 253, 1094
+```
+
+Exit:
+
+```text
+Candidate can justify greedy and use heap/sweep correctly.
+```
+
+### Week 4: Data Engineering and advanced
+
+Focus:
+
+```text
+SCD intervals
+active period lookup
+calendar booking
+minimum interval queries
+mock interviews
+```
+
+Problems:
+
+```text
+729, 731, 1851, SCD2 custom, active segment lookup
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 64. Interval Mock Set 1: Beginner
+
+Problems:
+
+```text
+1. Merge Intervals
+2. Meeting Rooms
+3. Merge Backfill Windows custom
+4. Detect Job Resource Conflict custom
+5. Missing Ranges
+```
+
+Expected skills:
+
+```text
+sort by start
+overlap condition
+half-open boundary
+gap scan
+basic edge cases
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate states overlap rule before code.
+```
+
+
+## 65. Interval Mock Set 2: Core Medium
+
+Problems:
+
+```text
+1. Insert Interval
+2. Interval List Intersections
+3. Non-overlapping Intervals
+4. Meeting Rooms II
+5. Remove Covered Intervals
+```
+
+Expected skills:
+
+```text
+insert/merge
+two pointers
+greedy by end
+min-heap concurrency
+start asc/end desc sort
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles adjacent and nested intervals correctly.
+```
+
+
+## 66. Interval Mock Set 3: Data Engineering Flavor
+
+Problems:
+
+```text
+1. Find missing extraction windows in expected range.
+2. Validate SCD2 no overlaps per customer.
+3. Detect SCD2 gaps.
+4. Find active segment at timestamp.
+5. Compute SLA outage overlaps.
+```
+
+Expected skills:
+
+```text
+half-open intervals
+grouping by entity
+sort and scan
+binary search
+two-pointer intersection
+date boundary communication
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains real pipeline implications.
+```
+
+
+## 67. Interval Mock Set 4: Strong Candidate
+
+Problems:
+
+```text
+1. Employee Free Time
+2. My Calendar II
+3. Car Pooling
+4. Minimum Interval to Include Each Query
+5. Meeting Scheduler
+```
+
+Expected skills:
+
+```text
+flatten/merge/gaps
+overlap tracking
+sweep line
+sort + heap
+two pointers
+capacity reasoning
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles follow-ups and boundary assumptions.
+```
+
+
+## 68. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Easy interval problem
+
+```text
+10-15 minutes
+```
+
+### Medium interval problem
+
+```text
+25-35 minutes
+```
+
+### Hard interval/sweep/heap problem
+
+```text
+40-45 minutes
+```
+
+Per problem:
+
+```text
+Minute 0-3:
+Clarify closed vs half-open and touching endpoints.
+
+Minute 3-6:
+Choose pattern and sorting rule.
+
+Minute 6-9:
+State overlap/gap condition.
+
+Minute 9-25:
+Code.
+
+Minute 25-30:
+Dry run overlap, adjacent, nested cases.
+
+Minute 30-35:
+Complexity and Data Engineering connection.
+```
+
+If candidate cannot state overlap condition:
+
+```text
+Stop and switch to weakness-repair-mode.md.
+```
+
+
+## 69. Review Checklist
+
+Review interval solutions using:
+
+```text
+1. Did candidate clarify boundary type?
+2. Did candidate state overlap condition?
+3. Did candidate sort if needed?
+4. Did candidate sort by correct key?
+5. Did candidate handle adjacent intervals correctly?
+6. Did candidate handle nested intervals correctly?
+7. Did candidate handle empty input?
+8. Did candidate update end with max when merging?
+9. Did candidate choose greedy by end when needed?
+10. Did candidate use heap/sweep for concurrency?
+11. Did candidate use two pointers for intersections?
+12. Did candidate find gaps after merging?
+13. Did candidate explain time complexity?
+14. Did candidate explain space complexity?
+15. Did candidate connect to Data Engineering date windows?
+```
+
+Verdict examples:
+
+```text
+Correct merge but wrong adjacent boundary.
+Correct sorting but wrong overlap condition.
+Good LeetCode answer but weak Data Engineering timestamp handling.
+Correct greedy but no proof.
+Correct heap but no capacity boundary explanation.
+Interview-ready.
+Strong.
+```
+
+
+## 70. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Cannot state overlap | Closed vs half-open overlap drills |
+| Uses wrong <=/< | Boundary contrast drills |
+| Forgets sorting | Sort requirement drills |
+| Sorts by wrong key | Pattern classification drills |
+| Fails nested intervals | Merge max-end drills |
+| Fails adjacent intervals | Touching endpoint drills |
+| Cannot insert interval | Three-phase insert drills |
+| Cannot intersect lists | Two-pointer move-smaller-end drills |
+| Greedy confusion | Sort-by-end selection drills |
+| Meeting rooms confusion | Heap end-time drills |
+| Sweep line event order wrong | Start/end tie-order repair |
+| SCD overlap confusion | Per-key effective-date drills |
+| Gap detection weak | Merge-first then gap-scan drills |
+| Active lookup weak | Binary search interval drills |
+| No DE connection | Backfill/SLA/SCD custom drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 71. Communication Scripts
+
+### Merge script
+
+```text
+I will sort by start time so overlapping intervals become adjacent. Then I keep a current interval and extend its end when the next interval overlaps.
+```
+
+### Boundary script
+
+```text
+I will treat timestamp windows as half-open [start, end), so two windows touching at the endpoint do not overlap unless the business wants continuous coverage merged.
+```
+
+### Insert script
+
+```text
+Because existing intervals are sorted and non-overlapping, I can add all intervals before the new one, merge overlaps with the new interval, then append the remaining intervals.
+```
+
+### Intersection script
+
+```text
+For two sorted interval lists, I compute the overlap of the current pair, then move the interval that ends first.
+```
+
+### Greedy script
+
+```text
+To maximize non-overlapping intervals, I sort by end time and keep the earliest-ending interval because it leaves the most room for future intervals.
+```
+
+### Heap concurrency script
+
+```text
+For minimum rooms/workers, I sort by start time and keep active end times in a min-heap. If the earliest end is before the next start, I can reuse that resource.
+```
+
+### Data Engineering script
+
+```text
+This is the same logic as merging backfill windows, checking SCD2 effective-date overlaps, or finding missing API extraction windows.
+```
+
+
+## 72. Candidate Self-Review Questions
+
+After every interval problem, candidate should answer:
+
+```text
+1. Are intervals closed or half-open?
+2. Do touching endpoints overlap?
+3. Are intervals sorted?
+4. What should I sort by?
+5. What is the overlap condition?
+6. What is the non-overlap condition?
+7. Is this merge, insert, intersection, greedy, heap, sweep, or gap problem?
+8. What edge case could break my code?
+9. What is time complexity?
+10. What is space complexity?
+11. How would this appear in a Data Engineering pipeline?
+12. What changes if these are timestamps?
+```
+
+If candidate cannot answer these:
+
+```text
+The problem is not fully learned.
+```
+
+
+## 73. Maintenance Drills
+
+After completing intervals, maintain skill with:
+
+```text
+1 merge interval drill per week
+1 greedy interval drill per week
+1 intersection/two-pointer drill every 2 weeks
+1 heap/sweep concurrency drill every 2 weeks
+1 Data Engineering date-window custom drill per week
+1 SCD/backfill/SLA drill every 2 weeks
+```
+
+Maintenance rotation:
+
+```text
+Week 1: merge + insert
+Week 2: intersection + gaps
+Week 3: greedy + meeting rooms
+Week 4: SCD/backfill + mixed mock
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed interval pattern.
+```
+
+
+## 74. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# Intervals Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Pattern | Difficulty | Score | Time | Mistake | Next Action
+
+## Pattern Scores
+
+Overlap conditions:
+Sort + merge:
+Insert interval:
+Interval intersection:
+Meeting conflict:
+Meeting rooms / heap:
+Sweep line:
+Greedy removals:
+Minimum arrows:
+Remove covered intervals:
+Gap detection:
+Employee free time:
+Calendar booking:
+SCD2 validation:
+Active period lookup:
+Data Engineering date windows:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 75. Final Exit Test
+
+Candidate passes intervals when they can solve:
+
+```text
+1. Merge Intervals
+2. Insert Interval
+3. Interval List Intersections
+4. Meeting Rooms
+5. Meeting Rooms II
+6. Non-overlapping Intervals
+7. Minimum Arrows
+8. Remove Covered Intervals
+9. Employee Free Time
+10. My Calendar I
+11. Car Pooling
+12. Partition Labels
+13. Meeting Scheduler
+14. Data Engineering: merge backfill windows
+15. Data Engineering: find missing extraction windows
+16. Data Engineering: SLA outage overlap
+17. Data Engineering: validate SCD2 no overlap
+18. Data Engineering: detect SCD2 gaps
+19. Data Engineering: active segment lookup
+20. Data Engineering: minimum workers for jobs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No overlap-condition confusion.
+No boundary mistakes on half-open intervals.
+No missing sort step.
+No wrong greedy sort key.
+No heap/sweep confusion for concurrency.
+Can explain Data Engineering relevance.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles timestamp/date follow-ups and production boundary risks.
+```
+
+
+## 76. Final Summary
+
+Intervals are one of the most practical DSA patterns for Data Engineering interviews.
+
+They map directly to:
+
+```text
+backfills
+partitions
+event-time windows
+SLA windows
+outages
+pipeline schedules
+resource capacity
+SCD2 effective dates
+API extraction windows
+calendar bookings
+maintenance windows
+coverage gaps
+active periods
+```
+
+The candidate must master:
+
+```text
+closed vs half-open boundaries
+overlap condition
+sort by start and merge
+insert interval
+two-pointer intersections
+greedy by end time
+heap for concurrent intervals
+sweep line events
+gap detection
+covered intervals
+calendar booking
+SCD2 validation
+active-period lookup
+```
+
+The mentor must be strict:
+
+```text
+No boundary clarification → not interview-ready.
+No overlap condition → not interview-ready.
+Wrong <= vs < → not interview-ready.
+No complexity → not interview-ready.
+Only sample passes → not interview-ready.
+```
+
+The goal is not to memorize interval problems.
+
+The goal is to reason correctly about time ranges, overlaps, gaps, and resource usage under interview pressure.
+
+
+## 77. Problem Card Appendix
+
+### Card 1: Merge Intervals
+
+LeetCode:
+
+```text
+56. Merge Intervals
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Sort by start + merge
+```
+
+Core idea:
+
+```text
+Merge overlapping ranges.
+```
+
+Data Engineering connection:
+
+```text
+Merge overlapping backfill windows.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Insert Interval
+
+LeetCode:
+
+```text
+57. Insert Interval
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Insert + merge
+```
+
+Core idea:
+
+```text
+Add one interval to sorted non-overlapping list.
+```
+
+Data Engineering connection:
+
+```text
+Add API sync window.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Interval List Intersections
+
+LeetCode:
+
+```text
+986. Interval List Intersections
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Two pointers
+```
+
+Core idea:
+
+```text
+Find overlap of two sorted lists.
+```
+
+Data Engineering connection:
+
+```text
+SLA/outage overlap.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Meeting Rooms
+
+LeetCode:
+
+```text
+252. Meeting Rooms
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Conflict detection
+```
+
+Core idea:
+
+```text
+Sort and check adjacent overlaps.
+```
+
+Data Engineering connection:
+
+```text
+Exclusive resource conflict.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Meeting Rooms II
+
+LeetCode:
+
+```text
+253. Meeting Rooms II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Min-heap end times
+```
+
+Core idea:
+
+```text
+Minimum concurrent resources.
+```
+
+Data Engineering connection:
+
+```text
+Minimum workers for jobs.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Non-overlapping Intervals
+
+LeetCode:
+
+```text
+435. Non-overlapping Intervals
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Greedy by end
+```
+
+Core idea:
+
+```text
+Minimum removals for non-overlap.
+```
+
+Data Engineering connection:
+
+```text
+Max non-overlapping maintenance windows.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Minimum Arrows
+
+LeetCode:
+
+```text
+452. Minimum Arrows
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Greedy by end
+```
+
+Core idea:
+
+```text
+Minimum points to cover intervals.
+```
+
+Data Engineering connection:
+
+```text
+Minimum checkpoints for incidents.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Remove Covered Intervals
+
+LeetCode:
+
+```text
+1288. Remove Covered Intervals
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Sort start asc/end desc
+```
+
+Core idea:
+
+```text
+Remove intervals covered by larger intervals.
+```
+
+Data Engineering connection:
+
+```text
+Remove redundant backfill windows.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Employee Free Time
+
+LeetCode:
+
+```text
+759. Employee Free Time
+Difficulty: Hard
+```
+
+Primary pattern:
+
+```text
+Flatten + merge + gaps
+```
+
+Core idea:
+
+```text
+Find gaps in busy intervals.
+```
+
+Data Engineering connection:
+
+```text
+Find maintenance windows.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: My Calendar I
+
+LeetCode:
+
+```text
+729. My Calendar I
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Booking conflict
+```
+
+Core idea:
+
+```text
+Reject overlapping booking.
+```
+
+Data Engineering connection:
+
+```text
+Book resource windows.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: My Calendar II
+
+LeetCode:
+
+```text
+731. My Calendar II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Overlap tracking
+```
+
+Core idea:
+
+```text
+Allow double, reject triple booking.
+```
+
+Data Engineering connection:
+
+```text
+Capacity 2 scheduling.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Car Pooling
+
+LeetCode:
+
+```text
+1094. Car Pooling
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Sweep line
+```
+
+Core idea:
+
+```text
+Check capacity over intervals.
+```
+
+Data Engineering connection:
+
+```text
+Worker capacity over time.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Partition Labels
+
+LeetCode:
+
+```text
+763. Partition Labels
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Greedy partitioning
+```
+
+Core idea:
+
+```text
+Close range at max last index.
+```
+
+Data Engineering connection:
+
+```text
+Independent processing chunks.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Meeting Scheduler
+
+LeetCode:
+
+```text
+1229. Meeting Scheduler
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Two pointers
+```
+
+Core idea:
+
+```text
+Earliest overlap of required duration.
+```
+
+Data Engineering connection:
+
+```text
+Shared maintenance slot.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Minimum Interval to Include Query
+
+LeetCode:
+
+```text
+1851. Minimum Interval to Include Query
+Difficulty: Hard
+```
+
+Primary pattern:
+
+```text
+Sort + heap
+```
+
+Core idea:
+
+```text
+Smallest interval containing each query.
+```
+
+Data Engineering connection:
+
+```text
+Smallest active policy/window for event.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Boundary assumption.
+2. Overlap or gap condition.
+3. Sorting rule.
+4. Algorithm.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 78. Data Engineering Custom Problem Card Appendix
+
+### Custom Card 1: Merge Backfill Windows
+
+Pattern:
+
+```text
+sort + merge
+```
+
+Task:
+
+```text
+Merge overlapping/adjacent [start, end) backfill ranges.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 2: Add API Sync Window
+
+Pattern:
+
+```text
+insert interval
+```
+
+Task:
+
+```text
+Insert new extraction window into consolidated sync windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 3: SLA Outage Overlap
+
+Pattern:
+
+```text
+two pointers
+```
+
+Task:
+
+```text
+Find outage periods inside SLA windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 4: Detect Job Conflict
+
+Pattern:
+
+```text
+sort + conflict
+```
+
+Task:
+
+```text
+Detect overlapping exclusive-resource job windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 5: Minimum Workers
+
+Pattern:
+
+```text
+heap/sweep
+```
+
+Task:
+
+```text
+Compute required parallel workers for job windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 6: Max Concurrent Pipelines
+
+Pattern:
+
+```text
+sweep line
+```
+
+Task:
+
+```text
+Find maximum active pipeline runs.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 7: Find Missing Windows
+
+Pattern:
+
+```text
+merge + gap scan
+```
+
+Task:
+
+```text
+Find uncovered extraction periods in expected range.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 8: Validate SCD2 Overlap
+
+Pattern:
+
+```text
+group + sort + scan
+```
+
+Task:
+
+```text
+Find overlapping effective-date rows per business key.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 9: Detect SCD2 Gaps
+
+Pattern:
+
+```text
+group + sort + gap scan
+```
+
+Task:
+
+```text
+Find missing effective-date coverage.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 10: Find Active Segment
+
+Pattern:
+
+```text
+binary search
+```
+
+Task:
+
+```text
+Find segment active at a timestamp.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 11: Resource Capacity
+
+Pattern:
+
+```text
+sweep line
+```
+
+Task:
+
+```text
+Check whether worker capacity is exceeded.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 12: Remove Redundant Windows
+
+Pattern:
+
+```text
+remove covered intervals
+```
+
+Task:
+
+```text
+Remove backfill windows fully contained in larger windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 13: Maintenance Free Time
+
+Pattern:
+
+```text
+flatten + merge + gaps
+```
+
+Task:
+
+```text
+Find periods where no critical jobs run.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 14: Minimum Checkpoints
+
+Pattern:
+
+```text
+greedy by end
+```
+
+Task:
+
+```text
+Find minimum timestamps covering incident windows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 15: Partition Coverage Validation
+
+Pattern:
+
+```text
+gap scan
+```
+
+Task:
+
+```text
+Validate complete coverage for date partitions.
+```
+
+Minimum expected answer:
+
+```text
+1. Define interval boundary type.
+2. Define sort or scan rule.
+3. Handle invalid/empty inputs.
+4. Explain edge cases.
+5. Explain time and space complexity.
+6. Explain production risk if boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 79. Drill Appendix
+
+### Drill 1: Boundary Conditions
+
+Task:
+
+```text
+Compare closed [a,b] and half-open [a,b) overlap for 10 examples.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Merge Basics
+
+Task:
+
+```text
+Solve Merge Intervals and merge backfill windows.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Adjacent Windows
+
+Task:
+
+```text
+Decide whether touching endpoints should merge in 10 scenarios.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Insert Interval
+
+Task:
+
+```text
+Solve Insert Interval and add API sync window.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Interval Intersection
+
+Task:
+
+```text
+Solve Interval List Intersections and SLA outage overlap.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Meeting Conflict
+
+Task:
+
+```text
+Solve Meeting Rooms and detect job resource conflict.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Meeting Rooms II
+
+Task:
+
+```text
+Solve minimum workers using heap and sweep line.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Greedy Removals
+
+Task:
+
+```text
+Solve Non-overlapping Intervals and max maintenance windows.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Minimum Arrows
+
+Task:
+
+```text
+Solve arrows and minimum checkpoints custom.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Remove Covered
+
+Task:
+
+```text
+Solve Remove Covered Intervals and redundant windows.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Gap Detection
+
+Task:
+
+```text
+Find missing extraction windows after merging.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Employee Free Time
+
+Task:
+
+```text
+Flatten schedules, merge busy intervals, return gaps.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: SCD2 Validation
+
+Task:
+
+```text
+Detect overlaps and gaps per customer.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Active Lookup
+
+Task:
+
+```text
+Binary search active segment interval.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Calendar Booking
+
+Task:
+
+```text
+Implement My Calendar I and discuss optimization.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Sweep Line Capacity
+
+Task:
+
+```text
+Solve Car Pooling and worker capacity custom.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: Pattern Classification
+
+Task:
+
+```text
+Classify 20 prompts before coding.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Timed Mock
+
+Task:
+
+```text
+Run 5 interval problems in 90 minutes and review.
+```
+
+Minimum passing answer:
+
+```text
+1. State boundary assumption.
+2. State overlap/gap condition.
+3. State pattern.
+4. Write clean Python.
+5. Dry run overlap, adjacent, and nested cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 80. Quick Reference Cards
+
+### Quick Card 1: Closed overlap
+
+Summary:
+
+```text
+a_start <= b_end and b_start <= a_end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 2: Half-open overlap
+
+Summary:
+
+```text
+a_start < b_end and b_start < a_end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 3: Merge intervals
+
+Summary:
+
+```text
+Sort by start, extend end with max.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 4: Insert interval
+
+Summary:
+
+```text
+Before, merge overlap, after.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 5: Intersection
+
+Summary:
+
+```text
+Use max starts and min ends; move smaller end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 6: Meeting rooms
+
+Summary:
+
+```text
+Sort starts; compare current start with previous end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 7: Minimum rooms
+
+Summary:
+
+```text
+Min-heap of active end times.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 8: Greedy removals
+
+Summary:
+
+```text
+Sort by end and keep earliest-ending intervals.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 9: Minimum arrows
+
+Summary:
+
+```text
+Sort by end and place point at earliest end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 10: Remove covered
+
+Summary:
+
+```text
+Sort by start asc, end desc.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 11: Gaps
+
+Summary:
+
+```text
+Merge first, then compare cursor to next start.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 12: Sweep line
+
+Summary:
+
+```text
+Convert ranges to start/end delta events.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 13: SCD2
+
+Summary:
+
+```text
+Validate no overlaps per business key.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 14: Active period
+
+Summary:
+
+```text
+For sorted non-overlapping intervals, binary search timestamp.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 15: Data windows
+
+Summary:
+
+```text
+Prefer [start, end) for timestamps.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```

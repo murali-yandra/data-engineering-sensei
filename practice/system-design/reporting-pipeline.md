@@ -1,0 +1,4583 @@
+# Reporting Pipeline System Design Guide
+
+Generated: 2026-06-06
+
+This guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/system-design/reporting-pipeline.md
+```
+
+This guide trains the mentor and candidate on **reporting pipeline system design** for Data Engineering interviews.
+
+The guide is interview-focused. It teaches how to design production-grade reporting pipelines that convert raw/source data into trusted reports, dashboards, KPIs, exports, and business scorecards with correct metric definitions, reliable refreshes, quality gates, lineage, governance, access control, cost control, and operational ownership.
+
+Reporting pipeline design is high-ROI because Data Engineering interviews often ask:
+
+```text
+Design a daily reporting pipeline.
+Design an executive KPI reporting pipeline.
+Design a sales reporting pipeline.
+Design a finance reporting pipeline.
+Design a dashboard refresh pipeline.
+Design a reporting pipeline from warehouse to BI.
+Design a pipeline that generates daily/weekly/monthly reports.
+Design a reporting pipeline with data quality gates.
+Design a reporting pipeline that handles late-arriving data.
+Design a reporting pipeline that supports backfills and corrections.
+Design a reporting pipeline with source-to-report reconciliation.
+Design a reporting pipeline with metric definitions and semantic layer.
+Design a pipeline for scheduled CSV/PDF exports.
+Design reporting for customer 360.
+Design product analytics reporting.
+Design realtime plus certified batch reporting.
+Explain dashboard freshness, metric governance, semantic layer, reporting marts, and certified datasets.
+Explain report grain, dimensional filters, slicing, drill-down, and aggregate tables.
+Explain how to prevent wrong numbers in dashboards.
+Explain how to monitor reporting pipeline SLA.
+Explain how to handle finance closed periods and restatements.
+```
+
+Use this with:
+
+```text
+docs/system-design-guide.md
+docs/data-engineering-fundamentals.md
+docs/etl-elt-pipelines-guide.md
+docs/data-warehouse-guide.md
+docs/data-modeling-guide.md
+docs/cloud-data-platforms-guide.md
+docs/orchestration-airflow-guide.md
+docs/sql-interview-guide.md
+docs/assessment-rubric.md
+docs/communication-rubric.md
+modes/system-design-mode.md
+modes/interview-mode.md
+modes/feedback-mode.md
+modes/weakness-repair-mode.md
+practice/system-design/batch-pipeline.md
+practice/system-design/cdc-pipeline.md
+practice/system-design/data-lake.md
+practice/system-design/data-quality-framework.md
+practice/system-design/data-warehouse.md
+practice/system-design/event-ingestion.md
+practice/system-design/realtime-pipeline.md
+practice/sql/window-functions.md
+practice/sql/joins.md
+practice/sql/deduplication.md
+practice/sql/query-optimization.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+```
+
+Default interview target:
+
+```text
+FAANG-style Data Engineering interview standard, adjusted by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at reporting pipeline system design interviews.
+
+The candidate should learn to answer:
+
+```text
+What is a reporting pipeline?
+What is the difference between reporting, analytics, and raw data processing?
+Who consumes reports?
+What metrics and KPIs are required?
+What is the report grain?
+What dimensions and filters are required?
+What is the refresh frequency?
+What is the reporting SLA?
+What source systems feed reports?
+How are reporting marts designed?
+How is a semantic layer used?
+How are metrics defined and governed?
+How are reports validated?
+How are wrong numbers prevented?
+How are dashboards refreshed?
+How are exports delivered?
+How are late-arriving records handled?
+How are corrections and restatements handled?
+How are backfills handled?
+How is source-to-report reconciliation done?
+How are report failures monitored?
+How are reports secured?
+How are PII and row-level permissions handled?
+How is report performance optimized?
+How is cost controlled?
+```
+
+A candidate is interview-ready only when they can design:
+
+```text
+source ingestion
+staging and curated layers
+reporting marts
+semantic/metrics layer
+report grain
+metric definitions
+dimension/filter design
+incremental refresh
+idempotent report builds
+data quality gates
+source-to-report reconciliation
+freshness monitoring
+dashboard refresh
+export delivery
+late data handling
+correction/restatement workflow
+finance closed-period controls
+access control
+row-level and column-level security
+lineage and catalog
+alerting and runbooks
+performance and cost optimization
+```
+
+
+## 2. What Interviewers Are Testing
+
+Reporting pipeline design tests whether the candidate can turn data into trusted business outputs.
+
+Interviewers evaluate:
+
+```text
+does the candidate clarify business metrics?
+does the candidate define report grain?
+does the candidate separate raw data from certified reports?
+does the candidate model reporting marts properly?
+does the candidate define metric ownership?
+does the candidate handle late data and corrections?
+does the candidate design data quality gates before publish?
+does the candidate reconcile reports to source/warehouse facts?
+does the candidate monitor freshness and dashboard SLA?
+does the candidate handle access control and PII?
+does the candidate optimize dashboard performance?
+does the candidate explain trade-offs between freshness, cost, and correctness?
+```
+
+Weak answer:
+
+```text
+Load data into Power BI/Tableau and refresh every day.
+```
+
+Strong answer:
+
+```text
+I would clarify the business KPIs, report grain, users, filters, and SLA, then build reporting marts from curated warehouse facts and dimensions. Metrics would be defined in a semantic layer with ownership and versioning. The pipeline would refresh incrementally using partition overwrite or MERGE, run quality gates for freshness, uniqueness, metric reconciliation, and row-count anomalies, publish only validated report tables, refresh BI dashboards or exports, monitor dashboard freshness and query performance, and alert owners with affected report/date/metric details if checks fail.
+```
+
+Interview line:
+
+```text
+A reporting pipeline is not just dashboard refresh; it is a governed path from trusted data to business decisions.
+```
+
+
+## 3. Core Mental Model
+
+A reporting pipeline converts trusted data into consumable business outputs.
+
+Mental model:
+
+```text
+Source systems
+    ↓
+Raw / staging
+    ↓
+Curated warehouse facts and dimensions
+    ↓
+Reporting marts
+    ↓
+Semantic / metrics layer
+    ↓
+Reports, dashboards, exports, scorecards
+    ↓
+Business decisions
+```
+
+Operational control plane:
+
+```text
+orchestration
+data quality
+metric definitions
+lineage
+catalog
+freshness monitoring
+access control
+alerting
+runbooks
+cost monitoring
+usage analytics
+```
+
+Core interview line:
+
+```text
+I design reporting pipelines around business metrics, report grain, quality gates, and consumer trust.
+```
+
+
+## 4. Reporting Pipeline Vocabulary
+
+Important terms:
+
+```text
+Report:
+A structured output that communicates business data.
+
+Dashboard:
+Interactive report with charts, filters, and drill-downs.
+
+KPI:
+Key Performance Indicator used to measure business performance.
+
+Metric:
+Quantitative business measure, such as revenue or active users.
+
+Dimension:
+Attribute used to filter/group metrics, such as date, country, product, or channel.
+
+Report grain:
+What one row in the report table represents.
+
+Reporting mart:
+Consumer-ready table optimized for reports/dashboards.
+
+Semantic layer:
+Governed layer that defines metrics, dimensions, joins, and filters.
+
+Certified dataset:
+Trusted dataset approved for business reporting.
+
+Data freshness:
+How up-to-date the data is.
+
+SLA:
+Expected report availability time or refresh guarantee.
+
+Quality gate:
+Validation that must pass before report publish.
+
+Reconciliation:
+Comparing report metrics against source/curated facts.
+
+Drill-down:
+Ability to move from summary to detailed view.
+
+Slice and dice:
+Filtering and grouping metrics by dimensions.
+
+Snapshot report:
+Report showing state as of a point in time.
+
+Incremental refresh:
+Refreshing only new/changed report partitions.
+
+Full refresh:
+Rebuilding the entire report output.
+
+Restatement:
+Correcting previously published report numbers.
+
+Closed period:
+Finance/accounting period where numbers should not change without approval.
+
+Export:
+Scheduled file/API delivery of reporting data.
+
+Row-level security:
+Users see only rows they are allowed to see.
+
+Column-level security:
+Users see only columns they are allowed to see.
+
+Metric drift:
+Same metric calculated differently in different reports.
+```
+
+
+## 5. Standard Reporting Pipeline Answer Framework
+
+Use this framework for reporting pipeline system design:
+
+```text
+1. Clarify business goal.
+2. Identify report consumers.
+3. Define KPIs and metrics.
+4. Define metric formulas and ownership.
+5. Define report grain.
+6. Define dimensions, filters, and drill-downs.
+7. Define freshness SLA and refresh frequency.
+8. Identify source systems and curated inputs.
+9. Design staging/curated/reporting mart layers.
+10. Design semantic/metrics layer.
+11. Define incremental/full refresh strategy.
+12. Define idempotent publish strategy.
+13. Define late data and correction handling.
+14. Define data quality gates.
+15. Define source-to-report reconciliation.
+16. Define dashboard/export delivery.
+17. Define access control and PII policy.
+18. Define monitoring and alerting.
+19. Define lineage and catalog documentation.
+20. Define backfills and restatements.
+21. Define performance and cost optimization.
+22. Explain trade-offs.
+23. Summarize final design.
+```
+
+Short version:
+
+```text
+Consumers → Metrics → Grain → Mart → Quality → Publish → Monitor → Govern
+```
+
+Strict rule:
+
+```text
+No reporting pipeline design is strong without metric definitions, report grain, quality gates, freshness monitoring, and reconciliation.
+```
+
+
+## 6. Scoring Rubric
+
+Score reporting pipeline answers from 0 to 5.
+
+### Score 0
+
+No meaningful design. Only says dashboard refresh.
+
+### Score 1
+
+Mentions reports and data loading but no metrics, grain, or quality.
+
+### Score 2
+
+Has basic mart/dashboard flow but weak on metric definitions, reconciliation, freshness, or access.
+
+### Score 3
+
+Reasonable reporting pipeline but weak on semantic layer, late data, restatements, lineage, or performance.
+
+### Score 4
+
+Interview-ready. Covers consumers, KPIs, grain, marts, semantic layer, refresh strategy, DQ gates, reconciliation, publish, dashboard/export refresh, monitoring, access control, and trade-offs.
+
+### Score 5
+
+Strong. Handles finance closed periods, metric versioning, certified datasets, lineage, usage analytics, row-level security, incremental refresh, late-data corrections, restatements, alerting, dashboard performance, multi-region/timezone reporting, and cost optimization.
+
+Automatic score cap below 4 if:
+
+```text
+no consumer/use-case clarification
+no KPI/metric definition
+no report grain
+no reporting mart design
+no data quality gates
+no source-to-report reconciliation
+no freshness SLA
+no publish/refresh strategy
+no access control
+only says BI tool refresh
+```
+
+
+## 7. Requirement Clarification Questions
+
+Ask these before designing.
+
+### Business and consumers
+
+```text
+Who uses the report?
+Executives, finance, product managers, operations, sales, marketing, analysts?
+What decisions does the report support?
+Which KPIs are critical?
+What is the impact if numbers are wrong?
+What is the impact if the report is late?
+```
+
+### Metrics
+
+```text
+How is each metric defined?
+What is included/excluded?
+What timezone is used?
+What date controls the metric?
+Should cancelled/refunded records count?
+Are metrics gross or net?
+Who owns metric definitions?
+```
+
+### Report shape
+
+```text
+What is the report grain?
+What dimensions and filters are needed?
+Is drill-down needed?
+What historical range is needed?
+Is snapshot reporting needed?
+Are row-level permissions required?
+```
+
+### Sources and freshness
+
+```text
+What source systems feed the report?
+Are source records mutable?
+How late can data arrive?
+What is the refresh frequency?
+What SLA is required?
+Are closed periods allowed to change?
+```
+
+### Operations
+
+```text
+What quality checks block publish?
+What reconciliation is required?
+How are failures alerted?
+Do exports need delivery confirmation?
+How are backfills and restatements handled?
+```
+
+Interview line:
+
+```text
+I clarify business metric definitions and report grain before designing tables or dashboards.
+```
+
+
+## 8. Reporting vs Analytics vs Data Warehouse
+
+### Reporting
+
+```text
+Structured, repeatable outputs for known business questions.
+Usually has SLA, owner, metric definitions, and quality gates.
+```
+
+### Analytics
+
+```text
+Exploratory analysis for discovering insights.
+More flexible and less standardized.
+```
+
+### Data warehouse
+
+```text
+Modeled analytical data platform that reporting pipelines often consume.
+```
+
+Reporting pipeline position:
+
+```text
+A reporting pipeline usually sits on top of curated warehouse/lakehouse data and creates consumer-ready marts, dashboards, and exports.
+```
+
+Interview line:
+
+```text
+Reporting is the governed, repeatable, consumer-facing layer of analytics.
+```
+
+
+## 9. Reference Reporting Pipeline Architecture
+
+Reference architecture:
+
+```text
+[Sources]
+  OLTP DBs
+  APIs
+  files
+  CDC streams
+  data lake
+        ↓
+[Curated Data]
+  warehouse facts
+  dimensions
+  certified base tables
+        ↓
+[Reporting Transformations]
+  metric calculation
+  aggregation
+  filtering
+  business rules
+        ↓
+[Reporting Marts]
+  dashboard-ready tables
+  report snapshots
+  export tables
+        ↓
+[Semantic Layer]
+  metric definitions
+  dimensions
+  access policies
+        ↓
+[Delivery]
+  BI dashboards
+  scheduled exports
+  emails
+  APIs
+  scorecards
+```
+
+Control plane:
+
+```text
+orchestration
+data quality gates
+source-to-report reconciliation
+freshness monitoring
+access control
+lineage/catalog
+usage analytics
+alerting/runbooks
+cost tracking
+```
+
+Interview line:
+
+```text
+I publish reports from validated reporting marts, not directly from raw or unstable staging tables.
+```
+
+
+## 10. Reporting Pipeline Types
+
+Common reporting pipeline types:
+
+### Operational reporting
+
+```text
+Supports daily operations such as orders, inventory, and support queues.
+Usually needs frequent refresh and row-level detail.
+```
+
+### Executive reporting
+
+```text
+High-level KPIs and scorecards.
+Needs certified definitions, trust, and consistency.
+```
+
+### Finance reporting
+
+```text
+Revenue, cost, invoices, payments, accounting periods.
+Needs strict reconciliation and closed-period controls.
+```
+
+### Product analytics reporting
+
+```text
+DAU, funnels, retention, conversion, feature usage.
+Needs event-time handling and metric governance.
+```
+
+### Marketing reporting
+
+```text
+Campaign performance, attribution, spend, conversions.
+Needs clear attribution logic and source reconciliation.
+```
+
+### Customer reporting
+
+```text
+Customer 360, account health, churn risk.
+Needs entity-level aggregation and access controls.
+```
+
+### Export reporting
+
+```text
+Scheduled files or APIs delivered to partners/customers.
+Needs delivery confirmation and schema contracts.
+```
+
+Interview line:
+
+```text
+The reporting type determines freshness, quality strictness, access controls, and correction policy.
+```
+
+
+## 11. KPI and Metric Definition
+
+### Metric name
+
+```text
+Clear business name such as net_revenue or daily_active_users.
+```
+
+### Formula
+
+```text
+Exact calculation logic.
+```
+
+### Owner
+
+```text
+Business or data owner responsible for definition.
+```
+
+### Inclusions
+
+```text
+Records included in metric.
+```
+
+### Exclusions
+
+```text
+Records excluded from metric.
+```
+
+### Timezone
+
+```text
+Reporting timezone.
+```
+
+### Date basis
+
+```text
+order_date, payment_date, event_date, accounting_date, etc.
+```
+
+### Version
+
+```text
+Metric definition version.
+```
+
+### Certification
+
+```text
+Whether metric is approved for business use.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 12. Report Grain
+
+### Definition
+
+```text
+What one row in the report table represents.
+```
+
+### Examples
+
+```text
+one row per date + country + product_category, one row per account + report_date, one row per campaign + date.
+```
+
+### Why it matters
+
+```text
+Controls primary key, uniqueness checks, joins, drill-downs, and metric correctness.
+```
+
+### Interview rule
+
+```text
+State report grain before listing columns or charts.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 13. Reporting Dimensions
+
+### Date/time
+
+```text
+day, week, month, quarter, year, fiscal period.
+```
+
+### Geography
+
+```text
+country, region, city.
+```
+
+### Product
+
+```text
+category, SKU, brand.
+```
+
+### Customer
+
+```text
+segment, account, lifecycle stage.
+```
+
+### Channel
+
+```text
+organic, paid, referral, email.
+```
+
+### Organization
+
+```text
+team, sales rep, territory.
+```
+
+### Experiment
+
+```text
+experiment_id, variant.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 14. Filters and Drill-Downs
+
+### Filters
+
+```text
+Dimensions users can filter by.
+```
+
+### Drill-down
+
+```text
+Move from aggregate to more detailed grain.
+```
+
+### Design rule
+
+```text
+Report marts should support common filters without expensive raw scans.
+```
+
+### Example
+
+```text
+Executive revenue by month → region → country → product category.
+```
+
+### Risk
+
+```text
+Adding too many dimensions can create huge marts and slow dashboards.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 15. Reporting Mart Design
+
+### Purpose
+
+```text
+Serve report/dashboard queries efficiently and consistently.
+```
+
+### Inputs
+
+```text
+Curated facts and dimensions.
+```
+
+### Outputs
+
+```text
+Aggregated or wide tables aligned to report grain.
+```
+
+### Metadata
+
+```text
+owner, SLA, grain, refresh frequency, quality status.
+```
+
+### Validation
+
+```text
+Reconcile mart totals to base facts.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 16. Semantic Layer Design
+
+### Purpose
+
+```text
+Centralize metric definitions and business dimensions.
+```
+
+### Contains
+
+```text
+metrics, dimensions, joins, filters, access rules, descriptions.
+```
+
+### Benefits
+
+```text
+consistent dashboards, less duplicate SQL, governed KPI definitions.
+```
+
+### Risk without it
+
+```text
+Different dashboards calculate the same metric differently.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 17. Certified Dataset Design
+
+### Definition
+
+```text
+Dataset approved for business reporting.
+```
+
+### Requirements
+
+```text
+owner, documentation, grain, lineage, quality checks, freshness SLA.
+```
+
+### Usage
+
+```text
+Reports should use certified datasets instead of ad hoc staging tables.
+```
+
+### Status
+
+```text
+certified, deprecated, experimental, broken/degraded.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 18. Report Snapshot Tables
+
+### Purpose
+
+```text
+Preserve what was reported at a point in time.
+```
+
+### Use cases
+
+```text
+executive scorecards, finance reports, regulatory reporting.
+```
+
+### Columns
+
+```text
+report_date, metric values, generated_at, metric_version, source_run_id.
+```
+
+### Benefit
+
+```text
+Allows audit of what users saw previously.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 19. Report Export Design
+
+### Formats
+
+```text
+CSV, Excel, Parquet, JSON, API, email, PDF if required by system.
+```
+
+### Requirements
+
+```text
+schema contract, delivery schedule, destination, retries, confirmation.
+```
+
+### Audit
+
+```text
+export_id, generated_at, delivered_at, status, row_count, checksum.
+```
+
+### Security
+
+```text
+encrypt files, signed URLs, access expiry, avoid PII leakage.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 20. Dashboard Refresh Design
+
+### Refresh modes
+
+```text
+scheduled refresh, incremental refresh, live query, cached extract.
+```
+
+### Considerations
+
+```text
+freshness SLA, query cost, dashboard load time, BI tool limits.
+```
+
+### Best practice
+
+```text
+dashboards should query prepared reporting marts, not raw facts.
+```
+
+### Monitoring
+
+```text
+last refresh time, refresh duration, failure status, query latency.
+```
+
+Interview line:
+
+```text
+Reporting design starts with the metric, grain, dimensions, and consumer SLA.
+```
+
+
+## 21. Reporting Pipeline Layers
+
+A clean reporting pipeline uses layers.
+
+```text
+raw/staging:
+source-shaped data, not business-ready
+
+curated:
+facts and dimensions with business rules
+
+reporting mart:
+consumer-ready table at report grain
+
+semantic layer:
+metric definitions and business meaning
+
+dashboard/export:
+final consumer output
+```
+
+Interview line:
+
+```text
+Reports should be built from curated or certified layers, not directly from raw ingestion.
+```
+
+
+## 22. Incremental Refresh
+
+Incremental refresh updates only affected data.
+
+Strategies:
+
+```text
+refresh latest partitions
+refresh changed business dates
+MERGE by report key
+partition overwrite
+incremental BI extracts
+materialized view refresh
+```
+
+Use when:
+
+```text
+large history
+daily/hourly updates
+late data affects recent periods
+dashboard cost matters
+```
+
+Interview line:
+
+```text
+Incremental refresh should be based on business date or changed keys, not just load date.
+```
+
+
+## 23. Full Refresh
+
+Full refresh rebuilds the entire report.
+
+Use when:
+
+```text
+small report table
+metric logic changed globally
+historical restatement required
+source correction affects all history
+initial build
+```
+
+Risks:
+
+```text
+higher cost
+longer runtime
+dashboard downtime if not published atomically
+```
+
+Safe pattern:
+
+```text
+build full table in temp
+validate
+swap/publish atomically
+```
+
+Interview line:
+
+```text
+Full refresh is simple but must be validated and published atomically for trusted reporting.
+```
+
+
+## 24. Idempotent Report Publish
+
+Report builds must be safe to rerun.
+
+Patterns:
+
+```text
+write to temp table then swap
+partition overwrite by report_date
+MERGE by report primary key
+delete-and-insert affected partitions
+versioned snapshots
+publish after validation only
+```
+
+Bad:
+
+```text
+append same report rows every retry
+```
+
+Interview line:
+
+```text
+A report rerun should not duplicate metrics or expose partial numbers.
+```
+
+
+## 25. Late-Arriving Data
+
+Late data can change reports.
+
+Examples:
+
+```text
+late mobile events change DAU
+payment update changes revenue
+partner file arrives after report deadline
+refund arrives after sales report
+timezone conversion changes business date
+```
+
+Handling:
+
+```text
+lookback window
+refresh affected business-date partitions
+mark report as provisional
+batch correction path
+closed-period policy
+late-data metrics
+```
+
+Interview line:
+
+```text
+Reporting pipelines should define whether numbers are final, provisional, or restatable.
+```
+
+
+## 26. Corrections and Restatements
+
+Restatement means correcting previously published report numbers.
+
+Needed for:
+
+```text
+bug fixes
+source correction
+late data beyond normal lookback
+metric definition change
+finance adjustment
+```
+
+Restatement workflow:
+
+```text
+identify affected reports/metrics/dates
+recompute using versioned logic
+validate and reconcile
+publish corrected version
+record restatement metadata
+notify consumers
+```
+
+Restatement metadata:
+
+```text
+restatement_id
+metric
+report
+affected_period
+reason
+old_value
+new_value
+approved_by
+published_at
+```
+
+Interview line:
+
+```text
+For business-critical reports, corrections must be auditable and communicated, not silently overwritten.
+```
+
+
+## 27. Closed Period Controls
+
+Finance reports often have closed periods.
+
+Closed period rules:
+
+```text
+closed months should not change automatically
+late records go to adjustment workflow
+manual approval required for restatement
+audit trail retained
+separate operational date from accounting date
+```
+
+Interview line:
+
+```text
+For finance reporting, correctness includes respecting closed-period and approval workflows.
+```
+
+
+## 28. Source-to-Report Reconciliation
+
+Reconciliation validates report correctness.
+
+Types:
+
+```text
+source count to curated count
+curated fact total to report total
+report total to finance source
+key set comparison
+hash/sample comparison
+partition-level reconciliation
+```
+
+Example:
+
+```sql
+SELECT
+  report_date,
+  SUM(net_revenue) AS report_revenue
+FROM daily_revenue_report
+GROUP BY report_date;
+```
+
+Compare against:
+
+```text
+fact_orders / fact_payments source total for same business date and metric definition
+```
+
+Interview line:
+
+```text
+A trusted report should reconcile to the curated facts or source of truth for critical metrics.
+```
+
+
+## 29. Data Quality Gates
+
+Quality gates decide whether report publishes.
+
+Common gates:
+
+```text
+freshness check passed
+report partition exists
+row count within expected range
+report grain is unique
+required metrics not null
+metric totals reconcile
+dimension values valid
+source inputs complete
+dashboard extract refreshed
+```
+
+Severity:
+
+```text
+critical:
+block publish
+
+warning:
+publish with degraded status or notify owner
+
+info:
+log for trend
+```
+
+Interview line:
+
+```text
+Quality gates should run before the report is visible to business users.
+```
+
+
+## 30. Report Freshness Monitoring
+
+Freshness should be monitored end to end.
+
+Track:
+
+```text
+source freshness
+curated fact freshness
+report mart freshness
+semantic layer freshness
+dashboard extract freshness
+export delivery freshness
+```
+
+Example SLA:
+
+```text
+Daily executive scorecard available by 8 AM local business time.
+```
+
+Interview line:
+
+```text
+Report freshness is measured where the consumer reads the data, not only in the warehouse.
+```
+
+
+## 31. Dashboard Performance
+
+Dashboard performance depends on data model and query design.
+
+Strategies:
+
+```text
+use reporting marts
+pre-aggregate common metrics
+partition by report_date
+cluster by common filters
+avoid live queries on raw facts
+cache extracts when acceptable
+limit high-cardinality filters
+materialize expensive calculations
+optimize semantic layer joins
+```
+
+Interview line:
+
+```text
+Fast dashboards usually come from well-designed reporting marts, not from adding more BI charts on raw tables.
+```
+
+
+## 32. Report Usage Analytics
+
+Track report usage.
+
+Metrics:
+
+```text
+active users
+dashboard views
+query count
+average load time
+failed refreshes
+unused reports
+most-used filters
+export downloads
+cost by report
+```
+
+Uses:
+
+```text
+deprecate unused reports
+optimize popular reports
+control cost
+understand consumer needs
+```
+
+Interview line:
+
+```text
+Usage analytics helps maintain a clean reporting ecosystem and reduce duplicate dashboards.
+```
+
+
+## 33. Access Control
+
+Reports often require strict access.
+
+Controls:
+
+```text
+role-based access
+row-level security
+column-level masking
+domain-specific permissions
+executive-only reports
+customer/tenant isolation
+export restrictions
+audit logs
+```
+
+Examples:
+
+```text
+sales reps see only their territory
+customers see only their account
+analysts cannot see raw PII
+finance reports restricted to finance team
+```
+
+Interview line:
+
+```text
+Reporting access control must be enforced at the data layer or semantic layer, not only by dashboard hiding.
+```
+
+
+## 34. PII and Sensitive Data
+
+Reporting pipelines must avoid leaking sensitive data.
+
+Controls:
+
+```text
+classify sensitive columns
+mask/tokenize PII
+aggregate where possible
+avoid exporting unnecessary PII
+restrict row-level detail
+audit report access
+encrypt exports
+use expiring links
+```
+
+Interview line:
+
+```text
+Reports should expose the minimum data needed for the decision, especially when PII is involved.
+```
+
+
+## 35. Lineage and Catalog
+
+Reporting lineage answers:
+
+```text
+Which source tables feed this report?
+Which transformations calculate this metric?
+Which dashboards use this mart?
+Who owns this metric?
+When was the report last refreshed?
+What DQ checks passed?
+```
+
+Catalog metadata:
+
+```text
+report name
+owner
+description
+metric definitions
+grain
+source tables
+refresh frequency
+SLA
+quality status
+access policy
+lineage
+```
+
+Interview line:
+
+```text
+Lineage and catalog metadata are essential for trust, debugging, and impact analysis.
+```
+
+
+## 36. Reporting Data Quality Checks
+
+- report mart freshness
+- one row per report grain
+- required metrics not null
+- metric totals reconcile to base facts
+- dimension values valid
+- row count within baseline
+- no duplicate report keys
+- report partitions complete
+- source inputs complete
+- semantic metric version expected
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 37. Metric Quality Checks
+
+- gross/net definitions applied correctly
+- cancelled/refunded records handled correctly
+- timezone/date basis correct
+- currency conversion applied
+- metric not negative unless allowed
+- denominator not zero
+- percentage between 0 and 100 where applicable
+- metric totals reconcile to source of truth
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 38. Export Quality Checks
+
+- file generated
+- row count expected
+- schema matches contract
+- checksum generated
+- file encrypted if needed
+- delivery succeeded
+- recipient authorized
+- retry status tracked
+- export audit row recorded
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 39. Dashboard Quality Checks
+
+- dashboard extract refreshed
+- dashboard query succeeds
+- dashboard freshness within SLA
+- critical tiles not blank
+- filters populated
+- semantic dataset version expected
+- load time within target
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 40. Alert Conditions
+
+- report SLA missed
+- critical DQ gate failed
+- metric reconciliation mismatch
+- dashboard refresh failed
+- export delivery failed
+- report query latency high
+- source input missing
+- closed period changed without approval
+- PII exposure risk
+- cost spike
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 41. Monitoring Metrics
+
+- report build duration
+- report freshness
+- dashboard refresh duration
+- dashboard load time
+- DQ pass/fail count
+- reconciliation variance
+- export delivery status
+- row counts by report date
+- query cost by report
+- report usage
+- incident count
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 42. Orchestration
+
+- load curated inputs
+- validate source completeness
+- build reporting mart
+- run report DQ checks
+- run reconciliation
+- publish/swap report
+- refresh BI extract or semantic model
+- deliver exports
+- notify success/failure
+- record metadata
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 43. Failure Handling
+
+- do not publish partial report output
+- keep previous trusted version if new build fails
+- write temp then swap
+- alert owner with affected report/date/metric
+- record failed run metadata
+- support rerun by report_date
+- notify consumers if SLA missed
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 44. Backfill Strategy
+
+- parameterized by report and date range
+- use same transformation code as daily run
+- write temp outputs
+- run DQ and reconciliation
+- refresh dependent dashboards/exports
+- record backfill metadata
+- communicate restatement if published values change
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 45. Cost Optimization
+
+- pre-aggregate report marts
+- incremental refresh instead of full refresh
+- partition by report_date
+- cluster by common filters
+- cache BI extracts when acceptable
+- avoid repeated heavy semantic queries
+- remove unused reports
+- limit dashboard auto-refresh frequency
+- monitor cost by report/dashboard/user
+
+Interview line:
+
+```text
+Reporting operations must protect users from stale, wrong, partial, or unauthorized data.
+```
+
+
+## 46. Practice Case 1: Daily Sales Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for daily sales reporting pipeline.
+```
+
+Sources:
+
+```text
+orders, order_items, payments, products, users
+```
+
+Goal:
+
+```text
+daily sales dashboard
+```
+
+Strong design points:
+
+- define gross revenue, net revenue, refunds, cancellations, and timezone
+- build fact_orders and fact_payments as curated inputs
+- reporting mart grain: report_date + country + product_category
+- incrementally refresh recent report_date partitions
+- run DQ checks for grain uniqueness, revenue reconciliation, freshness, and valid dimensions
+- publish mart only after validation
+- refresh dashboard extract
+- monitor SLA before business hours
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 47. Practice Case 2: Executive KPI Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for executive kpi reporting pipeline.
+```
+
+Sources:
+
+```text
+multiple certified business marts
+```
+
+Goal:
+
+```text
+executive scorecard
+```
+
+Strong design points:
+
+- define certified KPIs with owners and metric versions
+- use gold/certified datasets only
+- snapshot KPI values by report_date
+- strict quality gates before publish
+- lineage and metric definitions visible
+- dashboard optimized for fast executive access
+- alerts routed to metric owners
+- restatement workflow for corrections
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 48. Practice Case 3: Finance Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for finance reporting pipeline.
+```
+
+Sources:
+
+```text
+payments, invoices, refunds, bank/provider files
+```
+
+Goal:
+
+```text
+monthly finance report
+```
+
+Strong design points:
+
+- define accounting_date and closed-period policy
+- strict source-to-report reconciliation by currency and period
+- report mart grain: accounting_period + currency + account/category
+- critical DQ failures block publish
+- closed periods require approval for restatement
+- export encrypted files to finance destination
+- retain audit snapshots and reconciliation results
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 49. Practice Case 4: Product Analytics Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for product analytics reporting pipeline.
+```
+
+Sources:
+
+```text
+events, sessions, users, experiments
+```
+
+Goal:
+
+```text
+DAU/funnel/retention dashboards
+```
+
+Strong design points:
+
+- define event_time timezone and identity resolution policy
+- dedupe events by event_id
+- build product reporting marts by event_date + platform + country
+- handle late events with lookback and partition overwrite
+- metrics include DAU, funnel conversion, retention cohorts
+- monitor event volume, null identity rate, and dashboard freshness
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 50. Practice Case 5: Marketing Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for marketing reporting pipeline.
+```
+
+Sources:
+
+```text
+ad spend, campaign touches, orders, conversions
+```
+
+Goal:
+
+```text
+campaign performance report
+```
+
+Strong design points:
+
+- define attribution model and conversion window
+- report grain: campaign_id + report_date + channel
+- reconcile ad spend to platform exports
+- reconcile attributed revenue to order facts
+- document attribution caveats
+- handle late conversions within attribution window
+- restrict campaign cost access if needed
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 51. Practice Case 6: Customer 360 Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for customer 360 reporting pipeline.
+```
+
+Sources:
+
+```text
+users, orders, payments, support, events
+```
+
+Goal:
+
+```text
+account/customer dashboard
+```
+
+Strong design points:
+
+- aggregate each source to customer grain before joining
+- report grain: customer_id + snapshot_date
+- metrics include lifetime revenue, last activity, open tickets, plan, churn risk
+- row-level security by account owner/customer
+- validate one row per customer/date
+- reconcile revenue and ticket counts to source facts
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 52. Practice Case 7: Operations Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for operations reporting pipeline.
+```
+
+Sources:
+
+```text
+orders, inventory, shipments, support queues
+```
+
+Goal:
+
+```text
+daily operations dashboard
+```
+
+Strong design points:
+
+- refresh more frequently than executive reports
+- report grain depends on operations unit such as warehouse + product + hour
+- monitor missing sources and freshness tightly
+- support drill-down to operational details
+- alerts for SLA misses or abnormal volumes
+- balance freshness and exact correctness
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 53. Practice Case 8: Partner Export Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for partner export reporting pipeline.
+```
+
+Sources:
+
+```text
+certified report marts
+```
+
+Goal:
+
+```text
+scheduled partner/customer files
+```
+
+Strong design points:
+
+- define export schema contract
+- generate file from certified mart
+- validate row count, schema, checksum
+- encrypt and deliver to destination
+- retry failed delivery
+- record delivery audit
+- alert owner on failure
+- support re-delivery by export_id
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 54. Practice Case 9: Realtime Plus Certified Reporting
+
+Prompt:
+
+```text
+Design a reporting pipeline for realtime plus certified reporting.
+```
+
+Sources:
+
+```text
+event streams and batch curated facts
+```
+
+Goal:
+
+```text
+live dashboard plus daily certified report
+```
+
+Strong design points:
+
+- stream path updates low-latency provisional dashboard
+- batch path recomputes certified daily metrics
+- dashboard labels live metrics as provisional
+- late events corrected in certified report
+- reconcile realtime aggregates to batch outputs
+- monitor both stream lag and batch SLA
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 55. Practice Case 10: Regulatory Reporting Pipeline
+
+Prompt:
+
+```text
+Design a reporting pipeline for regulatory reporting pipeline.
+```
+
+Sources:
+
+```text
+finance/account/user activity records
+```
+
+Goal:
+
+```text
+auditable regulatory report
+```
+
+Strong design points:
+
+- strict source lineage and audit trail
+- fixed report schema and approval workflow
+- report snapshots retained
+- quality gates block publish
+- access tightly controlled
+- export delivery tracked
+- restatements require approval and explanation
+
+Minimum interview answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+report grain
+reporting mart
+refresh strategy
+DQ gates
+reconciliation
+publish/refresh
+access control
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the reporting design to business trust, metric definitions, and publish safety.
+```
+
+
+## 56. Metric Governance
+
+Metric governance prevents inconsistent numbers.
+
+Governance includes:
+
+```text
+metric owner
+metric formula
+business definition
+included/excluded records
+timezone/date basis
+source tables
+version history
+approval process
+deprecation policy
+```
+
+Example issue:
+
+```text
+One dashboard counts revenue by order_date, another by payment_date.
+Both say revenue but show different numbers.
+```
+
+Interview line:
+
+```text
+Metric governance ensures the same business word means the same calculation across reports.
+```
+
+
+## 57. Semantic Layer Trade-Offs
+
+Semantic layer benefits:
+
+```text
+consistent metrics
+centralized definitions
+less duplicated SQL
+governed access
+easier BI development
+```
+
+Trade-offs:
+
+```text
+can become complex
+may add performance overhead
+requires ownership
+not all use cases fit one model
+```
+
+Interview line:
+
+```text
+A semantic layer is valuable for governed reporting, but it still needs optimized marts underneath for performance.
+```
+
+
+## 58. Report Versioning
+
+Reports and metrics change over time.
+
+Version what matters:
+
+```text
+metric definitions
+report schema
+dashboard layout
+export schema
+business rules
+data source mappings
+```
+
+Use when:
+
+```text
+metric logic changes
+report consumers need audit
+finance/regulatory output must be reproducible
+```
+
+Interview line:
+
+```text
+Versioning makes report changes auditable and prevents silent metric drift.
+```
+
+
+## 59. Report Snapshots vs Live Reports
+
+Snapshot reports:
+
+```text
+store values as of generation time
+good for audit, finance, scorecards
+less flexible
+```
+
+Live reports:
+
+```text
+always query latest data
+good for operations and exploration
+numbers may change over time
+```
+
+Interview line:
+
+```text
+I use snapshots when the business needs to know what was reported at a specific time.
+```
+
+
+## 60. Timezone and Fiscal Calendar
+
+Reporting often depends on business calendars.
+
+Consider:
+
+```text
+UTC vs local timezone
+business day cutoff
+fiscal year/quarter/month
+week start day
+holiday calendar
+daylight saving time
+```
+
+Design:
+
+```text
+dim_date with fiscal attributes
+business_date columns in facts/marts
+document timezone assumptions
+```
+
+Interview line:
+
+```text
+Reporting dates must follow business calendar rules, not accidental database timestamps.
+```
+
+
+## 61. Currency and Unit Handling
+
+Reporting metrics may require currency or unit normalization.
+
+Consider:
+
+```text
+transaction currency
+reporting currency
+exchange rate date
+gross vs net amount
+tax/shipping inclusion
+unit conversion
+rounding rules
+```
+
+Interview line:
+
+```text
+Finance and sales reports need explicit currency, conversion, and rounding rules.
+```
+
+
+## 62. Drill-Through to Detail
+
+Reports often need drill-through.
+
+Design:
+
+```text
+summary mart for dashboard
+detail table for row-level investigation
+consistent keys between summary and detail
+access controls on detail
+query limits for large detail views
+```
+
+Interview line:
+
+```text
+Drill-through should be supported through controlled detail tables, not unbounded raw table access.
+```
+
+
+## 63. Report Deprecation
+
+Too many reports create confusion.
+
+Deprecation strategy:
+
+```text
+track usage
+identify duplicates
+notify owners/users
+mark deprecated in catalog
+redirect to certified report
+remove after grace period
+archive if needed
+```
+
+Interview line:
+
+```text
+Reporting platforms need lifecycle management so users know which reports to trust.
+```
+
+
+## 64. Report Incident Management
+
+Report incidents should be tracked.
+
+Incident fields:
+
+```text
+incident_id
+report_name
+metric
+affected_period
+severity
+business impact
+root cause
+owner
+detected_at
+resolved_at
+restatement_required
+consumer_notification
+```
+
+Interview line:
+
+```text
+Wrong report numbers are data incidents and should have root-cause tracking and prevention.
+```
+
+
+## 65. Reporting Anti-Patterns
+
+Avoid:
+
+```text
+dashboards querying raw/staging tables
+no metric owner
+same KPI defined differently in many places
+no report grain
+no quality gates before publish
+no reconciliation for finance/executive reports
+no freshness monitoring
+silent restatements
+manual CSV exports with no audit
+PII in broad-access reports
+too many unused duplicate dashboards
+no lineage
+```
+
+Interview line:
+
+```text
+The biggest reporting failures are wrong definitions, missing validation, and unclear ownership.
+```
+
+
+## 66. Reporting Trade-Offs
+
+Common trade-offs:
+
+```text
+freshness vs correctness
+snapshot vs live report
+semantic layer flexibility vs performance
+wide reporting mart vs dimensional model
+full refresh vs incremental refresh
+strict quality gate vs report availability
+late correction vs closed-period stability
+dashboard live query vs cached extract
+detail access vs privacy risk
+```
+
+Interview line:
+
+```text
+Reporting design balances trust, timeliness, performance, governance, and business usability.
+```
+
+
+## 67. Pattern Classification Drill
+
+### Dashboard numbers differ for revenue
+
+```text
+Metric governance/semantic layer issue.
+```
+
+### Report has duplicate rows for date + country
+
+```text
+Report grain uniqueness failure.
+```
+
+### Finance report changes after month close
+
+```text
+Closed-period/restatement control issue.
+```
+
+### Dashboard is stale but pipeline succeeded
+
+```text
+Dashboard freshness monitoring missing.
+```
+
+### Report takes 2 minutes to load
+
+```text
+Reporting mart/performance issue.
+```
+
+### Late events change yesterday's DAU
+
+```text
+Lookback and report partition refresh.
+```
+
+### Export file sent twice
+
+```text
+Export audit/idempotency issue.
+```
+
+### Metric owner unknown
+
+```text
+Governance/catalog metadata missing.
+```
+
+### BI users query staging table
+
+```text
+Certified dataset/reporting mart missing.
+```
+
+### Source total differs from report total
+
+```text
+Reconciliation failure.
+```
+
+### Report exposes customer PII
+
+```text
+Access control/masking issue.
+```
+
+### Dashboard has many unused duplicates
+
+```text
+Report lifecycle/deprecation issue.
+```
+
+### CSV schema changed for partner
+
+```text
+Export schema contract/versioning issue.
+```
+
+### Report refreshed but critical tile blank
+
+```text
+Dashboard quality check missing.
+```
+
+### Metric definition changed silently
+
+```text
+Metric versioning/approval missing.
+```
+
+### Region filter missing values
+
+```text
+Dimension completeness check.
+```
+
+### Full refresh expensive daily
+
+```text
+Incremental refresh needed.
+```
+
+### Report append duplicates after retry
+
+```text
+Idempotent publish missing.
+```
+
+### Different timezones produce different totals
+
+```text
+Business calendar/timezone definition missing.
+```
+
+### Executive scorecard needs audit trail
+
+```text
+Report snapshot table needed.
+```
+
+
+## 68. High-ROI Reporting Topics
+
+### consumer requirements
+
+```text
+who uses report and why
+```
+
+### KPI definitions
+
+```text
+exact formulas and owners
+```
+
+### report grain
+
+```text
+what one row means
+```
+
+### reporting mart
+
+```text
+dashboard-ready table
+```
+
+### semantic layer
+
+```text
+consistent metrics
+```
+
+### certified datasets
+
+```text
+trusted reporting inputs
+```
+
+### freshness SLA
+
+```text
+consumer availability time
+```
+
+### quality gates
+
+```text
+block bad reports
+```
+
+### reconciliation
+
+```text
+source-to-report trust
+```
+
+### incremental refresh
+
+```text
+cost-effective updates
+```
+
+### late data
+
+```text
+corrections/lookback
+```
+
+### restatements
+
+```text
+auditable corrections
+```
+
+### closed periods
+
+```text
+finance stability
+```
+
+### access control
+
+```text
+row/column permissions
+```
+
+### dashboard performance
+
+```text
+marts and aggregates
+```
+
+### exports
+
+```text
+schema/delivery audit
+```
+
+### lineage
+
+```text
+impact and debugging
+```
+
+
+## 69. Review Checklist
+
+### Did candidate clarify report consumers?
+
+```text
+Required.
+```
+
+### Did candidate clarify business decisions?
+
+```text
+Required.
+```
+
+### Did candidate define KPIs and formulas?
+
+```text
+Critical.
+```
+
+### Did candidate define metric owners?
+
+```text
+Governance.
+```
+
+### Did candidate define report grain?
+
+```text
+Critical.
+```
+
+### Did candidate define dimensions/filters?
+
+```text
+Report usability.
+```
+
+### Did candidate design reporting marts?
+
+```text
+Performance/trust.
+```
+
+### Did candidate include semantic layer?
+
+```text
+Metric consistency.
+```
+
+### Did candidate define refresh strategy?
+
+```text
+Operations.
+```
+
+### Did candidate make publish idempotent?
+
+```text
+Reliability.
+```
+
+### Did candidate handle late data?
+
+```text
+Correctness.
+```
+
+### Did candidate handle restatements/closed periods?
+
+```text
+Business maturity.
+```
+
+### Did candidate define DQ gates?
+
+```text
+Trust.
+```
+
+### Did candidate define reconciliation?
+
+```text
+Critical metrics.
+```
+
+### Did candidate define dashboard/export delivery?
+
+```text
+Serving.
+```
+
+### Did candidate define freshness monitoring?
+
+```text
+SLA.
+```
+
+### Did candidate define access control/PII?
+
+```text
+Security.
+```
+
+### Did candidate optimize performance/cost?
+
+```text
+Production.
+```
+
+### Did candidate explain trade-offs?
+
+```text
+System design maturity.
+```
+
+
+## 70. Weakness Repair Map
+
+### Only says dashboard refresh
+
+```text
+Practice full reporting architecture.
+```
+
+### No metric definitions
+
+```text
+Practice KPI clarification drills.
+```
+
+### No report grain
+
+```text
+Practice grain-first report design.
+```
+
+### No DQ gates
+
+```text
+Practice publish-blocking checks.
+```
+
+### No reconciliation
+
+```text
+Practice source-to-report validation.
+```
+
+### No freshness monitoring
+
+```text
+Practice end-to-end SLA metrics.
+```
+
+### No semantic layer
+
+```text
+Practice metric governance.
+```
+
+### No access control
+
+```text
+Practice row/column security.
+```
+
+### No late data/restatement
+
+```text
+Practice correction workflows.
+```
+
+### No performance
+
+```text
+Practice mart and aggregate design.
+```
+
+### Poor communication
+
+```text
+Practice whiteboard template.
+```
+
+
+## 71. 7-Day Reporting Pipeline Study Plan
+
+### Day 1
+
+```text
+Reporting concepts, consumers, KPIs, metric definitions.
+```
+
+### Day 2
+
+```text
+Report grain, dimensions, filters, reporting marts.
+```
+
+### Day 3
+
+```text
+Semantic layer, certified datasets, dashboard/export design.
+```
+
+### Day 4
+
+```text
+Incremental refresh, idempotent publish, late data, restatements.
+```
+
+### Day 5
+
+```text
+DQ gates, reconciliation, freshness monitoring, alerts.
+```
+
+### Day 6
+
+```text
+Access control, PII, performance, cost, lineage, report lifecycle.
+```
+
+### Day 7
+
+```text
+Full reporting pipeline mock and weakness repair.
+```
+
+
+## 72. 30-Day Reporting Pipeline Study Plan
+
+### Week 1
+
+```text
+Foundation: consumers, metrics, grain, reporting marts.
+```
+
+### Week 2
+
+```text
+Trust: DQ gates, reconciliation, semantic layer, certification.
+```
+
+### Week 3
+
+```text
+Operations: refresh, late data, restatements, monitoring, access.
+```
+
+### Week 4
+
+```text
+Case studies and timed mocks.
+```
+
+
+## 73. Timed Interview Protocol
+
+### 0-5 minutes
+
+```text
+Clarify consumers, KPIs, decisions, SLA, source systems.
+```
+
+### 5-12 minutes
+
+```text
+Define metric formulas, grain, dimensions, and report outputs.
+```
+
+### 12-22 minutes
+
+```text
+Draw curated data → marts → semantic layer → dashboards/exports.
+```
+
+### 22-32 minutes
+
+```text
+Discuss refresh, idempotency, late data, DQ gates, reconciliation.
+```
+
+### 32-40 minutes
+
+```text
+Discuss access, monitoring, performance, cost, restatements.
+```
+
+### 40-45 minutes
+
+```text
+Trade-offs and final summary.
+```
+
+
+## 74. Reporting Pipeline Whiteboard Template
+
+```text
+Requirements:
+- report name:
+- consumers:
+- business decision:
+- KPIs:
+- metric definitions:
+- report grain:
+- dimensions/filters:
+- freshness SLA:
+- sources:
+- history range:
+- access/PII:
+
+Architecture:
+sources → curated facts/dimensions → reporting marts → semantic layer → dashboard/export
+
+Correctness:
+- DQ gates:
+- reconciliation:
+- late data:
+- restatement:
+- closed period:
+- idempotent publish:
+
+Operations:
+- orchestration:
+- monitoring:
+- alerts:
+- dashboard refresh:
+- export audit:
+- lineage/catalog:
+- performance:
+- cost:
+```
+
+
+## 75. Metric Definition Template
+
+```text
+Metric name:
+Business definition:
+Formula:
+Owner:
+Source tables:
+Date basis:
+Timezone:
+Inclusions:
+Exclusions:
+Currency/unit:
+Refresh frequency:
+Version:
+DQ checks:
+Certified status:
+```
+
+
+## 76. Reporting Mart Template
+
+```text
+Mart name:
+Consumers:
+Business owner:
+Grain:
+Primary key:
+Metrics:
+Dimensions:
+Source facts:
+Source dimensions:
+Partition key:
+Refresh strategy:
+Freshness SLA:
+DQ checks:
+Reconciliation:
+Access policy:
+Lineage:
+```
+
+
+## 77. Report DQ Checklist Template
+
+```text
+Freshness:
+- report partition available
+- dashboard/export refreshed before SLA
+
+Grain:
+- one row per report key
+
+Metrics:
+- required metrics not null
+- metric values in valid range
+- denominator not zero where needed
+
+Reconciliation:
+- report totals match curated facts/source of truth
+
+Dimensions:
+- filter values complete
+- no unexpected unknown values
+
+Publish:
+- temp build validated
+- atomic publish completed
+- catalog quality status updated
+```
+
+
+## 78. Report Incident Template
+
+```text
+Incident ID:
+Report:
+Metric:
+Affected period:
+Severity:
+Detected by:
+Business impact:
+Root cause:
+Old value:
+Corrected value:
+Restatement required:
+Owner:
+Status:
+Consumer notification:
+Preventive action:
+```
+
+
+## 79. Mock Set 1: Reporting Foundations
+
+Problems:
+
+- Design a daily reporting pipeline.
+- Define KPIs and metric ownership.
+- Define report grain for sales reporting.
+- Design reporting mart for executive dashboard.
+- Explain semantic layer purpose.
+
+Expected answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+grain
+reporting mart
+semantic layer
+refresh
+DQ gates
+reconciliation
+access
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 80. Mock Set 2: Trust and Quality
+
+Problems:
+
+- Design DQ gates for a report.
+- Design source-to-report reconciliation.
+- Handle stale dashboard data.
+- Handle wrong metric numbers.
+- Design certified dataset process.
+
+Expected answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+grain
+reporting mart
+semantic layer
+refresh
+DQ gates
+reconciliation
+access
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 81. Mock Set 3: Refresh and Corrections
+
+Problems:
+
+- Design incremental dashboard refresh.
+- Handle late-arriving report data.
+- Design restatement workflow.
+- Handle finance closed periods.
+- Make report publish idempotent.
+
+Expected answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+grain
+reporting mart
+semantic layer
+refresh
+DQ gates
+reconciliation
+access
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 82. Mock Set 4: Serving and Governance
+
+Problems:
+
+- Design scheduled CSV export.
+- Design row-level security for reports.
+- Prevent PII leakage in dashboards.
+- Optimize slow dashboard performance.
+- Design report catalog and lineage.
+
+Expected answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+grain
+reporting mart
+semantic layer
+refresh
+DQ gates
+reconciliation
+access
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 83. Mock Set 5: Case Designs
+
+Problems:
+
+- Design sales reporting pipeline.
+- Design finance reporting pipeline.
+- Design product analytics reporting.
+- Design customer 360 reporting.
+- Design realtime plus certified reporting.
+
+Expected answer must include:
+
+```text
+consumers
+KPIs
+metric definitions
+grain
+reporting mart
+semantic layer
+refresh
+DQ gates
+reconciliation
+access
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 84. Reporting Pipeline FAQ
+
+### FAQ 1: What is a reporting pipeline?
+
+```text
+A pipeline that produces trusted, consumer-facing reports, dashboards, exports, or scorecards from curated data.
+```
+
+### FAQ 2: What is report grain?
+
+```text
+The meaning of one row in a report table.
+```
+
+### FAQ 3: Why define metrics carefully?
+
+```text
+Because wrong or inconsistent metric definitions create conflicting dashboards and bad decisions.
+```
+
+### FAQ 4: What is a reporting mart?
+
+```text
+A table optimized for a specific report/dashboard or group of related metrics.
+```
+
+### FAQ 5: What is a semantic layer?
+
+```text
+A governed layer defining metrics, dimensions, joins, filters, and access rules.
+```
+
+### FAQ 6: Why do reports need DQ gates?
+
+```text
+To prevent stale, incomplete, duplicate, or wrong numbers from reaching users.
+```
+
+### FAQ 7: What is reconciliation?
+
+```text
+Comparing report metrics against curated facts or source-of-truth totals.
+```
+
+### FAQ 8: What is a restatement?
+
+```text
+An auditable correction of previously published report values.
+```
+
+### FAQ 9: How do you optimize dashboards?
+
+```text
+Use reporting marts, aggregates, partitioning, clustering, caching, and avoid raw scans.
+```
+
+### FAQ 10: What makes reporting pipeline design strong?
+
+```text
+Clear consumers, KPIs, grain, metric governance, validated marts, reconciliation, freshness monitoring, access control, and trade-offs.
+```
+
+
+## 85. Candidate Self-Review Questions
+
+After every reporting pipeline design, candidate should answer:
+
+```text
+1. Who consumes the report?
+2. What decision does the report support?
+3. What KPIs are required?
+4. Who owns each metric?
+5. What is the formula for each metric?
+6. What is included/excluded?
+7. What timezone/date basis is used?
+8. What is the report grain?
+9. What dimensions and filters are required?
+10. What drill-down is required?
+11. What source systems feed the report?
+12. What curated facts/dimensions are used?
+13. What reporting marts are built?
+14. Is there a semantic layer?
+15. What is the refresh frequency?
+16. What is the freshness SLA?
+17. Is refresh full or incremental?
+18. How is publish idempotent?
+19. How is late data handled?
+20. How are restatements handled?
+21. Are closed periods required?
+22. What DQ gates run?
+23. How is reconciliation done?
+24. How is dashboard/export refreshed?
+25. How is access controlled?
+26. How is PII protected?
+27. What monitoring exists?
+28. What alerts exist?
+29. How is performance/cost optimized?
+30. What trade-offs were chosen?
+```
+
+If candidate cannot answer these:
+
+```text
+The reporting pipeline design is not interview-ready.
+```
+
+
+## 86. Final Exit Test
+
+Candidate passes reporting pipeline system design when they can explain:
+
+```text
+1. Reporting pipeline purpose.
+2. Reporting vs analytics vs warehouse.
+3. Report consumers.
+4. KPI and metric definition.
+5. Metric ownership.
+6. Report grain.
+7. Reporting dimensions.
+8. Filters and drill-downs.
+9. Reporting marts.
+10. Semantic layer.
+11. Certified datasets.
+12. Report snapshots.
+13. Dashboard refresh.
+14. Scheduled exports.
+15. Reporting pipeline layers.
+16. Incremental refresh.
+17. Full refresh.
+18. Idempotent publish.
+19. Late-arriving data.
+20. Corrections/restatements.
+21. Closed period controls.
+22. Source-to-report reconciliation.
+23. Data quality gates.
+24. Report freshness monitoring.
+25. Dashboard performance.
+26. Usage analytics.
+27. Access control.
+28. PII handling.
+29. Lineage/catalog.
+30. Metric governance.
+31. Metric versioning.
+32. Timezone/fiscal calendar.
+33. Currency/unit handling.
+34. Drill-through to detail.
+35. Report deprecation.
+36. Report incident management.
+37. Cost optimization.
+38. Case study: sales reporting.
+39. Case study: finance reporting.
+40. Case study: executive reporting.
+41. Case study: product analytics reporting.
+42. Case study: partner export reporting.
+43. Trade-offs and final summary.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No missing KPIs.
+No missing metric definitions.
+No missing report grain.
+No missing DQ gates.
+No missing reconciliation.
+No missing freshness monitoring.
+No missing access control.
+No dashboard-refresh-only answers.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate designs a trusted, governed, performant reporting pipeline with correct metrics, safe publishing, reconciliation, and operational maturity.
+```
+
+
+## 87. Final Summary
+
+Reporting pipeline system design is a core Data Engineering interview skill.
+
+The candidate must master:
+
+```text
+reporting concepts
+business consumers
+KPI definitions
+metric ownership
+metric formulas
+report grain
+dimensions
+filters
+drill-downs
+reporting marts
+semantic layer
+certified datasets
+dashboard refresh
+scheduled exports
+snapshots
+incremental refresh
+full refresh
+idempotent publish
+late data
+corrections
+restatements
+closed periods
+source-to-report reconciliation
+data quality gates
+freshness monitoring
+dashboard performance
+usage analytics
+access control
+PII protection
+lineage
+catalog
+metric governance
+metric versioning
+timezone/calendar rules
+currency/unit handling
+report incidents
+report deprecation
+cost optimization
+trade-offs
+```
+
+The mentor must be strict:
+
+```text
+Only says dashboard refresh → not interview-ready.
+No KPI definitions → not interview-ready.
+No report grain → not interview-ready.
+No reporting mart → not interview-ready.
+No semantic/metric governance → not interview-ready.
+No DQ gates → not interview-ready.
+No reconciliation → not interview-ready.
+No freshness monitoring → not interview-ready.
+No access control → not interview-ready.
+No correction/restatement plan → not interview-ready.
+```
+
+Final interview line:
+
+```text
+A production reporting pipeline must deliver trusted, governed, validated, performant, and explainable business numbers to the right consumers at the right time.
+```
+
+
+## 88. Additional Mini Scenario Cards
+
+### Mini Scenario 1: Two dashboards show different revenue
+
+Recommended direction:
+
+```text
+Metric governance and semantic layer are missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 2: Daily report has duplicate date-country rows
+
+Recommended direction:
+
+```text
+Report grain uniqueness check failed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 3: Executive dashboard is stale
+
+Recommended direction:
+
+```text
+Consumer-facing freshness monitoring failed or missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 4: Finance numbers changed after close
+
+Recommended direction:
+
+```text
+Closed-period/restatement controls needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 5: Dashboard loads slowly
+
+Recommended direction:
+
+```text
+Build aggregate reporting mart and optimize filters.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 6: CSV export sent wrong schema
+
+Recommended direction:
+
+```text
+Export schema contract and validation needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 7: Report publish fails halfway
+
+Recommended direction:
+
+```text
+Use temp build and atomic publish/swap.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 8: Late refund changes last week's revenue
+
+Recommended direction:
+
+```text
+Refresh affected business dates or restatement policy.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 9: PII visible to broad users
+
+Recommended direction:
+
+```text
+Mask/restrict columns and enforce row-level access.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 10: BI users query staging tables
+
+Recommended direction:
+
+```text
+Certified reporting mart missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 11: Metric definition changed silently
+
+Recommended direction:
+
+```text
+Metric versioning and approval required.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 12: Report total differs from fact table
+
+Recommended direction:
+
+```text
+Source-to-report reconciliation failure.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 13: Critical tile is blank
+
+Recommended direction:
+
+```text
+Dashboard quality check missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 14: Sales rep sees other territories
+
+Recommended direction:
+
+```text
+Row-level security failure.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 15: Partner export delivered twice
+
+Recommended direction:
+
+```text
+Export idempotency and audit failure.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 16: Unused dashboards confuse users
+
+Recommended direction:
+
+```text
+Report usage analytics and deprecation needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 17: Revenue uses UTC but business wants local day
+
+Recommended direction:
+
+```text
+Timezone/business_date rule missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 18: Currency totals mix USD and EUR
+
+Recommended direction:
+
+```text
+Currency normalization needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 19: Report owner unknown
+
+Recommended direction:
+
+```text
+Catalog/ownership metadata missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 20: Backfill changed published numbers silently
+
+Recommended direction:
+
+```text
+Restatement workflow and consumer notification missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 21: No drill-down from KPI to detail
+
+Recommended direction:
+
+```text
+Controlled detail table/drill-through design needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 22: Operational report too delayed
+
+Recommended direction:
+
+```text
+Higher refresh frequency or realtime path needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 23: Report cost spikes
+
+Recommended direction:
+
+```text
+Incremental refresh, caching, marts, and usage controls.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 24: Metric denominator zero
+
+Recommended direction:
+
+```text
+Metric validity check needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 25: Dashboard filter missing product categories
+
+Recommended direction:
+
+```text
+Dimension completeness issue.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 26: Report uses cancelled orders incorrectly
+
+Recommended direction:
+
+```text
+Metric inclusion/exclusion definition missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 27: Report changes every refresh and users lose trust
+
+Recommended direction:
+
+```text
+Snapshot/certified reporting policy needed.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 28: Export contains unauthorized accounts
+
+Recommended direction:
+
+```text
+Recipient-specific row-level security missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 29: Report SQL copied across dashboards
+
+Recommended direction:
+
+```text
+Semantic layer or reusable mart missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 30: Source file late but dashboard published
+
+Recommended direction:
+
+```text
+Source completeness quality gate missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which reporting principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 89. Quick Reference Cards
+
+### Card 1: KPI
+
+Purpose:
+
+```text
+Business performance measure.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 2: Metric definition
+
+Purpose:
+
+```text
+Exact formula and rules.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 3: Report grain
+
+Purpose:
+
+```text
+Meaning of one report row.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 4: Reporting mart
+
+Purpose:
+
+```text
+Dashboard-ready table.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 5: Semantic layer
+
+Purpose:
+
+```text
+Governed metric definitions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 6: Certified dataset
+
+Purpose:
+
+```text
+Trusted reporting source.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 7: Quality gate
+
+Purpose:
+
+```text
+Validation before publish.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 8: Freshness SLA
+
+Purpose:
+
+```text
+Report availability expectation.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 9: Reconciliation
+
+Purpose:
+
+```text
+Report vs source/truth comparison.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 10: Snapshot report
+
+Purpose:
+
+```text
+Stored report values at a point in time.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 11: Restatement
+
+Purpose:
+
+```text
+Auditable correction of published numbers.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 12: Closed period
+
+Purpose:
+
+```text
+Locked finance/accounting period.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 13: Dashboard refresh
+
+Purpose:
+
+```text
+BI output update process.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 14: Export audit
+
+Purpose:
+
+```text
+Tracking file/API report delivery.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 15: Row-level security
+
+Purpose:
+
+```text
+Restrict visible rows.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 16: Column masking
+
+Purpose:
+
+```text
+Protect sensitive fields.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 17: Lineage
+
+Purpose:
+
+```text
+Source-to-report dependency path.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 18: Usage analytics
+
+Purpose:
+
+```text
+Report adoption and performance tracking.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 19: Drill-down
+
+Purpose:
+
+```text
+Summary to detailed analysis.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 20: Metric versioning
+
+Purpose:
+
+```text
+Track changes to business formulas.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```

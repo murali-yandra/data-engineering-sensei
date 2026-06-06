@@ -1,0 +1,5796 @@
+# BFS and DFS Basics Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/dsa/bfs-dfs-basics.md
+```
+
+This guide teaches and drills **BFS and DFS basics for Data Engineering interviews**.
+
+This is not a generic graph theory textbook. It is an interview-focused guide for Data Engineering candidates who need to recognize traversal problems, explain the difference between BFS and DFS, write clean Python, handle visited state, and connect traversal thinking to real Data Engineering work.
+
+BFS and DFS matter because they appear in:
+
+- graph coding interviews
+- tree coding interviews
+- grid/matrix problems
+- connected components
+- dependency graphs
+- pipeline DAGs
+- data lineage traversal
+- nested JSON traversal
+- file/folder traversal
+- schema dependency analysis
+- source-to-target reachability
+- shortest path in unweighted graphs
+- level-order processing
+- flood fill and island problems
+- cycle detection basics
+- topological-sort preparation
+
+Use this guide with:
+
+- `docs/dsa-for-data-engineers.md`
+- `docs/leetcode-practice-map.md`
+- `docs/python-interview-guide.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/dsa-drill-mode.md`
+- `modes/pattern-mapper-mode.md`
+- `modes/tutor-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `modes/interview-mode.md`
+- `practice/dsa/arrays-strings.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering coding standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate confident in BFS and DFS fundamentals.
+
+The candidate should learn to answer:
+
+```text
+When should I use BFS?
+When should I use DFS?
+What is a graph?
+What is a tree?
+What is a grid graph?
+What does visited mean?
+When do I need a queue?
+When do I need a stack or recursion?
+How do I avoid infinite loops?
+How do I traverse all connected components?
+How do I calculate shortest path in unweighted graphs?
+How do I process graph level by level?
+How do I detect a cycle?
+How do I traverse nested structures?
+How does this relate to Data Engineering?
+```
+
+The candidate is interview-ready only when they can:
+
+```text
+identify BFS/DFS trigger clues
+choose BFS vs DFS correctly
+write iterative BFS with deque
+write recursive DFS safely
+write iterative DFS if recursion risk exists
+handle visited state
+handle disconnected graphs
+handle grid boundaries
+explain time and space complexity
+dry run traversal
+solve common LeetCode-style BFS/DFS problems
+connect traversal to Data Engineering scenarios
+```
+
+
+## 2. Why BFS/DFS Matter for Data Engineers
+
+BFS and DFS are not only for software engineering roles.
+
+Data Engineering examples:
+
+```text
+Pipeline dependencies:
+Find all upstream/downstream tasks for a DAG node.
+
+Data lineage:
+Find which dashboards are affected by a source table change.
+
+Nested JSON:
+Traverse deeply nested API response fields.
+
+Directory/file processing:
+Walk folders and process files.
+
+Schema dependency:
+Find all views depending on a base table.
+
+Graph validation:
+Detect dependency cycles in pipelines.
+
+Reachability:
+Can table A reach table B through transformations?
+
+Connected components:
+Group related entities, merchants, accounts, or users.
+
+Shortest path:
+Find minimum number of hops between two datasets/services in an unweighted dependency graph.
+
+Grid traversal:
+Process matrix-like data, maps, masks, or image-like quality grids.
+```
+
+Interviewers use BFS/DFS to test whether the candidate can think recursively, manage state, and avoid infinite loops.
+
+
+## 3. Core Mental Model
+
+A graph is a set of nodes connected by edges.
+
+```text
+A -- B -- C
+|         |
+D --------
+```
+
+Nodes can represent:
+
+```text
+tasks
+tables
+files
+records
+users
+services
+cells in a grid
+tree nodes
+JSON objects
+```
+
+Edges can represent:
+
+```text
+depends on
+connected to
+parent-child
+next step
+upstream/downstream
+neighboring cell
+contains
+references
+```
+
+Traversal means:
+
+```text
+Start from one node and visit reachable nodes by following edges.
+```
+
+The central rule:
+
+```text
+If a graph can contain cycles, track visited nodes.
+```
+
+Without visited:
+
+```text
+A → B → A → B → A ...
+```
+
+The program can loop forever.
+
+
+## 4. BFS vs DFS Short Difference
+
+### BFS: Breadth-First Search
+
+BFS explores level by level.
+
+```text
+Start node
+then all neighbors
+then neighbors of neighbors
+then next level
+```
+
+Uses:
+
+```text
+queue
+collections.deque in Python
+```
+
+Best for:
+
+```text
+shortest path in unweighted graph
+level-order traversal
+minimum steps
+nearest target
+spread/contamination problems
+multi-source expansion
+```
+
+### DFS: Depth-First Search
+
+DFS explores one path deeply before backtracking.
+
+```text
+Start node
+go as deep as possible
+backtrack
+try next path
+```
+
+Uses:
+
+```text
+recursion
+or stack
+```
+
+Best for:
+
+```text
+connected components
+exploring all nodes
+path existence
+tree recursion
+island counting
+cycle detection basics
+backtracking foundation
+nested structure traversal
+```
+
+Interview line:
+
+```text
+I choose BFS when I need shortest distance or level-by-level processing. I choose DFS when I need to explore connected regions, recursively process structure, or visit all reachable nodes.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for every BFS/DFS problem:
+
+```text
+1. Restate the problem.
+2. Identify graph/tree/grid representation.
+3. Identify nodes and edges.
+4. Decide BFS or DFS.
+5. Explain why that traversal fits.
+6. Define visited state.
+7. Define start nodes.
+8. Handle disconnected components if needed.
+9. Write code.
+10. Dry run a small example.
+11. Explain time complexity.
+12. Explain space complexity.
+13. Discuss edge cases.
+14. Handle follow-up variation.
+```
+
+Short version:
+
+```text
+Graph representation:
+Traversal:
+Visited:
+Algorithm:
+Complexity:
+Edge cases:
+```
+
+Strict rule:
+
+```text
+No traversal code before saying what the nodes, edges, and visited state are.
+```
+
+
+## 6. Scoring Rubric
+
+Score each BFS/DFS attempt from 0 to 5.
+
+### Score 0
+
+No meaningful attempt.
+
+### Score 1
+
+Does not understand traversal or graph representation.
+
+### Score 2
+
+Partial traversal but missing visited, edge cases, or correct result.
+
+### Score 3
+
+Works on simple case but weak on disconnected graphs, cycles, grids, or complexity.
+
+### Score 4
+
+Interview-ready. Correct traversal, visited state, edge cases, and complexity.
+
+### Score 5
+
+Strong. Clean code, strong explanation, handles follow-ups, and connects to DE scenarios.
+
+Do not give 4+ if:
+
+```text
+candidate forgets visited in cyclic graph
+candidate uses list as BFS queue with pop(0)
+candidate cannot explain BFS vs DFS
+candidate misses disconnected components
+candidate has boundary errors in grid traversal
+candidate cannot explain time/space complexity
+candidate code only works for sample
+candidate cannot dry run
+```
+
+
+## 7. Core Vocabulary
+
+Candidate must know these terms.
+
+### Node / Vertex
+
+```text
+An item in the graph.
+```
+
+### Edge
+
+```text
+Connection between nodes.
+```
+
+### Neighbor
+
+```text
+A directly connected node.
+```
+
+### Directed graph
+
+```text
+Edges have direction.
+A → B does not imply B → A.
+```
+
+### Undirected graph
+
+```text
+Edges go both ways.
+A -- B means A connected to B and B connected to A.
+```
+
+### Connected component
+
+```text
+A group of nodes reachable from each other in an undirected graph.
+```
+
+### Cycle
+
+```text
+A path that returns to a previously visited node.
+```
+
+### DAG
+
+```text
+Directed Acyclic Graph.
+Common in Airflow/pipeline dependencies.
+```
+
+### Tree
+
+```text
+A connected acyclic graph, often with parent-child structure.
+```
+
+### Grid graph
+
+```text
+A matrix where each cell can be treated as a node connected to neighboring cells.
+```
+
+
+## 8. Graph Representations
+
+Common ways to represent a graph.
+
+### Adjacency list
+
+```python
+graph = {
+    "A": ["B", "D"],
+    "B": ["A", "C"],
+    "C": ["B", "D"],
+    "D": ["A", "C"],
+}
+```
+
+Best for interviews.
+
+### Edge list
+
+```python
+edges = [
+    ("A", "B"),
+    ("A", "D"),
+    ("B", "C"),
+    ("C", "D"),
+]
+```
+
+Often converted to adjacency list.
+
+### Matrix/grid
+
+```python
+grid = [
+    ["1", "1", "0"],
+    ["0", "1", "0"],
+    ["1", "0", "1"],
+]
+```
+
+Each cell can be a node.
+
+### Tree node object
+
+```python
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+```
+
+Interview rule:
+
+```text
+If given edge list, build adjacency list first unless direct edge processing is enough.
+```
+
+
+## 9. Building an Adjacency List
+
+For undirected graph:
+
+```python
+from collections import defaultdict
+
+def build_undirected_graph(edges):
+    graph = defaultdict(list)
+
+    for a, b in edges:
+        graph[a].append(b)
+        graph[b].append(a)
+
+    return graph
+```
+
+For directed graph:
+
+```python
+from collections import defaultdict
+
+def build_directed_graph(edges):
+    graph = defaultdict(list)
+
+    for source, target in edges:
+        graph[source].append(target)
+
+    return graph
+```
+
+Important:
+
+```text
+Undirected graph adds both directions.
+Directed graph adds only source → target.
+```
+
+Data Engineering example:
+
+```text
+If table A feeds table B, that is directed: A → B.
+If two users are linked as same household, that may be undirected.
+```
+
+
+## 10. BFS Template
+
+BFS uses a queue.
+
+Python should use:
+
+```python
+from collections import deque
+```
+
+Template:
+
+```python
+from collections import deque
+
+def bfs(graph, start):
+    visited = set([start])
+    queue = deque([start])
+
+    while queue:
+        node = queue.popleft()
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return visited
+```
+
+Important:
+
+```text
+Mark visited when enqueueing, not when dequeueing, to avoid duplicate queue entries.
+```
+
+Bad queue:
+
+```python
+queue.pop(0)
+```
+
+Why bad:
+
+```text
+list pop(0) is O(n), so BFS can become inefficient.
+```
+
+Use:
+
+```python
+queue.popleft()
+```
+
+
+## 11. DFS Recursive Template
+
+Recursive DFS:
+
+```python
+def dfs(graph, node, visited):
+    if node in visited:
+        return
+
+    visited.add(node)
+
+    for neighbor in graph[node]:
+        dfs(graph, neighbor, visited)
+```
+
+Usage:
+
+```python
+visited = set()
+dfs(graph, start, visited)
+```
+
+Important:
+
+```text
+Base case prevents infinite recursion.
+```
+
+Potential issue:
+
+```text
+Python recursion depth can be exceeded on very deep graphs.
+```
+
+Interview line:
+
+```text
+I can write DFS recursively for clarity, but for very deep graphs I would prefer iterative DFS to avoid recursion depth issues.
+```
+
+
+## 12. DFS Iterative Template
+
+Iterative DFS uses a stack.
+
+```python
+def dfs_iterative(graph, start):
+    visited = set()
+    stack = [start]
+
+    while stack:
+        node = stack.pop()
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                stack.append(neighbor)
+
+    return visited
+```
+
+Alternative:
+
+```text
+Mark visited when pushing to stack to reduce duplicate stack entries.
+```
+
+Version with visited on push:
+
+```python
+def dfs_iterative(graph, start):
+    visited = set([start])
+    stack = [start]
+
+    while stack:
+        node = stack.pop()
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                stack.append(neighbor)
+
+    return visited
+```
+
+Use iterative DFS when:
+
+```text
+graph can be very deep
+recursion depth is risky
+interviewer asks for iterative solution
+```
+
+
+## 13. BFS Level-Order Template
+
+BFS level-order traversal is useful when you need distance, steps, or levels.
+
+Template:
+
+```python
+from collections import deque
+
+def bfs_levels(graph, start):
+    visited = set([start])
+    queue = deque([(start, 0)])
+    distances = {start: 0}
+
+    while queue:
+        node, distance = queue.popleft()
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                distances[neighbor] = distance + 1
+                queue.append((neighbor, distance + 1))
+
+    return distances
+```
+
+Alternative process by level size:
+
+```python
+from collections import deque
+
+def bfs_by_level(graph, start):
+    visited = set([start])
+    queue = deque([start])
+    level = 0
+
+    while queue:
+        level_size = len(queue)
+
+        for _ in range(level_size):
+            node = queue.popleft()
+
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+        level += 1
+```
+
+Use this for:
+
+```text
+shortest path
+minimum steps
+rotting oranges
+binary tree level order
+nearest target
+```
+
+
+## 14. Grid Traversal Template
+
+Many BFS/DFS problems use grids.
+
+Grid node:
+
+```text
+(row, col)
+```
+
+Neighbors:
+
+```text
+up, down, left, right
+```
+
+Directions:
+
+```python
+directions = [
+    (1, 0),
+    (-1, 0),
+    (0, 1),
+    (0, -1),
+]
+```
+
+Boundary check:
+
+```python
+0 <= next_row < rows and 0 <= next_col < cols
+```
+
+DFS grid template:
+
+```python
+def dfs_grid(grid, row, col, visited):
+    rows = len(grid)
+    cols = len(grid[0])
+
+    if row < 0 or row >= rows or col < 0 or col >= cols:
+        return
+
+    if (row, col) in visited:
+        return
+
+    if grid[row][col] == "0":
+        return
+
+    visited.add((row, col))
+
+    for dr, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+        dfs_grid(grid, row + dr, col + dc, visited)
+```
+
+BFS grid template:
+
+```python
+from collections import deque
+
+def bfs_grid(grid, start_row, start_col):
+    rows = len(grid)
+    cols = len(grid[0])
+    queue = deque([(start_row, start_col)])
+    visited = set([(start_row, start_col)])
+
+    while queue:
+        row, col = queue.popleft()
+
+        for dr, dc in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            nr = row + dr
+            nc = col + dc
+
+            if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in visited:
+                visited.add((nr, nc))
+                queue.append((nr, nc))
+```
+
+Common mistake:
+
+```text
+row/column boundary confusion
+```
+
+
+## 15. Choosing BFS vs DFS
+
+Use this decision table.
+
+| Requirement | Usually Use |
+|---|---|
+| shortest path in unweighted graph | BFS |
+| minimum number of steps | BFS |
+| level-order traversal | BFS |
+| nearest target | BFS |
+| spreading process minute by minute | BFS |
+| explore all connected cells/nodes | DFS or BFS |
+| count connected components | DFS or BFS |
+| recursively process tree | DFS |
+| find path exists | DFS or BFS |
+| nested JSON traversal | DFS |
+| file/folder traversal | DFS or BFS |
+| cycle detection | DFS or graph-specific BFS/toposort |
+| topological sort | DFS or BFS indegree |
+| backtracking | DFS |
+
+Interview line:
+
+```text
+BFS is best when distance/level/minimum steps matter. DFS is simpler when I need to fully explore a connected region or recursive structure.
+```
+
+
+## 16. Complexity Rules
+
+For graph traversal:
+
+```text
+Time: O(V + E)
+Space: O(V)
+```
+
+Where:
+
+```text
+V = number of vertices/nodes
+E = number of edges
+```
+
+Why time is O(V + E):
+
+```text
+Each node is visited once.
+Each edge is checked through adjacency lists.
+```
+
+For grid traversal:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+For binary tree traversal:
+
+```text
+Time: O(n)
+Space:
+- DFS recursion: O(h), h = height
+- BFS queue: O(w), w = maximum width
+```
+
+Common mistake:
+
+```text
+Saying DFS is always O(log n).
+```
+
+That is false unless specific balanced tree search conditions apply.
+
+
+## 17. Edge Case Checklist
+
+For graph problems:
+
+```text
+empty graph
+start node missing
+single node
+disconnected graph
+cycle
+self-loop
+duplicate edges
+directed vs undirected
+node with no neighbors
+multiple components
+target unreachable
+```
+
+For grid problems:
+
+```text
+empty grid
+one row
+one column
+all water/zeros
+all land/ones
+start cell invalid
+boundary cells
+diagonal movement allowed or not
+visited mutation allowed or not
+```
+
+For tree problems:
+
+```text
+empty tree
+single node
+skewed tree
+balanced tree
+duplicate values
+negative values
+target not found
+```
+
+For Data Engineering-flavored graph problems:
+
+```text
+task references missing dependency
+cycle in pipeline DAG
+table with no upstream
+dashboard with no downstream
+duplicate edges from metadata
+case-sensitive names
+large graph memory limits
+```
+
+
+## 18. Common Mistakes
+
+Common BFS/DFS mistakes:
+
+```text
+Forgetting visited set.
+Marking visited too late in BFS.
+Using list.pop(0) instead of deque.popleft().
+Confusing BFS and DFS use cases.
+Not handling disconnected components.
+Only traversing from node 0 when graph has multiple components.
+Incorrect grid boundary checks.
+Modifying grid when not allowed.
+Recursion depth risk ignored.
+Using DFS for shortest path in unweighted graph and returning non-shortest answer.
+Not distinguishing directed and undirected edges.
+Cycle detection using parent logic incorrectly in directed graph.
+Not returning correct count or distance.
+Not dry-running.
+Wrong complexity.
+```
+
+Strict feedback:
+
+```text
+This traversal is not interview-ready because it can revisit nodes and loop forever in cyclic graphs.
+```
+
+
+## 19. Problem: Binary Tree Inorder Traversal
+
+LeetCode:
+
+```text
+94. Binary Tree Inorder Traversal
+Difficulty: Easy
+Pattern: DFS on tree
+```
+
+Problem:
+
+```text
+Return inorder traversal of a binary tree.
+Order: left → root → right.
+```
+
+Recursive code:
+
+```python
+def inorder_traversal(root):
+    result = []
+
+    def dfs(node):
+        if node is None:
+            return
+
+        dfs(node.left)
+        result.append(node.val)
+        dfs(node.right)
+
+    dfs(root)
+    return result
+```
+
+Iterative code:
+
+```python
+def inorder_traversal(root):
+    result = []
+    stack = []
+    current = root
+
+    while current or stack:
+        while current:
+            stack.append(current)
+            current = current.left
+
+        current = stack.pop()
+        result.append(current.val)
+        current = current.right
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h) recursion/stack, h = tree height
+```
+
+Data Engineering connection:
+
+```text
+Tree traversal maps to nested structure traversal, such as nested JSON objects.
+```
+
+
+## 20. Problem: Binary Tree Preorder Traversal
+
+LeetCode:
+
+```text
+144. Binary Tree Preorder Traversal
+Difficulty: Easy
+Pattern: DFS on tree
+```
+
+Order:
+
+```text
+root → left → right
+```
+
+Recursive code:
+
+```python
+def preorder_traversal(root):
+    result = []
+
+    def dfs(node):
+        if node is None:
+            return
+
+        result.append(node.val)
+        dfs(node.left)
+        dfs(node.right)
+
+    dfs(root)
+    return result
+```
+
+Iterative code:
+
+```python
+def preorder_traversal(root):
+    if root is None:
+        return []
+
+    result = []
+    stack = [root]
+
+    while stack:
+        node = stack.pop()
+        result.append(node.val)
+
+        if node.right:
+            stack.append(node.right)
+
+        if node.left:
+            stack.append(node.left)
+
+    return result
+```
+
+Why push right first:
+
+```text
+Stack is LIFO, so left should be processed before right.
+```
+
+
+## 21. Problem: Binary Tree Postorder Traversal
+
+LeetCode:
+
+```text
+145. Binary Tree Postorder Traversal
+Difficulty: Easy
+Pattern: DFS on tree
+```
+
+Order:
+
+```text
+left → right → root
+```
+
+Recursive code:
+
+```python
+def postorder_traversal(root):
+    result = []
+
+    def dfs(node):
+        if node is None:
+            return
+
+        dfs(node.left)
+        dfs(node.right)
+        result.append(node.val)
+
+    dfs(root)
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h)
+```
+
+Data Engineering connection:
+
+```text
+Postorder is useful when dependencies must be processed before parent node.
+```
+
+Pipeline analogy:
+
+```text
+Process upstream dependencies before downstream task.
+```
+
+
+## 22. Problem: Maximum Depth of Binary Tree
+
+LeetCode:
+
+```text
+104. Maximum Depth of Binary Tree
+Difficulty: Easy
+Pattern: DFS or BFS
+```
+
+DFS code:
+
+```python
+def max_depth(root):
+    if root is None:
+        return 0
+
+    return 1 + max(max_depth(root.left), max_depth(root.right))
+```
+
+BFS code:
+
+```python
+from collections import deque
+
+def max_depth(root):
+    if root is None:
+        return 0
+
+    queue = deque([root])
+    depth = 0
+
+    while queue:
+        level_size = len(queue)
+
+        for _ in range(level_size):
+            node = queue.popleft()
+
+            if node.left:
+                queue.append(node.left)
+
+            if node.right:
+                queue.append(node.right)
+
+        depth += 1
+
+    return depth
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h) for DFS recursion or O(w) for BFS queue
+```
+
+Interview point:
+
+```text
+DFS is shorter. BFS is natural if thinking level by level.
+```
+
+
+## 23. Problem: Same Tree
+
+LeetCode:
+
+```text
+100. Same Tree
+Difficulty: Easy
+Pattern: DFS tree comparison
+```
+
+Approach:
+
+```text
+Two trees are same if current nodes match and left/right subtrees match.
+```
+
+Code:
+
+```python
+def is_same_tree(p, q):
+    if p is None and q is None:
+        return True
+
+    if p is None or q is None:
+        return False
+
+    if p.val != q.val:
+        return False
+
+    return is_same_tree(p.left, q.left) and is_same_tree(p.right, q.right)
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h)
+```
+
+Data Engineering connection:
+
+```text
+Compare two nested structures for equality.
+```
+
+
+## 24. Problem: Invert Binary Tree
+
+LeetCode:
+
+```text
+226. Invert Binary Tree
+Difficulty: Easy
+Pattern: DFS/BFS tree transformation
+```
+
+DFS code:
+
+```python
+def invert_tree(root):
+    if root is None:
+        return None
+
+    root.left, root.right = root.right, root.left
+
+    invert_tree(root.left)
+    invert_tree(root.right)
+
+    return root
+```
+
+BFS code:
+
+```python
+from collections import deque
+
+def invert_tree(root):
+    if root is None:
+        return None
+
+    queue = deque([root])
+
+    while queue:
+        node = queue.popleft()
+        node.left, node.right = node.right, node.left
+
+        if node.left:
+            queue.append(node.left)
+
+        if node.right:
+            queue.append(node.right)
+
+    return root
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h) DFS or O(w) BFS
+```
+
+
+## 25. Problem: Binary Tree Level Order Traversal
+
+LeetCode:
+
+```text
+102. Binary Tree Level Order Traversal
+Difficulty: Medium
+Pattern: BFS level order
+```
+
+Approach:
+
+```text
+Use queue.
+For each level, process current queue size.
+Append values for that level.
+```
+
+Code:
+
+```python
+from collections import deque
+
+def level_order(root):
+    if root is None:
+        return []
+
+    result = []
+    queue = deque([root])
+
+    while queue:
+        level_size = len(queue)
+        level_values = []
+
+        for _ in range(level_size):
+            node = queue.popleft()
+            level_values.append(node.val)
+
+            if node.left:
+                queue.append(node.left)
+
+            if node.right:
+                queue.append(node.right)
+
+        result.append(level_values)
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(w), where w is max width
+```
+
+Data Engineering connection:
+
+```text
+Process dependency graph level by level.
+```
+
+
+## 26. Problem: Path Sum
+
+LeetCode:
+
+```text
+112. Path Sum
+Difficulty: Easy
+Pattern: DFS root-to-leaf
+```
+
+Problem:
+
+```text
+Return True if tree has root-to-leaf path with sum targetSum.
+```
+
+Code:
+
+```python
+def has_path_sum(root, target_sum):
+    if root is None:
+        return False
+
+    remaining = target_sum - root.val
+
+    if root.left is None and root.right is None:
+        return remaining == 0
+
+    return (
+        has_path_sum(root.left, remaining)
+        or has_path_sum(root.right, remaining)
+    )
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h)
+```
+
+Common mistake:
+
+```text
+Checking path sum at non-leaf nodes.
+```
+
+Data Engineering connection:
+
+```text
+Find whether a dependency path accumulates to a target weight/cost.
+```
+
+
+## 27. Problem: Number of Islands
+
+LeetCode:
+
+```text
+200. Number of Islands
+Difficulty: Medium
+Pattern: DFS/BFS on grid connected components
+```
+
+Problem:
+
+```text
+Given grid of '1' land and '0' water, count islands.
+An island is connected horizontally or vertically.
+```
+
+DFS code mutating grid:
+
+```python
+def num_islands(grid):
+    if not grid or not grid[0]:
+        return 0
+
+    rows = len(grid)
+    cols = len(grid[0])
+    islands = 0
+
+    def dfs(row, col):
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return
+
+        if grid[row][col] != "1":
+            return
+
+        grid[row][col] = "0"
+
+        dfs(row + 1, col)
+        dfs(row - 1, col)
+        dfs(row, col + 1)
+        dfs(row, col - 1)
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == "1":
+                islands += 1
+                dfs(row, col)
+
+    return islands
+```
+
+BFS code:
+
+```python
+from collections import deque
+
+def num_islands(grid):
+    if not grid or not grid[0]:
+        return 0
+
+    rows = len(grid)
+    cols = len(grid[0])
+    islands = 0
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == "1":
+                islands += 1
+                grid[row][col] = "0"
+                queue = deque([(row, col)])
+
+                while queue:
+                    r, c = queue.popleft()
+
+                    for dr, dc in directions:
+                        nr = r + dr
+                        nc = c + dc
+
+                        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == "1":
+                            grid[nr][nc] = "0"
+                            queue.append((nr, nc))
+
+    return islands
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols) worst case
+```
+
+Data Engineering connection:
+
+```text
+Group connected related records or regions in a matrix-like quality grid.
+```
+
+Common mistakes:
+
+```text
+diagonal connection when not allowed
+forgetting to mark visited
+not handling empty grid
+```
+
+
+## 28. Problem: Max Area of Island
+
+LeetCode:
+
+```text
+695. Max Area of Island
+Difficulty: Medium
+Pattern: DFS/BFS grid
+```
+
+Problem:
+
+```text
+Return the maximum area of an island.
+```
+
+DFS code:
+
+```python
+def max_area_of_island(grid):
+    if not grid or not grid[0]:
+        return 0
+
+    rows = len(grid)
+    cols = len(grid[0])
+
+    def dfs(row, col):
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return 0
+
+        if grid[row][col] != 1:
+            return 0
+
+        grid[row][col] = 0
+
+        return (
+            1
+            + dfs(row + 1, col)
+            + dfs(row - 1, col)
+            + dfs(row, col + 1)
+            + dfs(row, col - 1)
+        )
+
+    best = 0
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == 1:
+                best = max(best, dfs(row, col))
+
+    return best
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols) recursion worst case
+```
+
+Data Engineering connection:
+
+```text
+Find largest connected cluster of related records/cells.
+```
+
+
+## 29. Problem: Flood Fill
+
+LeetCode:
+
+```text
+733. Flood Fill
+Difficulty: Easy
+Pattern: DFS/BFS grid
+```
+
+Problem:
+
+```text
+Change connected region of starting color to new color.
+```
+
+DFS code:
+
+```python
+def flood_fill(image, sr, sc, color):
+    original = image[sr][sc]
+
+    if original == color:
+        return image
+
+    rows = len(image)
+    cols = len(image[0])
+
+    def dfs(row, col):
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return
+
+        if image[row][col] != original:
+            return
+
+        image[row][col] = color
+
+        dfs(row + 1, col)
+        dfs(row - 1, col)
+        dfs(row, col + 1)
+        dfs(row, col - 1)
+
+    dfs(sr, sc)
+    return image
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+Critical edge case:
+
+```text
+If original color equals new color, return immediately to avoid infinite recursion.
+```
+
+Data Engineering connection:
+
+```text
+Propagate a label to all connected matching cells/records.
+```
+
+
+## 30. Problem: Rotting Oranges
+
+LeetCode:
+
+```text
+994. Rotting Oranges
+Difficulty: Medium
+Pattern: Multi-source BFS
+```
+
+Problem:
+
+```text
+Each minute, rotten oranges rot adjacent fresh oranges.
+Return minutes until no fresh oranges remain, or -1 if impossible.
+```
+
+Why BFS:
+
+```text
+Rot spreads level by level from all initially rotten oranges.
+Each BFS level = one minute.
+```
+
+Code:
+
+```python
+from collections import deque
+
+def oranges_rotting(grid):
+    rows = len(grid)
+    cols = len(grid[0])
+    queue = deque()
+    fresh = 0
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == 2:
+                queue.append((row, col))
+            elif grid[row][col] == 1:
+                fresh += 1
+
+    minutes = 0
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    while queue and fresh > 0:
+        level_size = len(queue)
+
+        for _ in range(level_size):
+            row, col = queue.popleft()
+
+            for dr, dc in directions:
+                nr = row + dr
+                nc = col + dc
+
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:
+                    grid[nr][nc] = 2
+                    fresh -= 1
+                    queue.append((nr, nc))
+
+        minutes += 1
+
+    return minutes if fresh == 0 else -1
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+Data Engineering connection:
+
+```text
+Multi-source propagation: failures spreading, dependency impact by level, or nearest-source expansion.
+```
+
+Common mistakes:
+
+```text
+starting BFS from only one rotten orange
+incrementing minutes incorrectly
+not tracking fresh count
+```
+
+
+## 31. Problem: Walls and Gates
+
+LeetCode:
+
+```text
+286. Walls and Gates
+Difficulty: Medium
+Pattern: Multi-source BFS
+```
+
+Problem:
+
+```text
+Fill each empty room with distance to nearest gate.
+```
+
+Why BFS:
+
+```text
+Nearest distance from multiple sources requires multi-source BFS.
+```
+
+Code:
+
+```python
+from collections import deque
+
+def walls_and_gates(rooms):
+    if not rooms or not rooms[0]:
+        return
+
+    rows = len(rooms)
+    cols = len(rooms[0])
+    INF = 2147483647
+    queue = deque()
+
+    for row in range(rows):
+        for col in range(cols):
+            if rooms[row][col] == 0:
+                queue.append((row, col))
+
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    while queue:
+        row, col = queue.popleft()
+
+        for dr, dc in directions:
+            nr = row + dr
+            nc = col + dc
+
+            if 0 <= nr < rows and 0 <= nc < cols and rooms[nr][nc] == INF:
+                rooms[nr][nc] = rooms[row][col] + 1
+                queue.append((nr, nc))
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+Data Engineering connection:
+
+```text
+Find distance to nearest known good source, gateway, or reference point in grid-like topology.
+```
+
+
+## 32. Problem: Clone Graph
+
+LeetCode:
+
+```text
+133. Clone Graph
+Difficulty: Medium
+Pattern: DFS/BFS graph copy
+```
+
+Problem:
+
+```text
+Return a deep copy of an undirected connected graph.
+```
+
+DFS code:
+
+```python
+def clone_graph(node):
+    if node is None:
+        return None
+
+    copies = {}
+
+    def dfs(current):
+        if current in copies:
+            return copies[current]
+
+        copy = Node(current.val)
+        copies[current] = copy
+
+        for neighbor in current.neighbors:
+            copy.neighbors.append(dfs(neighbor))
+
+        return copy
+
+    return dfs(node)
+```
+
+BFS code:
+
+```python
+from collections import deque
+
+def clone_graph(node):
+    if node is None:
+        return None
+
+    copies = {node: Node(node.val)}
+    queue = deque([node])
+
+    while queue:
+        current = queue.popleft()
+
+        for neighbor in current.neighbors:
+            if neighbor not in copies:
+                copies[neighbor] = Node(neighbor.val)
+                queue.append(neighbor)
+
+            copies[current].neighbors.append(copies[neighbor])
+
+    return copies[node]
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V)
+```
+
+Data Engineering connection:
+
+```text
+Copy metadata lineage graph or dependency graph without sharing original references.
+```
+
+Common mistake:
+
+```text
+Creating duplicate copies of same node because no mapping dictionary is used.
+```
+
+
+## 33. Problem: Graph Valid Tree
+
+LeetCode:
+
+```text
+261. Graph Valid Tree
+Difficulty: Medium
+Pattern: DFS/BFS + connected + no cycle
+```
+
+Problem:
+
+```text
+Given n nodes and undirected edges, determine if edges form a valid tree.
+```
+
+A valid tree has:
+
+```text
+n - 1 edges
+all nodes connected
+no cycles
+```
+
+Efficient rule:
+
+```text
+If undirected graph with n nodes has n - 1 edges and is connected, it is a tree.
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def valid_tree(n, edges):
+    if len(edges) != n - 1:
+        return False
+
+    graph = defaultdict(list)
+
+    for a, b in edges:
+        graph[a].append(b)
+        graph[b].append(a)
+
+    visited = set([0])
+    queue = deque([0])
+
+    while queue:
+        node = queue.popleft()
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return len(visited) == n
+```
+
+Complexity:
+
+```text
+Time: O(n + e)
+Space: O(n + e)
+```
+
+Data Engineering connection:
+
+```text
+Validate dependency structure has no cycles and all nodes are reachable.
+```
+
+
+## 34. Problem: Number of Connected Components
+
+LeetCode:
+
+```text
+323. Number of Connected Components in an Undirected Graph
+Difficulty: Medium
+Pattern: DFS/BFS over disconnected graph
+```
+
+Problem:
+
+```text
+Count connected components among n nodes.
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def count_components(n, edges):
+    graph = defaultdict(list)
+
+    for a, b in edges:
+        graph[a].append(b)
+        graph[b].append(a)
+
+    visited = set()
+    components = 0
+
+    def dfs(node):
+        visited.add(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor)
+
+    for node in range(n):
+        if node not in visited:
+            components += 1
+            dfs(node)
+
+    return components
+```
+
+Complexity:
+
+```text
+Time: O(n + e)
+Space: O(n + e)
+```
+
+Common mistake:
+
+```text
+Starting DFS from node 0 only and missing disconnected components.
+```
+
+Data Engineering connection:
+
+```text
+Group related entities or disconnected clusters of metadata dependencies.
+```
+
+
+## 35. Problem: Find if Path Exists in Graph
+
+LeetCode:
+
+```text
+1971. Find if Path Exists in Graph
+Difficulty: Easy
+Pattern: BFS/DFS reachability
+```
+
+Problem:
+
+```text
+Given undirected graph, source, destination, return whether path exists.
+```
+
+BFS code:
+
+```python
+from collections import defaultdict, deque
+
+def valid_path(n, edges, source, destination):
+    graph = defaultdict(list)
+
+    for a, b in edges:
+        graph[a].append(b)
+        graph[b].append(a)
+
+    visited = set([source])
+    queue = deque([source])
+
+    while queue:
+        node = queue.popleft()
+
+        if node == destination:
+            return True
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(n + e)
+Space: O(n + e)
+```
+
+Data Engineering connection:
+
+```text
+Can source table reach a downstream dashboard through lineage edges?
+```
+
+
+## 36. Problem: Course Schedule
+
+LeetCode:
+
+```text
+207. Course Schedule
+Difficulty: Medium
+Pattern: Directed graph cycle detection / topological sort
+```
+
+Problem:
+
+```text
+Given prerequisites, determine if all courses can be finished.
+```
+
+Why relevant:
+
+```text
+Course schedule is the classic pipeline DAG cycle detection problem.
+```
+
+DFS cycle detection code:
+
+```python
+from collections import defaultdict
+
+def can_finish(num_courses, prerequisites):
+    graph = defaultdict(list)
+
+    for course, prereq in prerequisites:
+        graph[prereq].append(course)
+
+    visiting = set()
+    visited = set()
+
+    def dfs(course):
+        if course in visiting:
+            return False
+
+        if course in visited:
+            return True
+
+        visiting.add(course)
+
+        for next_course in graph[course]:
+            if not dfs(next_course):
+                return False
+
+        visiting.remove(course)
+        visited.add(course)
+        return True
+
+    for course in range(num_courses):
+        if not dfs(course):
+            return False
+
+    return True
+```
+
+BFS indegree code:
+
+```python
+from collections import defaultdict, deque
+
+def can_finish(num_courses, prerequisites):
+    graph = defaultdict(list)
+    indegree = [0] * num_courses
+
+    for course, prereq in prerequisites:
+        graph[prereq].append(course)
+        indegree[course] += 1
+
+    queue = deque()
+
+    for course in range(num_courses):
+        if indegree[course] == 0:
+            queue.append(course)
+
+    completed = 0
+
+    while queue:
+        course = queue.popleft()
+        completed += 1
+
+        for next_course in graph[course]:
+            indegree[next_course] -= 1
+
+            if indegree[next_course] == 0:
+                queue.append(next_course)
+
+    return completed == num_courses
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Detect cycles in Airflow DAGs or table dependency graphs.
+```
+
+Common mistakes:
+
+```text
+using undirected parent cycle logic for directed graph
+not distinguishing visiting vs visited in DFS
+```
+
+
+## 37. Problem: Course Schedule II
+
+LeetCode:
+
+```text
+210. Course Schedule II
+Difficulty: Medium
+Pattern: Topological sort
+```
+
+Problem:
+
+```text
+Return a valid course order if possible.
+```
+
+BFS indegree code:
+
+```python
+from collections import defaultdict, deque
+
+def find_order(num_courses, prerequisites):
+    graph = defaultdict(list)
+    indegree = [0] * num_courses
+
+    for course, prereq in prerequisites:
+        graph[prereq].append(course)
+        indegree[course] += 1
+
+    queue = deque()
+
+    for course in range(num_courses):
+        if indegree[course] == 0:
+            queue.append(course)
+
+    order = []
+
+    while queue:
+        course = queue.popleft()
+        order.append(course)
+
+        for next_course in graph[course]:
+            indegree[next_course] -= 1
+
+            if indegree[next_course] == 0:
+                queue.append(next_course)
+
+    if len(order) != num_courses:
+        return []
+
+    return order
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Find execution order of pipeline tasks based on dependencies.
+```
+
+
+## 38. Problem: Pacific Atlantic Water Flow
+
+LeetCode:
+
+```text
+417. Pacific Atlantic Water Flow
+Difficulty: Medium
+Pattern: Reverse DFS/BFS from borders
+```
+
+Problem:
+
+```text
+Water can flow from cell to neighbor with height <= current height.
+Find cells that can flow to both oceans.
+```
+
+Key insight:
+
+```text
+Instead of starting from every cell, start from ocean borders and reverse the flow.
+From ocean, move to neighbors with height >= current height.
+```
+
+DFS code:
+
+```python
+def pacific_atlantic(heights):
+    if not heights or not heights[0]:
+        return []
+
+    rows = len(heights)
+    cols = len(heights[0])
+    pacific = set()
+    atlantic = set()
+
+    def dfs(row, col, visited, previous_height):
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return
+
+        if (row, col) in visited:
+            return
+
+        if heights[row][col] < previous_height:
+            return
+
+        visited.add((row, col))
+
+        dfs(row + 1, col, visited, heights[row][col])
+        dfs(row - 1, col, visited, heights[row][col])
+        dfs(row, col + 1, visited, heights[row][col])
+        dfs(row, col - 1, visited, heights[row][col])
+
+    for col in range(cols):
+        dfs(0, col, pacific, heights[0][col])
+        dfs(rows - 1, col, atlantic, heights[rows - 1][col])
+
+    for row in range(rows):
+        dfs(row, 0, pacific, heights[row][0])
+        dfs(row, cols - 1, atlantic, heights[row][cols - 1])
+
+    result = []
+
+    for row in range(rows):
+        for col in range(cols):
+            if (row, col) in pacific and (row, col) in atlantic:
+                result.append([row, col])
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+Data Engineering connection:
+
+```text
+Reverse traversal from sinks/consumers to find upstream reachable nodes.
+```
+
+Common mistake:
+
+```text
+Starting DFS from every cell and causing high complexity.
+```
+
+
+## 39. Problem: Surrounded Regions
+
+LeetCode:
+
+```text
+130. Surrounded Regions
+Difficulty: Medium
+Pattern: DFS/BFS from borders
+```
+
+Problem:
+
+```text
+Capture surrounded 'O' regions that are not connected to border.
+```
+
+Key insight:
+
+```text
+Border-connected O cannot be captured.
+Mark all border-connected O first.
+Then flip remaining O to X.
+```
+
+Code:
+
+```python
+def solve(board):
+    if not board or not board[0]:
+        return
+
+    rows = len(board)
+    cols = len(board[0])
+
+    def dfs(row, col):
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return
+
+        if board[row][col] != "O":
+            return
+
+        board[row][col] = "S"
+
+        dfs(row + 1, col)
+        dfs(row - 1, col)
+        dfs(row, col + 1)
+        dfs(row, col - 1)
+
+    for row in range(rows):
+        dfs(row, 0)
+        dfs(row, cols - 1)
+
+    for col in range(cols):
+        dfs(0, col)
+        dfs(rows - 1, col)
+
+    for row in range(rows):
+        for col in range(cols):
+            if board[row][col] == "O":
+                board[row][col] = "X"
+            elif board[row][col] == "S":
+                board[row][col] = "O"
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols)
+Space: O(rows * cols)
+```
+
+Data Engineering connection:
+
+```text
+Mark records connected to safe boundary/source before transforming isolated groups.
+```
+
+
+## 40. Problem: Word Search
+
+LeetCode:
+
+```text
+79. Word Search
+Difficulty: Medium
+Pattern: DFS backtracking on grid
+```
+
+Problem:
+
+```text
+Find if word exists in grid by adjacent cells.
+Each cell can be used once per path.
+```
+
+Code:
+
+```python
+def exist(board, word):
+    rows = len(board)
+    cols = len(board[0])
+
+    def dfs(row, col, index):
+        if index == len(word):
+            return True
+
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return False
+
+        if board[row][col] != word[index]:
+            return False
+
+        temp = board[row][col]
+        board[row][col] = "#"
+
+        found = (
+            dfs(row + 1, col, index + 1)
+            or dfs(row - 1, col, index + 1)
+            or dfs(row, col + 1, index + 1)
+            or dfs(row, col - 1, index + 1)
+        )
+
+        board[row][col] = temp
+        return found
+
+    for row in range(rows):
+        for col in range(cols):
+            if dfs(row, col, 0):
+                return True
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(rows * cols * 4^L), where L is word length
+Space: O(L) recursion
+```
+
+Data Engineering connection:
+
+```text
+Backtracking through constrained paths; less direct but important DFS variation.
+```
+
+Common mistakes:
+
+```text
+not restoring cell after recursion
+using same cell twice
+not stopping at full word length
+```
+
+
+## 41. Data Engineering Custom Problem: Pipeline Reachability
+
+Problem:
+
+```text
+Given directed edges representing table lineage:
+source_table → target_table
+
+Return whether a source table can reach a target table.
+```
+
+Pattern:
+
+```text
+BFS/DFS reachability in directed graph
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def can_reach(edges, source, target):
+    graph = defaultdict(list)
+
+    for upstream, downstream in edges:
+        graph[upstream].append(downstream)
+
+    visited = set([source])
+    queue = deque([source])
+
+    while queue:
+        table = queue.popleft()
+
+        if table == target:
+            return True
+
+        for downstream in graph[table]:
+            if downstream not in visited:
+                visited.add(downstream)
+                queue.append(downstream)
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Interview point:
+
+```text
+This is exactly graph reachability.
+```
+
+Follow-up:
+
+```text
+Return the actual path from source to target.
+```
+
+
+## 42. Data Engineering Custom Problem: Find Lineage Path
+
+Problem:
+
+```text
+Given directed lineage edges, return one path from source to target if it exists.
+```
+
+Pattern:
+
+```text
+BFS with parent map
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def find_lineage_path(edges, source, target):
+    graph = defaultdict(list)
+
+    for upstream, downstream in edges:
+        graph[upstream].append(downstream)
+
+    visited = set([source])
+    parent = {source: None}
+    queue = deque([source])
+
+    while queue:
+        node = queue.popleft()
+
+        if node == target:
+            break
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = node
+                queue.append(neighbor)
+
+    if target not in parent:
+        return []
+
+    path = []
+    current = target
+
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+
+    path.reverse()
+    return path
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V)
+```
+
+Data Engineering connection:
+
+```text
+Show exact upstream path causing dashboard impact.
+```
+
+
+## 43. Data Engineering Custom Problem: Downstream Impact
+
+Problem:
+
+```text
+Given lineage edges table_a → table_b, return all downstream tables affected by a change to source.
+```
+
+Pattern:
+
+```text
+DFS/BFS directed graph traversal
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def downstream_impact(edges, changed_table):
+    graph = defaultdict(list)
+
+    for upstream, downstream in edges:
+        graph[upstream].append(downstream)
+
+    impacted = []
+    visited = set([changed_table])
+    queue = deque([changed_table])
+
+    while queue:
+        table = queue.popleft()
+
+        for downstream in graph[table]:
+            if downstream not in visited:
+                visited.add(downstream)
+                impacted.append(downstream)
+                queue.append(downstream)
+
+    return impacted
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Follow-up:
+
+```text
+Return impacted tables by distance level from changed table.
+```
+
+Expected:
+
+```text
+Use BFS level-order.
+```
+
+
+## 44. Data Engineering Custom Problem: Upstream Dependencies
+
+Problem:
+
+```text
+Given lineage edges upstream → downstream, return all upstream dependencies for a target table.
+```
+
+Pattern:
+
+```text
+Reverse graph + BFS/DFS
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def upstream_dependencies(edges, target_table):
+    reverse_graph = defaultdict(list)
+
+    for upstream, downstream in edges:
+        reverse_graph[downstream].append(upstream)
+
+    dependencies = []
+    visited = set([target_table])
+    queue = deque([target_table])
+
+    while queue:
+        table = queue.popleft()
+
+        for upstream in reverse_graph[table]:
+            if upstream not in visited:
+                visited.add(upstream)
+                dependencies.append(upstream)
+                queue.append(upstream)
+
+    return dependencies
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Interview point:
+
+```text
+To find upstream dependencies, reverse the direction of lineage edges.
+```
+
+
+## 45. Data Engineering Custom Problem: Pipeline Cycle Detection
+
+Problem:
+
+```text
+Given task dependencies prereq → task, detect whether there is a cycle.
+```
+
+Pattern:
+
+```text
+Directed graph DFS cycle detection
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def has_cycle(edges):
+    graph = defaultdict(list)
+
+    for prereq, task in edges:
+        graph[prereq].append(task)
+
+    visiting = set()
+    visited = set()
+
+    def dfs(node):
+        if node in visiting:
+            return True
+
+        if node in visited:
+            return False
+
+        visiting.add(node)
+
+        for neighbor in graph[node]:
+            if dfs(neighbor):
+                return True
+
+        visiting.remove(node)
+        visited.add(node)
+        return False
+
+    nodes = set()
+
+    for a, b in edges:
+        nodes.add(a)
+        nodes.add(b)
+
+    for node in nodes:
+        if dfs(node):
+            return True
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Airflow DAGs and table build dependencies must be acyclic.
+```
+
+Common mistake:
+
+```text
+Using only a visited set is not enough for directed cycle detection.
+```
+
+
+## 46. Data Engineering Custom Problem: Pipeline Execution Order
+
+Problem:
+
+```text
+Given task dependencies prereq → task, return one valid execution order.
+If cycle exists, return [].
+```
+
+Pattern:
+
+```text
+Topological sort using BFS indegree
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def execution_order(tasks, dependencies):
+    graph = defaultdict(list)
+    indegree = {task: 0 for task in tasks}
+
+    for prereq, task in dependencies:
+        graph[prereq].append(task)
+        indegree[task] += 1
+
+    queue = deque()
+
+    for task in tasks:
+        if indegree[task] == 0:
+            queue.append(task)
+
+    order = []
+
+    while queue:
+        task = queue.popleft()
+        order.append(task)
+
+        for downstream in graph[task]:
+            indegree[downstream] -= 1
+
+            if indegree[downstream] == 0:
+                queue.append(downstream)
+
+    if len(order) != len(tasks):
+        return []
+
+    return order
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Find valid task execution order from DAG dependencies.
+```
+
+
+## 47. Data Engineering Custom Problem: Nested JSON Field Paths
+
+Problem:
+
+```text
+Given a nested dictionary/list JSON-like object, return all field paths.
+```
+
+Example:
+
+```python
+{
+    "ticket": {
+        "id": "t1",
+        "customer": {
+            "id": "c1"
+        }
+    }
+}
+```
+
+Output:
+
+```text
+ticket.id
+ticket.customer.id
+```
+
+Pattern:
+
+```text
+DFS recursion on nested structure
+```
+
+Code:
+
+```python
+def extract_field_paths(data):
+    paths = []
+
+    def dfs(value, path):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                next_path = f"{path}.{key}" if path else key
+                dfs(child, next_path)
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                next_path = f"{path}[{index}]"
+                dfs(child, next_path)
+        else:
+            paths.append(path)
+
+    dfs(data, "")
+    return paths
+```
+
+Complexity:
+
+```text
+Time: O(n), where n is number of nested elements
+Space: O(h + p), h recursion depth and p output paths
+```
+
+Data Engineering connection:
+
+```text
+Schema discovery for API JSON responses.
+```
+
+Follow-up:
+
+```text
+Ignore list indexes and use [] notation.
+```
+
+
+## 48. Data Engineering Custom Problem: Directory Traversal
+
+Problem:
+
+```text
+Given a nested folder structure, return all file paths.
+```
+
+Example structure:
+
+```python
+{
+    "name": "root",
+    "type": "folder",
+    "children": [
+        {"name": "a.csv", "type": "file"},
+        {
+            "name": "sub",
+            "type": "folder",
+            "children": [
+                {"name": "b.csv", "type": "file"}
+            ]
+        }
+    ]
+}
+```
+
+Pattern:
+
+```text
+DFS tree traversal
+```
+
+Code:
+
+```python
+def list_files(node):
+    result = []
+
+    def dfs(current, path):
+        current_path = f"{path}/{current['name']}" if path else current["name"]
+
+        if current.get("type") == "file":
+            result.append(current_path)
+            return
+
+        for child in current.get("children", []):
+            dfs(child, current_path)
+
+    dfs(node, "")
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(h + f), h recursion depth and f output files
+```
+
+Data Engineering connection:
+
+```text
+Traverse object storage folder metadata or file manifests.
+```
+
+
+## 49. Data Engineering Custom Problem: Dependency Levels
+
+Problem:
+
+```text
+Given directed dependency edges upstream → downstream and a starting table, return downstream tables grouped by distance level.
+```
+
+Pattern:
+
+```text
+BFS level-order
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def downstream_levels(edges, start):
+    graph = defaultdict(list)
+
+    for upstream, downstream in edges:
+        graph[upstream].append(downstream)
+
+    result = []
+    visited = set([start])
+    queue = deque([start])
+
+    while queue:
+        level_size = len(queue)
+        level = []
+
+        for _ in range(level_size):
+            node = queue.popleft()
+
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    level.append(neighbor)
+                    queue.append(neighbor)
+
+        if level:
+            result.append(level)
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Show first-order, second-order, third-order downstream impact after source change.
+```
+
+
+## 50. Data Engineering Custom Problem: Group Related Records
+
+Problem:
+
+```text
+Given pairs of related IDs, group all connected IDs.
+```
+
+Example:
+
+```text
+(a, b), (b, c), (d, e)
+```
+
+Output:
+
+```text
+[a, b, c], [d, e]
+```
+
+Pattern:
+
+```text
+Connected components in undirected graph
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def group_related_ids(pairs):
+    graph = defaultdict(list)
+    nodes = set()
+
+    for a, b in pairs:
+        graph[a].append(b)
+        graph[b].append(a)
+        nodes.add(a)
+        nodes.add(b)
+
+    visited = set()
+    groups = []
+
+    def dfs(node, group):
+        visited.add(node)
+        group.append(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor, group)
+
+    for node in nodes:
+        if node not in visited:
+            group = []
+            dfs(node, group)
+            groups.append(group)
+
+    return groups
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Data Engineering connection:
+
+```text
+Entity resolution clusters, related accounts, duplicate merchant groups.
+```
+
+
+## 51. Data Engineering Custom Problem: Shortest Hops Between Services
+
+Problem:
+
+```text
+Given undirected service connection edges, return minimum hops between service A and service B.
+```
+
+Pattern:
+
+```text
+BFS shortest path in unweighted graph
+```
+
+Code:
+
+```python
+from collections import defaultdict, deque
+
+def shortest_hops(edges, source, target):
+    graph = defaultdict(list)
+
+    for a, b in edges:
+        graph[a].append(b)
+        graph[b].append(a)
+
+    visited = set([source])
+    queue = deque([(source, 0)])
+
+    while queue:
+        service, distance = queue.popleft()
+
+        if service == target:
+            return distance
+
+        for neighbor in graph[service]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, distance + 1))
+
+    return -1
+```
+
+Complexity:
+
+```text
+Time: O(V + E)
+Space: O(V + E)
+```
+
+Interview point:
+
+```text
+Use BFS because each edge has equal weight.
+```
+
+
+## 52. BFS/DFS Pattern Classification Drill
+
+Classify each as BFS, DFS, either, or topological sort.
+
+```text
+1. Find shortest number of connections between two services.
+2. Count number of islands in a grid.
+3. Return all downstream tables from a changed table.
+4. Return downstream tables grouped by distance.
+5. Detect cycle in pipeline dependencies.
+6. Return valid task execution order.
+7. Traverse nested JSON and return all field paths.
+8. Find whether path exists between two nodes.
+9. Find maximum depth of binary tree.
+10. Level order traversal of binary tree.
+11. Rotting oranges minimum minutes.
+12. Group connected related customer IDs.
+13. Clone graph.
+14. Flood fill image.
+15. Word search path in grid.
+16. Find all upstream dependencies of a target table.
+17. Determine if graph is valid tree.
+18. Find nearest gate distance for rooms.
+19. Find one lineage path from source to dashboard.
+20. Process tree dependencies children before parent.
+```
+
+Expected answers:
+
+```text
+1. BFS
+2. DFS or BFS
+3. DFS or BFS
+4. BFS
+5. DFS cycle detection or topological sort
+6. Topological sort
+7. DFS
+8. DFS or BFS
+9. DFS or BFS
+10. BFS
+11. Multi-source BFS
+12. DFS or BFS
+13. DFS or BFS
+14. DFS or BFS
+15. DFS backtracking
+16. Reverse graph + DFS/BFS
+17. BFS/DFS with tree rules
+18. Multi-source BFS
+19. BFS with parent map or DFS path
+20. DFS postorder
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed graph mocks.
+```
+
+
+## 53. High-ROI LeetCode List
+
+Practice these first.
+
+| No. | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 94 | Binary Tree Inorder Traversal | Easy | DFS tree |
+| 144 | Binary Tree Preorder Traversal | Easy | DFS tree |
+| 145 | Binary Tree Postorder Traversal | Easy | DFS tree |
+| 104 | Maximum Depth of Binary Tree | Easy | DFS/BFS tree |
+| 100 | Same Tree | Easy | DFS tree comparison |
+| 226 | Invert Binary Tree | Easy | DFS/BFS tree |
+| 102 | Binary Tree Level Order Traversal | Medium | BFS tree |
+| 112 | Path Sum | Easy | DFS root-to-leaf |
+| 200 | Number of Islands | Medium | Grid DFS/BFS |
+| 695 | Max Area of Island | Medium | Grid DFS/BFS |
+| 733 | Flood Fill | Easy | Grid DFS/BFS |
+| 994 | Rotting Oranges | Medium | Multi-source BFS |
+| 286 | Walls and Gates | Medium | Multi-source BFS |
+| 133 | Clone Graph | Medium | Graph DFS/BFS |
+| 261 | Graph Valid Tree | Medium | Graph DFS/BFS |
+| 323 | Number of Connected Components | Medium | Components |
+| 1971 | Find if Path Exists in Graph | Easy | Reachability |
+| 207 | Course Schedule | Medium | Directed cycle/toposort |
+| 210 | Course Schedule II | Medium | Topological sort |
+| 417 | Pacific Atlantic Water Flow | Medium | Reverse DFS/BFS |
+| 130 | Surrounded Regions | Medium | Border DFS/BFS |
+| 79 | Word Search | Medium | DFS backtracking |
+
+
+## 54. Practice Ladder
+
+### Level 1: Tree traversal basics
+
+```text
+Binary Tree Inorder Traversal
+Preorder Traversal
+Postorder Traversal
+Maximum Depth
+Same Tree
+Invert Binary Tree
+```
+
+Exit:
+
+```text
+Candidate can write recursive DFS and explain base case.
+```
+
+### Level 2: BFS level basics
+
+```text
+Binary Tree Level Order Traversal
+Maximum Depth BFS
+Path Sum
+```
+
+Exit:
+
+```text
+Candidate can use queue and process levels.
+```
+
+### Level 3: Grid DFS/BFS
+
+```text
+Flood Fill
+Number of Islands
+Max Area of Island
+Surrounded Regions
+```
+
+Exit:
+
+```text
+Candidate handles boundaries and visited state.
+```
+
+### Level 4: Graph basics
+
+```text
+Find if Path Exists
+Clone Graph
+Connected Components
+Graph Valid Tree
+```
+
+Exit:
+
+```text
+Candidate builds adjacency list and handles cycles/components.
+```
+
+### Level 5: BFS distance and dependency graphs
+
+```text
+Rotting Oranges
+Walls and Gates
+Course Schedule
+Course Schedule II
+Pipeline execution order
+Lineage path
+```
+
+Exit:
+
+```text
+Candidate chooses BFS for distance and topological sort for dependencies.
+```
+
+
+## 55. 7-Day BFS/DFS Plan
+
+### Day 1: DFS recursion basics
+
+Problems:
+
+```text
+Inorder Traversal
+Maximum Depth
+Same Tree
+Invert Binary Tree
+```
+
+Focus:
+
+```text
+base case
+recursive calls
+tree height complexity
+```
+
+### Day 2: BFS queue basics
+
+Problems:
+
+```text
+Level Order Traversal
+Maximum Depth BFS
+Shortest hops custom problem
+```
+
+Focus:
+
+```text
+deque
+level-size loop
+distance tracking
+```
+
+### Day 3: Grid DFS
+
+Problems:
+
+```text
+Flood Fill
+Number of Islands
+Max Area of Island
+```
+
+Focus:
+
+```text
+boundary checks
+visited/mutation
+directions
+```
+
+### Day 4: Grid BFS
+
+Problems:
+
+```text
+Rotting Oranges
+Walls and Gates
+Surrounded Regions
+```
+
+Focus:
+
+```text
+multi-source BFS
+minutes/levels
+border traversal
+```
+
+### Day 5: Graph basics
+
+Problems:
+
+```text
+Find if Path Exists
+Connected Components
+Clone Graph
+Graph Valid Tree
+```
+
+Focus:
+
+```text
+adjacency list
+visited
+components
+copy map
+```
+
+### Day 6: Dependencies and cycles
+
+Problems:
+
+```text
+Course Schedule
+Course Schedule II
+Pipeline cycle detection
+Pipeline execution order
+```
+
+Focus:
+
+```text
+directed cycle detection
+visiting/visited
+indegree topological sort
+```
+
+### Day 7: Data Engineering mock
+
+Problems:
+
+```text
+Downstream impact
+Upstream dependencies
+Lineage path
+Nested JSON field paths
+Group related records
+```
+
+Focus:
+
+```text
+explain DE relevance
+write clean code
+handle edge cases
+```
+
+
+## 56. 30-Day BFS/DFS Plan
+
+### Week 1: Tree DFS and BFS
+
+Focus:
+
+```text
+recursive DFS
+iterative DFS
+queue BFS
+level order
+path problems
+```
+
+Problems:
+
+```text
+94, 144, 145, 104, 100, 226, 102, 112
+```
+
+Exit:
+
+```text
+Candidate can traverse trees without confusion.
+```
+
+### Week 2: Grid traversal
+
+Focus:
+
+```text
+directions
+boundaries
+visited
+connected cells
+multi-source BFS
+```
+
+Problems:
+
+```text
+733, 200, 695, 994, 286, 130
+```
+
+Exit:
+
+```text
+Candidate can solve grid DFS/BFS with correct boundaries.
+```
+
+### Week 3: Graph representation and components
+
+Focus:
+
+```text
+adjacency list
+directed vs undirected
+reachability
+components
+clone graph
+valid tree
+```
+
+Problems:
+
+```text
+1971, 323, 133, 261
+```
+
+Exit:
+
+```text
+Candidate can build graph and traverse disconnected/cyclic graphs.
+```
+
+### Week 4: Dependency graphs and Data Engineering custom
+
+Focus:
+
+```text
+cycle detection
+topological sort
+lineage traversal
+upstream/downstream impact
+nested JSON DFS
+mock interviews
+```
+
+Problems:
+
+```text
+207, 210, custom lineage/path/execution/nested JSON problems
+```
+
+Exit:
+
+```text
+Average score >= 4/5 on BFS/DFS mock set.
+```
+
+
+## 57. BFS/DFS Mock Set 1: Beginner
+
+Problems:
+
+```text
+1. Maximum Depth of Binary Tree
+2. Same Tree
+3. Flood Fill
+4. Find if Path Exists in Graph
+5. Downstream impact custom problem
+```
+
+Expected skills:
+
+```text
+DFS base case
+BFS/DFS reachability
+grid boundary checks
+visited set
+adjacency list
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No missing visited set.
+Correct complexity.
+```
+
+
+## 58. BFS/DFS Mock Set 2: Core Medium
+
+Problems:
+
+```text
+1. Binary Tree Level Order Traversal
+2. Number of Islands
+3. Max Area of Island
+4. Number of Connected Components
+5. Clone Graph
+```
+
+Expected skills:
+
+```text
+BFS queue
+DFS grid
+components
+graph copying
+visited/copy map
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles disconnected graphs and grid boundaries.
+```
+
+
+## 59. BFS/DFS Mock Set 3: Data Engineering Flavor
+
+Problems:
+
+```text
+1. Pipeline reachability.
+2. Find lineage path with parent map.
+3. Return all upstream dependencies.
+4. Detect pipeline cycle.
+5. Extract nested JSON field paths.
+```
+
+Expected skills:
+
+```text
+directed graph
+reverse graph
+BFS parent map
+DFS cycle detection
+recursive nested traversal
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains DE relevance and failure scenarios.
+```
+
+
+## 60. BFS/DFS Mock Set 4: Strong Candidate
+
+Problems:
+
+```text
+1. Rotting Oranges
+2. Course Schedule
+3. Course Schedule II
+4. Pacific Atlantic Water Flow
+5. Word Search
+```
+
+Expected skills:
+
+```text
+multi-source BFS
+topological sort
+reverse traversal
+DFS backtracking
+cycle detection
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles follow-ups and explains pattern choices clearly.
+```
+
+
+## 61. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Easy tree/graph problem
+
+```text
+10-15 minutes
+```
+
+### Medium grid/graph problem
+
+```text
+25-35 minutes
+```
+
+### Course schedule/toposort/advanced grid
+
+```text
+35-45 minutes
+```
+
+Per problem:
+
+```text
+Minute 0-3:
+Restate problem, identify graph/tree/grid.
+
+Minute 3-6:
+Choose BFS/DFS and explain why.
+
+Minute 6-20:
+Code solution.
+
+Minute 20-25:
+Dry run edge case and explain complexity.
+
+Remaining:
+Follow-up variation.
+```
+
+If candidate cannot identify representation in 5 minutes:
+
+```text
+Switch to pattern-mapper-mode.md.
+```
+
+If candidate forgets visited repeatedly:
+
+```text
+Switch to weakness-repair-mode.md.
+```
+
+
+## 62. Review Checklist
+
+Review BFS/DFS solutions using:
+
+```text
+1. Did candidate identify nodes and edges?
+2. Did candidate choose BFS/DFS correctly?
+3. Did candidate explain why?
+4. Did candidate build correct adjacency list if needed?
+5. Did candidate handle directed vs undirected correctly?
+6. Did candidate use visited set correctly?
+7. Did candidate avoid list.pop(0)?
+8. Did candidate handle disconnected components?
+9. Did candidate handle grid boundaries?
+10. Did candidate handle empty input?
+11. Did candidate avoid recursion depth risk when relevant?
+12. Did candidate explain time complexity?
+13. Did candidate explain space complexity?
+14. Did candidate dry run?
+15. Did candidate handle follow-up?
+```
+
+Verdict examples:
+
+```text
+Correct traversal but missing disconnected components.
+Correct BFS but inefficient queue.
+Correct grid idea but boundary bug.
+Correct DFS but recursion depth risk not mentioned.
+Interview-ready.
+Strong.
+```
+
+
+## 63. Weakness Repair Map
+
+Use this map when the candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Forgets visited | Run cycle graph drills and explain infinite loop |
+| Uses list.pop(0) | Replace with deque drills |
+| Cannot choose BFS vs DFS | Classification drills |
+| Misses disconnected components | Connected components drills |
+| Grid boundary bugs | Grid template drills |
+| Directed/undirected confusion | Adjacency-list construction drills |
+| DFS cycle detection wrong | visiting/visited repair |
+| Toposort confusion | indegree drills |
+| Recursion depth ignored | iterative DFS drills |
+| Cannot explain complexity | V + E explanation drills |
+| Cannot connect to DE | lineage/pipeline custom drills |
+| Cannot reconstruct path | BFS parent map drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 64. Communication Scripts
+
+### BFS script
+
+```text
+I use BFS because the problem asks for minimum steps/nearest target/level order. BFS explores nodes level by level using a queue, so the first time we reach a node is the shortest distance in an unweighted graph.
+```
+
+### DFS script
+
+```text
+I use DFS because I need to explore an entire connected region/path. I will mark each visited node to avoid revisiting cycles.
+```
+
+### Grid script
+
+```text
+I treat each cell as a node and its up/down/left/right cells as neighbors. I check boundaries and visited state before recursing or enqueueing.
+```
+
+### Connected components script
+
+```text
+Because the graph may be disconnected, I need to start traversal from every unvisited node and count each new traversal as one component.
+```
+
+### Topological sort script
+
+```text
+Because tasks have directed dependencies, I need to detect cycles and produce an order where prerequisites come before dependent tasks.
+```
+
+### Data Engineering script
+
+```text
+This is similar to lineage traversal: tables are nodes, dependencies are directed edges, and BFS/DFS tells us what upstream or downstream datasets are affected.
+```
+
+
+## 65. Candidate Self-Review Questions
+
+After every BFS/DFS problem, candidate should answer:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Is the graph directed or undirected?
+4. Is the graph connected or possibly disconnected?
+5. Why BFS or DFS?
+6. What is the visited state?
+7. What is the start node or start nodes?
+8. What edge cases matter?
+9. What is time complexity?
+10. What is space complexity?
+11. Could recursion depth be a problem?
+12. How does this map to a Data Engineering scenario?
+```
+
+If candidate cannot answer these:
+
+```text
+The problem is not fully learned.
+```
+
+
+## 66. Maintenance Drills
+
+After completing BFS/DFS basics, maintain skill with:
+
+```text
+1 tree DFS problem per week
+1 BFS level-order or shortest-path problem per week
+1 grid DFS/BFS problem per week
+1 graph components/reachability problem per week
+1 dependency graph/toposort problem every 2 weeks
+1 Data Engineering lineage custom problem per week
+```
+
+Maintenance rotation:
+
+```text
+Week 1: tree + grid
+Week 2: graph + dependency
+Week 3: multi-source BFS + nested JSON DFS
+Week 4: mixed mock
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed pattern.
+```
+
+
+## 67. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# BFS/DFS Basics Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Pattern | Difficulty | Score | Time | Mistake | Next Action
+
+## Pattern Scores
+
+Tree DFS:
+Tree BFS:
+Grid DFS:
+Grid BFS:
+Multi-source BFS:
+Graph reachability:
+Connected components:
+Clone graph:
+Directed cycle:
+Topological sort:
+Data lineage traversal:
+Nested structure DFS:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 68. Final Exit Test
+
+Candidate passes BFS/DFS basics when they can solve:
+
+```text
+1. Maximum Depth of Binary Tree
+2. Binary Tree Level Order Traversal
+3. Number of Islands
+4. Max Area of Island
+5. Flood Fill
+6. Rotting Oranges
+7. Find if Path Exists in Graph
+8. Number of Connected Components
+9. Clone Graph
+10. Course Schedule
+11. Course Schedule II
+12. Data Engineering: downstream impact
+13. Data Engineering: upstream dependencies
+14. Data Engineering: lineage path
+15. Data Engineering: nested JSON field paths
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No missing visited state.
+No queue inefficiency with pop(0).
+No grid boundary confusion.
+No directed/undirected graph confusion.
+Can explain O(V + E) and O(rows * cols).
+Can explain Data Engineering relevance.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles variations and pressure follow-ups.
+```
+
+
+## 69. Final Summary
+
+BFS and DFS are foundational traversal patterns.
+
+For Data Engineering candidates, they map directly to:
+
+```text
+pipeline DAGs
+data lineage
+dependency graphs
+nested JSON
+file trees
+connected entities
+source-target impact analysis
+shortest hop analysis
+grid/matrix processing
+```
+
+The candidate must master:
+
+```text
+BFS with queue
+DFS recursion
+DFS iterative stack
+visited set
+adjacency list
+grid directions
+connected components
+multi-source BFS
+cycle detection basics
+topological sort basics
+path reconstruction
+```
+
+The mentor must be strict:
+
+```text
+No visited state in cyclic graph → not interview-ready.
+No BFS/DFS reasoning → not interview-ready.
+No complexity explanation → not interview-ready.
+Only sample works → not interview-ready.
+```
+
+The goal is not to memorize graph problems.
+
+The goal is to recognize traversal structure and explain it clearly under interview pressure.
+
+
+## 70. Problem Card Appendix
+
+### Card 1: Binary Tree Inorder Traversal
+
+LeetCode:
+
+```text
+94. Binary Tree Inorder Traversal
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS tree
+```
+
+Core idea:
+
+```text
+left → root → right
+```
+
+Data Engineering connection:
+
+```text
+Nested structure traversal.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Binary Tree Preorder Traversal
+
+LeetCode:
+
+```text
+144. Binary Tree Preorder Traversal
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS tree
+```
+
+Core idea:
+
+```text
+root → left → right
+```
+
+Data Engineering connection:
+
+```text
+Process parent before children.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Binary Tree Postorder Traversal
+
+LeetCode:
+
+```text
+145. Binary Tree Postorder Traversal
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS tree
+```
+
+Core idea:
+
+```text
+left → right → root
+```
+
+Data Engineering connection:
+
+```text
+Process dependencies before parent.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Maximum Depth of Binary Tree
+
+LeetCode:
+
+```text
+104. Maximum Depth of Binary Tree
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS/BFS tree
+```
+
+Core idea:
+
+```text
+1 + max(left depth, right depth)
+```
+
+Data Engineering connection:
+
+```text
+Find depth of nested structure.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Same Tree
+
+LeetCode:
+
+```text
+100. Same Tree
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS comparison
+```
+
+Core idea:
+
+```text
+Compare current nodes and subtrees.
+```
+
+Data Engineering connection:
+
+```text
+Compare nested schemas.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Invert Binary Tree
+
+LeetCode:
+
+```text
+226. Invert Binary Tree
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS/BFS transform
+```
+
+Core idea:
+
+```text
+Swap children recursively or iteratively.
+```
+
+Data Engineering connection:
+
+```text
+Transform tree-like structures.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Binary Tree Level Order Traversal
+
+LeetCode:
+
+```text
+102. Binary Tree Level Order Traversal
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+BFS level order
+```
+
+Core idea:
+
+```text
+Process queue level by level.
+```
+
+Data Engineering connection:
+
+```text
+Process tasks by dependency level.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Path Sum
+
+LeetCode:
+
+```text
+112. Path Sum
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+DFS root-to-leaf
+```
+
+Core idea:
+
+```text
+Subtract node value and check leaf.
+```
+
+Data Engineering connection:
+
+```text
+Path cost validation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Number of Islands
+
+LeetCode:
+
+```text
+200. Number of Islands
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Grid components
+```
+
+Core idea:
+
+```text
+Start DFS/BFS at each unvisited land cell.
+```
+
+Data Engineering connection:
+
+```text
+Connected record groups.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: Max Area of Island
+
+LeetCode:
+
+```text
+695. Max Area of Island
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Grid DFS/BFS
+```
+
+Core idea:
+
+```text
+Return area of each connected land region.
+```
+
+Data Engineering connection:
+
+```text
+Largest related cluster.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Flood Fill
+
+LeetCode:
+
+```text
+733. Flood Fill
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Grid DFS/BFS
+```
+
+Core idea:
+
+```text
+Change connected cells of original color.
+```
+
+Data Engineering connection:
+
+```text
+Label propagation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Rotting Oranges
+
+LeetCode:
+
+```text
+994. Rotting Oranges
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Multi-source BFS
+```
+
+Core idea:
+
+```text
+Each level equals one minute.
+```
+
+Data Engineering connection:
+
+```text
+Failure/impact spread over levels.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Walls and Gates
+
+LeetCode:
+
+```text
+286. Walls and Gates
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Multi-source BFS
+```
+
+Core idea:
+
+```text
+Start from all gates to fill nearest distance.
+```
+
+Data Engineering connection:
+
+```text
+Nearest source/gateway distance.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Clone Graph
+
+LeetCode:
+
+```text
+133. Clone Graph
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Graph DFS/BFS
+```
+
+Core idea:
+
+```text
+Use map original node → copy node.
+```
+
+Data Engineering connection:
+
+```text
+Clone metadata graph.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Graph Valid Tree
+
+LeetCode:
+
+```text
+261. Graph Valid Tree
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Graph DFS/BFS
+```
+
+Core idea:
+
+```text
+n-1 edges + connected.
+```
+
+Data Engineering connection:
+
+```text
+Validate dependency tree.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Connected Components
+
+LeetCode:
+
+```text
+323. Connected Components
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Components
+```
+
+Core idea:
+
+```text
+Start traversal from every unvisited node.
+```
+
+Data Engineering connection:
+
+```text
+Group related entities.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: Find if Path Exists
+
+LeetCode:
+
+```text
+1971. Find if Path Exists
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Reachability
+```
+
+Core idea:
+
+```text
+BFS/DFS from source to destination.
+```
+
+Data Engineering connection:
+
+```text
+Lineage reachability.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 18: Course Schedule
+
+LeetCode:
+
+```text
+207. Course Schedule
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Cycle detection/toposort
+```
+
+Core idea:
+
+```text
+Detect directed cycle.
+```
+
+Data Engineering connection:
+
+```text
+Pipeline DAG validation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 19: Course Schedule II
+
+LeetCode:
+
+```text
+210. Course Schedule II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Topological sort
+```
+
+Core idea:
+
+```text
+Return valid order or empty.
+```
+
+Data Engineering connection:
+
+```text
+Pipeline execution order.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 20: Pacific Atlantic Water Flow
+
+LeetCode:
+
+```text
+417. Pacific Atlantic Water Flow
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Reverse DFS/BFS
+```
+
+Core idea:
+
+```text
+Start from borders and reverse flow.
+```
+
+Data Engineering connection:
+
+```text
+Reverse lineage from sinks.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 21: Surrounded Regions
+
+LeetCode:
+
+```text
+130. Surrounded Regions
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Border DFS/BFS
+```
+
+Core idea:
+
+```text
+Mark border-connected safe cells.
+```
+
+Data Engineering connection:
+
+```text
+Boundary-safe records.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 22: Word Search
+
+LeetCode:
+
+```text
+79. Word Search
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+DFS backtracking
+```
+
+Core idea:
+
+```text
+Try paths and restore visited state.
+```
+
+Data Engineering connection:
+
+```text
+Constrained path search.
+```
+
+Candidate must be able to explain:
+
+```text
+1. What are the nodes?
+2. What are the edges?
+3. Why BFS or DFS?
+4. What is visited state?
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 71. Drill Appendix
+
+### Drill 1: BFS vs DFS Classification
+
+Task:
+
+```text
+Classify 20 prompts as BFS, DFS, either, or topological sort.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Tree DFS
+
+Task:
+
+```text
+Solve inorder, preorder, postorder, maximum depth.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Tree BFS
+
+Task:
+
+```text
+Solve level order and maximum depth using BFS.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Grid Boundary Repair
+
+Task:
+
+```text
+Write DFS grid template from memory and dry run on edges/corners.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Island Counting
+
+Task:
+
+```text
+Solve Number of Islands and Max Area of Island.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Multi-Source BFS
+
+Task:
+
+```text
+Solve Rotting Oranges and Walls and Gates.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Graph Construction
+
+Task:
+
+```text
+Build directed and undirected adjacency lists from edge lists.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Reachability
+
+Task:
+
+```text
+Solve Find if Path Exists and pipeline reachability.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Connected Components
+
+Task:
+
+```text
+Solve components and group related IDs.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Clone Graph
+
+Task:
+
+```text
+Solve clone graph using copy map.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Directed Cycle
+
+Task:
+
+```text
+Solve Course Schedule using visiting/visited sets.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Topological Sort
+
+Task:
+
+```text
+Solve Course Schedule II and pipeline execution order.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Path Reconstruction
+
+Task:
+
+```text
+Return lineage path using BFS parent map.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Reverse Graph
+
+Task:
+
+```text
+Find upstream dependencies by reversing edges.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Nested JSON DFS
+
+Task:
+
+```text
+Extract field paths from nested dict/list.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Directory DFS
+
+Task:
+
+```text
+Return all files from nested folder structure.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: Downstream Levels
+
+Task:
+
+```text
+Return impacted tables grouped by distance.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Mixed Mock
+
+Task:
+
+```text
+Run one tree, one grid, one graph, one dependency, one DE custom problem.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify nodes and edges.
+2. Choose traversal and explain why.
+3. Define visited state.
+4. Write clean Python.
+5. Dry run one edge case.
+6. Explain time and space complexity.
+7. Connect to Data Engineering if relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 72. Quick Reference Cards
+
+### Quick Card 1: BFS Queue
+
+Summary:
+
+```text
+Use deque and popleft. Best for shortest path/levels.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 2: DFS Recursion
+
+Summary:
+
+```text
+Use base case and visited. Best for connected exploration.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 3: Visited State
+
+Summary:
+
+```text
+Prevents infinite loops and duplicate work.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 4: Grid Directions
+
+Summary:
+
+```text
+Use [(1,0),(-1,0),(0,1),(0,-1)] unless diagonal allowed.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 5: Connected Components
+
+Summary:
+
+```text
+Loop over all nodes and start traversal from unvisited nodes.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 6: Multi-Source BFS
+
+Summary:
+
+```text
+Put all starting sources in queue before BFS begins.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 7: Topological Sort
+
+Summary:
+
+```text
+Use indegree queue or DFS cycle detection for directed dependencies.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 8: Parent Map
+
+Summary:
+
+```text
+Use parent dictionary to reconstruct path after BFS.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 9: Reverse Graph
+
+Summary:
+
+```text
+Reverse edges to find upstream nodes.
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```
+
+### Quick Card 10: Complexity
+
+Summary:
+
+```text
+Graph traversal O(V+E), grid traversal O(rows*cols), tree traversal O(n).
+```
+
+Interview check:
+
+```text
+Give one coding problem and one Data Engineering scenario where this applies.
+```

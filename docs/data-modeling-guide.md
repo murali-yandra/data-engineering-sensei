@@ -1,0 +1,2101 @@
+# Data Modeling Guide
+
+Generated: 2026-06-06
+
+This guide teaches **data modeling for Data Engineering interviews**.
+
+It is written for **Data Engineering Sensei**, a strict, no-sugarcoating Data Engineering interview mentor. The goal is not to memorize terms like fact table and dimension table. The goal is to make the candidate capable of designing, explaining, defending, and reviewing data models in interviews.
+
+Use this guide for:
+
+- Data modeling interview preparation
+- SQL interview reasoning
+- Data warehouse design
+- Data Engineering system design
+- Project deep dives
+- Analytics pipeline discussions
+- Resume/project explanation
+- Weakness repair for modeling gaps
+
+---
+
+## 1. What Data Modeling Means in Data Engineering Interviews
+
+Data modeling is the process of designing how data should be structured so it can be stored, queried, maintained, and trusted.
+
+In interviews, data modeling usually tests whether the candidate can answer:
+
+1. What is the business process?
+2. What is the grain?
+3. What are the facts?
+4. What are the dimensions?
+5. What history should be preserved?
+6. What keys are needed?
+7. How will analysts query this data?
+8. How will the model handle changes?
+9. How will the model avoid duplicates?
+10. How will the model scale?
+11. What trade-offs are being made?
+
+A weak candidate starts with tables.
+
+A strong candidate starts with business process and grain.
+
+---
+
+## 2. Interview Standard
+
+The mentor should not accept a data model answer that only lists tables.
+
+Weak answer:
+
+```text
+We need customer table, product table, orders table, and sales table.
+```
+
+This is incomplete.
+
+Strong answer:
+
+```text
+The business process is sales transactions. I would define the fact table grain as one row per order line item because revenue and quantity are measured at product-level per order. Dimensions would include customer, product, date, store/channel, and possibly promotion. Customer and product attributes may need SCD Type 2 if historical reporting must reflect values at the time of purchase.
+```
+
+A strong answer includes:
+
+- business process
+- grain
+- fact table
+- dimensions
+- keys
+- history
+- query patterns
+- trade-offs
+- data quality
+- late-arriving data
+- example queries
+
+---
+
+## 3. No-Sugarcoating Rule
+
+Data modeling mistakes can break downstream analytics.
+
+The mentor should be direct.
+
+Allowed feedback:
+
+```text
+You did not define grain. Without grain, your fact table design is not interview-ready.
+```
+
+```text
+You mixed dimensions and facts. This model will create confusing analytics and possible duplicate metrics.
+```
+
+```text
+You are creating one wide table because it feels simple, not because you evaluated query patterns or trade-offs.
+```
+
+```text
+For your experience level, not knowing SCD Type 2 is a serious gap.
+```
+
+Do not say “good try” without explaining what is wrong.
+
+---
+
+## 4. Data Modeling Mental Model
+
+Use this sequence for most modeling questions:
+
+```text
+1. Understand the business process
+2. Define the analytical questions
+3. Define the grain
+4. Identify facts
+5. Identify dimensions
+6. Define keys
+7. Decide history handling
+8. Choose schema style
+9. Handle late-arriving and changing data
+10. Add data quality rules
+11. Discuss performance and cost
+12. Summarize trade-offs
+```
+
+The most important step is grain.
+
+If grain is wrong, the model is usually wrong.
+
+---
+
+## 5. OLTP vs OLAP Modeling
+
+## 5.1 OLTP Modeling
+
+OLTP stands for Online Transaction Processing.
+
+It is used for operational systems.
+
+Examples:
+
+- payment system
+- order management system
+- user profile database
+- inventory system
+- banking transactions
+
+OLTP models are usually:
+
+- normalized
+- update-heavy
+- optimized for inserts/updates/deletes
+- designed for consistency
+- used by applications
+
+### Strong interview answer
+
+```text
+OLTP systems are optimized for transactions and operational consistency. They usually use normalized schemas to reduce duplication and maintain data integrity. They are not optimized for large analytical aggregations.
+```
+
+---
+
+## 5.2 OLAP Modeling
+
+OLAP stands for Online Analytical Processing.
+
+It is used for analytics and reporting.
+
+Examples:
+
+- data warehouse
+- BI dashboards
+- sales analytics
+- retention analysis
+- customer segmentation
+- product metrics
+
+OLAP models are usually:
+
+- denormalized
+- read-heavy
+- optimized for aggregations
+- organized around facts and dimensions
+- designed for analysts and reporting
+
+### Strong interview answer
+
+```text
+OLAP models are optimized for analytical queries. Instead of highly normalized transaction tables, we usually design facts and dimensions so analysts can aggregate metrics by business attributes like date, product, customer, and region.
+```
+
+---
+
+## 5.3 OLTP vs OLAP Interview Comparison
+
+| Area | OLTP | OLAP |
+|---|---|---|
+| Purpose | Transactions | Analytics |
+| Query type | point lookups, writes | scans, joins, aggregations |
+| Design | normalized | dimensional/denormalized |
+| Users | application systems | analysts, BI, ML, leadership |
+| Updates | frequent | batch/periodic/append/merge |
+| Example | orders DB | sales warehouse |
+
+### Common mistake
+
+Saying:
+
+```text
+A data warehouse is just a copy of the production database.
+```
+
+This is weak. A warehouse should be modeled for analytics, not blindly copied.
+
+---
+
+## 6. Normalization
+
+Normalization organizes data to reduce redundancy and maintain consistency.
+
+### Example
+
+Instead of storing customer_name in every order row, store customers separately and reference customer_id.
+
+### Benefits
+
+- less duplication
+- better consistency
+- easier updates
+- strong integrity
+
+### Trade-offs
+
+- more joins
+- less convenient for analytics
+- slower analytical queries if over-normalized
+- harder for business users
+
+### Interview-ready answer
+
+```text
+Normalization is useful in OLTP systems because it reduces duplication and update anomalies. In analytics, we often denormalize some data because read performance and ease of querying become more important.
+```
+
+---
+
+## 7. Denormalization
+
+Denormalization intentionally stores duplicated or pre-joined data to improve query performance or usability.
+
+### Benefits
+
+- faster analytical queries
+- fewer joins
+- easier for analysts
+- better dashboard performance
+
+### Risks
+
+- duplicated data
+- update complexity
+- inconsistency if not managed
+- larger storage
+
+### Strong answer
+
+```text
+Denormalization is common in warehouses because analytics often favors read performance and simplicity. The trade-off is duplicated data, so we need clear ownership and refresh logic to keep values consistent.
+```
+
+---
+
+## 8. Star Schema
+
+A star schema has a central fact table connected to dimension tables.
+
+```text
+              dim_customer
+                   |
+dim_product -- fact_sales -- dim_date
+                   |
+              dim_store
+```
+
+### Components
+
+- Fact table: measurable business events
+- Dimension tables: descriptive attributes
+- Foreign keys: connect fact to dimensions
+
+### Benefits
+
+- simple for analysts
+- good BI performance
+- clear metric grain
+- easy slicing and dicing
+
+### Strong answer
+
+```text
+A star schema is useful for analytics because it separates measurable events from descriptive attributes. The fact table stores metrics at a defined grain, and dimensions provide context for filtering and grouping.
+```
+
+### Weak answer
+
+```text
+Star schema has fact and dimension tables.
+```
+
+Correct but too shallow.
+
+---
+
+## 9. Snowflake Schema
+
+A snowflake schema normalizes dimension tables into sub-dimensions.
+
+Example:
+
+```text
+fact_sales → dim_product → dim_category
+```
+
+### Benefits
+
+- less dimension duplication
+- better consistency for large dimensions
+- normalized hierarchy
+
+### Trade-offs
+
+- more joins
+- more complex for analysts
+- potentially slower queries
+- harder BI usage
+
+### Strong answer
+
+```text
+A snowflake schema normalizes dimensions further. It can reduce duplication, but it adds joins and complexity. I would use it only when the hierarchy is large or reused enough to justify the complexity.
+```
+
+---
+
+## 10. Fact Tables
+
+A fact table stores measurable business events or states.
+
+Examples:
+
+- sales transactions
+- order line items
+- page views
+- payments
+- shipments
+- inventory snapshots
+- subscription events
+
+### Fact table contains
+
+- foreign keys to dimensions
+- measures
+- event timestamps
+- degenerate dimensions if useful
+- audit fields
+
+### Common measures
+
+- amount
+- quantity
+- cost
+- discount
+- duration
+- count
+- balance
+- score
+
+### Strong answer
+
+```text
+A fact table stores measurable events at a defined grain. For example, a sales fact table might have one row per order line item, with measures like quantity, gross revenue, discount, and net revenue.
+```
+
+---
+
+## 11. Dimension Tables
+
+A dimension table stores descriptive context.
+
+Examples:
+
+- customer
+- product
+- date
+- store
+- employee
+- region
+- campaign
+- device
+- merchant
+- account
+
+### Dimension table contains
+
+- dimension key
+- natural key
+- descriptive attributes
+- effective dates if history is tracked
+- current flag if SCD Type 2
+- audit fields
+
+### Strong answer
+
+```text
+Dimensions describe the facts. They provide the attributes analysts use to filter, group, and explain metrics. For sales, dimensions may include customer, product, date, region, and channel.
+```
+
+---
+
+## 12. Grain
+
+Grain defines what one row represents.
+
+This is the most important modeling concept.
+
+### Examples
+
+| Table | Possible Grain |
+|---|---|
+| fact_order | one row per order |
+| fact_order_line | one row per order line item |
+| fact_payment | one row per payment transaction |
+| fact_daily_inventory | one row per product per store per day |
+| fact_user_activity_daily | one row per user per day |
+| fact_page_view | one row per page view event |
+
+### Strong answer
+
+```text
+Before designing the table, I define the grain. If the business wants product-level revenue, one row per order line item is better than one row per order, because an order can contain multiple products.
+```
+
+### Common grain mistakes
+
+- not defining grain
+- mixing grains in one fact table
+- storing order-level and order-line-level measures together incorrectly
+- joining fact tables and multiplying metrics
+- using DISTINCT to hide grain issues
+- aggregating before understanding row level
+
+### Mentor correction
+
+```text
+Stop. You have not defined what one row represents. Without grain, your model is not valid.
+```
+
+---
+
+## 13. Additive, Semi-Additive, and Non-Additive Facts
+
+## 13.1 Additive Facts
+
+Can be summed across all dimensions.
+
+Examples:
+
+- revenue
+- quantity
+- cost
+- number of clicks
+- number of orders
+
+### Strong answer
+
+```text
+Revenue is additive because it can usually be summed across date, product, customer, and region.
+```
+
+---
+
+## 13.2 Semi-Additive Facts
+
+Can be summed across some dimensions but not all.
+
+Examples:
+
+- account balance
+- inventory quantity
+- daily active users snapshot
+- end-of-day stock
+
+### Strong answer
+
+```text
+Inventory balance is semi-additive. We can sum it across products or stores for a given day, but summing across dates would double-count inventory.
+```
+
+---
+
+## 13.3 Non-Additive Facts
+
+Cannot be summed directly.
+
+Examples:
+
+- ratios
+- percentages
+- averages
+- conversion rate
+- margin percentage
+
+### Strong answer
+
+```text
+Conversion rate is non-additive. We should store numerator and denominator, then calculate the rate at query time to avoid incorrect aggregation.
+```
+
+### Common mistake
+
+Averaging averages.
+
+Mentor correction:
+
+```text
+Do not average precomputed averages unless you know the weighting. Store base measures and calculate the ratio at the correct grain.
+```
+
+---
+
+## 14. Keys
+
+## 14.1 Natural Key
+
+A natural key comes from the source/business system.
+
+Examples:
+
+- customer_id from CRM
+- product_sku
+- email
+- account_number
+- transaction_id
+
+### Risk
+
+Natural keys can change, be reused, or differ across systems.
+
+---
+
+## 14.2 Surrogate Key
+
+A surrogate key is generated in the warehouse.
+
+Examples:
+
+- customer_key
+- product_key
+- date_key
+
+### Why useful
+
+- stable warehouse joins
+- supports SCD Type 2
+- decouples warehouse from source keys
+- handles multiple source systems
+
+### Strong answer
+
+```text
+I would use surrogate keys in dimensions, especially when tracking history with SCD Type 2. The natural key identifies the business entity, while the surrogate key identifies a specific version of that entity.
+```
+
+---
+
+## 15. Slowly Changing Dimensions
+
+Slowly Changing Dimensions handle changes in dimension attributes over time.
+
+Example:
+
+A customer moves from Bengaluru to Mumbai. Should historical sales be reported under old city or new city?
+
+That depends on business requirement.
+
+---
+
+## 15.1 SCD Type 1
+
+Overwrite old value.
+
+### Example
+
+Customer city changes from Bengaluru to Mumbai. Update the row.
+
+### Good for
+
+- corrections
+- attributes where history is not needed
+- simple models
+
+### Trade-off
+
+History is lost.
+
+### Strong answer
+
+```text
+SCD Type 1 overwrites old values. It is simple and useful for corrections, but it does not preserve history.
+```
+
+---
+
+## 15.2 SCD Type 2
+
+Create a new version row and preserve history.
+
+### Example
+
+```text
+customer_key | customer_id | city      | effective_start | effective_end | is_current
+101          | C1          | Bengaluru | 2023-01-01      | 2024-05-31    | false
+205          | C1          | Mumbai    | 2024-06-01      | null          | true
+```
+
+### Good for
+
+- historical reporting
+- compliance
+- changing customer/product attributes
+- analytics that depend on historical context
+
+### Trade-off
+
+- more complex ETL
+- joins need date logic or correct surrogate key
+- more rows
+- must handle late-arriving facts
+
+### Strong answer
+
+```text
+SCD Type 2 preserves history by creating a new row for each version of a dimension. Facts should link to the correct dimension version so historical reports reflect the attribute value at the time of the event.
+```
+
+---
+
+## 15.3 SCD Type 3
+
+Store limited history in additional columns.
+
+Example:
+
+```text
+current_region
+previous_region
+```
+
+### Good for
+
+- limited previous value tracking
+- simple reporting
+
+### Trade-off
+
+Only limited history is preserved.
+
+---
+
+## 16. Fact Table Types
+
+## 16.1 Transaction Fact
+
+Stores individual business events.
+
+Examples:
+
+- order line item
+- payment
+- shipment
+- click event
+
+### Grain
+
+One row per transaction/event.
+
+### Strong answer
+
+```text
+A transaction fact captures individual business events at the lowest useful grain, such as one row per order line item.
+```
+
+---
+
+## 16.2 Periodic Snapshot Fact
+
+Stores state at regular intervals.
+
+Examples:
+
+- daily inventory by product/store
+- daily account balance
+- monthly subscription status
+
+### Grain
+
+One row per entity per period.
+
+### Strong answer
+
+```text
+A periodic snapshot fact captures state at fixed intervals, such as inventory quantity per product per store per day. It is useful for trend analysis, but measures like balance are semi-additive.
+```
+
+---
+
+## 16.3 Accumulating Snapshot Fact
+
+Tracks a process through milestones.
+
+Examples:
+
+- order lifecycle
+- loan application process
+- shipment process
+- support ticket lifecycle
+
+### Columns
+
+- order_created_date
+- payment_date
+- shipped_date
+- delivered_date
+- cancelled_date
+
+### Strong answer
+
+```text
+An accumulating snapshot is useful for tracking a process with known milestones, such as order-to-delivery. The row is updated as the process moves through stages.
+```
+
+---
+
+## 17. Degenerate Dimension
+
+A degenerate dimension is a dimension-like value stored in the fact table.
+
+Examples:
+
+- order_number
+- invoice_number
+- ticket_number
+- transaction_id
+
+It has no separate dimension table because there are no descriptive attributes.
+
+### Strong answer
+
+```text
+Order number can be a degenerate dimension in the fact table because it is useful for tracing but does not need a separate dimension table.
+```
+
+---
+
+## 18. Junk Dimension
+
+A junk dimension groups low-cardinality flags and indicators.
+
+Examples:
+
+- is_gift
+- is_returned
+- payment_type_flag
+- customer_type_flag
+
+### Strong answer
+
+```text
+A junk dimension can combine several small flags into one dimension to avoid cluttering the fact table with many low-cardinality columns.
+```
+
+Use only if it simplifies the model.
+
+---
+
+## 19. Bridge Table
+
+A bridge table handles many-to-many relationships.
+
+Example:
+
+A customer can belong to multiple segments.
+
+```text
+dim_customer
+bridge_customer_segment
+dim_segment
+```
+
+### Strong answer
+
+```text
+I would use a bridge table when there is a many-to-many relationship, such as customers belonging to multiple segments. This avoids duplicating dimension rows or incorrectly multiplying facts.
+```
+
+### Common mistake
+
+Joining many-to-many dimensions directly and multiplying metrics.
+
+---
+
+## 20. Role-Playing Dimensions
+
+A role-playing dimension is the same dimension used in different roles.
+
+Example:
+
+Date dimension used as:
+
+- order_date
+- ship_date
+- delivery_date
+- cancellation_date
+
+### Strong answer
+
+```text
+A date dimension can play multiple roles in a fact table. For an order fact, order_date_key, ship_date_key, and delivery_date_key may all reference the same dim_date.
+```
+
+---
+
+## 21. Conformed Dimensions
+
+A conformed dimension is shared across fact tables.
+
+Examples:
+
+- dim_customer used by sales and support facts
+- dim_product used by sales and inventory facts
+- dim_date used everywhere
+
+### Strong answer
+
+```text
+Conformed dimensions allow consistent reporting across business processes. If sales and support both use the same customer dimension, analysts can compare metrics consistently.
+```
+
+---
+
+## 22. Date Dimension
+
+A date dimension provides rich date attributes.
+
+Columns:
+
+- date_key
+- full_date
+- day
+- month
+- quarter
+- year
+- day_of_week
+- week_number
+- fiscal_period
+- is_weekend
+- is_holiday
+
+### Strong answer
+
+```text
+A date dimension simplifies reporting by storing reusable date attributes like month, quarter, fiscal period, and holiday flags.
+```
+
+---
+
+## 23. Data Mart
+
+A data mart is a subject-specific analytics layer.
+
+Examples:
+
+- sales mart
+- finance mart
+- marketing mart
+- product analytics mart
+- customer support mart
+
+### Strong answer
+
+```text
+A data mart is a curated dataset or schema focused on a business domain. It makes analytics easier for a specific team while relying on governed shared data underneath.
+```
+
+---
+
+## 24. Metrics Layer
+
+A metrics layer defines consistent business metrics.
+
+Examples:
+
+- revenue
+- active users
+- churn rate
+- conversion rate
+- retention
+- gross margin
+
+### Why it matters
+
+Without a metrics layer, different teams may calculate the same metric differently.
+
+### Strong answer
+
+```text
+A metrics layer centralizes definitions for business metrics so dashboards and teams use consistent logic. This reduces metric disputes and duplicated SQL.
+```
+
+---
+
+## 25. Modeling Process in Interviews
+
+Use this exact process.
+
+```text
+1. Clarify business goal
+2. Ask analytical questions
+3. Identify source entities
+4. Define grain
+5. Identify facts
+6. Identify dimensions
+7. Choose keys
+8. Choose SCD strategy
+9. Handle late-arriving data
+10. Design schema
+11. Explain example queries
+12. Add quality checks
+13. Discuss trade-offs
+14. Summarize
+```
+
+If candidate skips grain, stop them.
+
+---
+
+## 26. Clarifying Questions for Modeling Interviews
+
+Ask:
+
+1. What business process are we modeling?
+2. What questions should analysts answer?
+3. What is the lowest useful level of detail?
+4. Are updates and deletes possible?
+5. Do we need historical reporting?
+6. How often does data arrive?
+7. What is the data volume?
+8. Who are the consumers?
+9. What dimensions change over time?
+10. What metrics must be accurate?
+11. Are there compliance or PII concerns?
+12. What are the common query patterns?
+
+---
+
+## 27. Modeling Scenario: E-Commerce Sales
+
+### Prompt
+
+```text
+Design a data model for e-commerce sales analytics.
+```
+
+### Strong design
+
+Business process:
+
+```text
+Customer places orders containing one or more products.
+```
+
+Grain:
+
+```text
+One row per order line item.
+```
+
+Fact table:
+
+```text
+fact_order_line
+```
+
+Measures:
+
+- quantity
+- unit_price
+- discount_amount
+- gross_revenue
+- net_revenue
+- tax_amount
+- shipping_amount
+
+Dimensions:
+
+- dim_customer
+- dim_product
+- dim_date
+- dim_payment_method
+- dim_channel
+- dim_promotion
+- dim_location
+
+Keys:
+
+- order_id as degenerate dimension
+- order_line_id as natural transaction identifier
+- customer_key
+- product_key
+- order_date_key
+
+SCD:
+
+- customer segment may be SCD Type 2
+- product category may be SCD Type 2 depending on reporting needs
+
+### Interview-ready explanation
+
+```text
+I would model sales at order-line grain because an order can contain multiple products. This allows product-level revenue analysis. The fact table stores measures like quantity and revenue, while dimensions provide customer, product, channel, date, and promotion context. I would preserve customer/product history with SCD Type 2 if reporting must reflect attributes at the time of purchase.
+```
+
+### Follow-up questions
+
+1. How do you handle returns?
+2. How do you handle cancelled orders?
+3. How do you handle product category changes?
+4. How do you calculate revenue?
+5. What if an order has multiple promotions?
+6. How do you avoid double counting?
+
+---
+
+## 28. Modeling Scenario: Subscription Analytics
+
+### Prompt
+
+```text
+Design a data model for subscription analytics.
+```
+
+### Business questions
+
+- active subscribers
+- churn rate
+- new subscriptions
+- renewals
+- monthly recurring revenue
+- plan upgrades/downgrades
+- retention
+
+### Possible facts
+
+```text
+fact_subscription_event
+fact_subscription_snapshot_daily
+fact_invoice
+```
+
+### Dimensions
+
+- dim_customer
+- dim_plan
+- dim_date
+- dim_region
+- dim_channel
+
+### Grain options
+
+Subscription event fact:
+
+```text
+One row per subscription event.
+```
+
+Daily snapshot fact:
+
+```text
+One row per subscription per day.
+```
+
+Invoice fact:
+
+```text
+One row per invoice or invoice line.
+```
+
+### Strong answer
+
+```text
+I would likely use both an event fact and a periodic snapshot. Events capture changes like subscribe, cancel, upgrade, and renew. A daily or monthly snapshot makes active subscriber and MRR reporting easier. The choice depends on query patterns and volume.
+```
+
+### Common mistake
+
+Trying to calculate all subscription metrics only from current state.
+
+---
+
+## 29. Modeling Scenario: Inventory
+
+### Prompt
+
+```text
+Design a model for inventory reporting.
+```
+
+### Grain
+
+Common grain:
+
+```text
+One row per product per warehouse/store per day.
+```
+
+### Fact type
+
+Periodic snapshot fact.
+
+```text
+fact_inventory_daily
+```
+
+### Measures
+
+- on_hand_quantity
+- reserved_quantity
+- available_quantity
+- reorder_level
+- inventory_value
+
+### Dimensions
+
+- dim_product
+- dim_location
+- dim_date
+- dim_supplier
+
+### Strong answer
+
+```text
+Inventory is usually modeled as a periodic snapshot because it represents state at a point in time. Quantity is semi-additive: we can sum across products or stores for one day, but summing inventory across multiple days would double count.
+```
+
+---
+
+## 30. Modeling Scenario: Clickstream Events
+
+### Prompt
+
+```text
+Design a model for user clickstream analytics.
+```
+
+### Grain
+
+```text
+One row per event.
+```
+
+### Fact table
+
+```text
+fact_user_event
+```
+
+### Measures
+
+Often event facts have few numeric measures, but can include:
+
+- event_count as 1
+- duration_ms
+- page_load_time
+- revenue_attributed if applicable
+
+### Dimensions
+
+- dim_user
+- dim_session
+- dim_device
+- dim_page
+- dim_campaign
+- dim_date
+- dim_geo
+
+### Design concerns
+
+- very high volume
+- partition by event_date
+- deduplicate by event_id
+- late-arriving events
+- sessionization
+- bot filtering
+- PII handling
+
+### Strong answer
+
+```text
+Clickstream should be modeled at event grain. Because volume can be high, I would partition by event_date and store events in columnar format. I would deduplicate by event_id and handle late-arriving events. Aggregated marts can support dashboards like daily active users, funnels, and retention.
+```
+
+---
+
+## 31. Modeling Scenario: Customer 360
+
+### Prompt
+
+```text
+Design a customer 360 model.
+```
+
+### Purpose
+
+A customer 360 combines information from multiple domains:
+
+- transactions
+- support tickets
+- marketing
+- product usage
+- profile
+- billing
+- subscriptions
+
+### Model approach
+
+Use conformed customer dimension and domain-specific facts.
+
+Possible tables:
+
+- dim_customer
+- fact_order_line
+- fact_support_ticket
+- fact_subscription_event
+- fact_user_activity_daily
+- fact_payment
+- customer_summary_mart
+
+### Strong answer
+
+```text
+I would avoid putting everything into one giant table. Instead, I would create a conformed customer dimension and connect domain-specific facts. A customer summary mart can be built on top for common use cases, but the underlying facts should preserve their own grain.
+```
+
+### Common mistake
+
+Creating one huge customer table with mixed grains and duplicated metrics.
+
+---
+
+## 32. Handling Returns and Cancellations
+
+Returns and cancellations can be modeled in different ways.
+
+### Options
+
+1. Negative transaction rows
+2. Separate return fact
+3. Status field on order fact
+4. Accumulating snapshot for order lifecycle
+
+### Strong answer
+
+```text
+For returns, I might use a separate return fact or negative adjustment rows depending on reporting needs. The key is to avoid double counting and make net revenue calculation clear.
+```
+
+### Follow-up questions
+
+1. Should cancelled orders count in gross orders?
+2. Should returns reduce revenue on return date or original order date?
+3. Do we need reason codes?
+4. Are partial returns possible?
+
+---
+
+## 33. Late-Arriving Facts
+
+A late-arriving fact is a fact that arrives after expected time.
+
+Example:
+
+An order from Monday arrives on Wednesday.
+
+### Handling strategies
+
+- process based on event date
+- update affected partitions
+- use backfill/reprocessing
+- monitor late data rate
+- keep raw data
+- design idempotent loads
+
+### Strong answer
+
+```text
+For late-arriving facts, I would process them into the correct event-date partition and update downstream aggregates. The pipeline should support reprocessing affected partitions rather than only appending to today's data.
+```
+
+---
+
+## 34. Late-Arriving Dimensions
+
+A late-arriving dimension happens when fact data arrives before the dimension record is available.
+
+Example:
+
+Order arrives with customer_id, but customer dimension has not loaded yet.
+
+### Handling strategies
+
+- unknown member row
+- inferred dimension row
+- retry dimension lookup
+- update later when dimension arrives
+- maintain natural key mapping
+
+### Strong answer
+
+```text
+If a fact arrives before the dimension, I can use an unknown or inferred dimension member temporarily, then update the relationship when the dimension arrives. The choice depends on reporting accuracy and pipeline complexity.
+```
+
+---
+
+## 35. Handling Duplicates
+
+Duplicates can come from:
+
+- source retries
+- pipeline retries
+- CDC replay
+- duplicate files
+- event producer bugs
+- join multiplication
+
+### Modeling strategies
+
+- define natural keys
+- use unique constraints where possible
+- deduplicate in staging
+- use ROW_NUMBER for latest records
+- enforce grain
+- validate row counts
+- monitor duplicate rate
+
+### Strong answer
+
+```text
+I would define the expected grain and natural key, deduplicate in staging using deterministic rules, and add quality checks to prevent duplicate facts from being published.
+```
+
+---
+
+## 36. Data Quality Rules for Models
+
+For fact tables:
+
+- primary/natural key uniqueness
+- not null foreign keys where required
+- valid date keys
+- non-negative measures when expected
+- referential integrity
+- row count checks
+- duplicate checks
+- accepted status values
+- freshness checks
+
+For dimension tables:
+
+- one current row per natural key for SCD Type 2
+- effective date ranges do not overlap
+- required attributes not null
+- natural key uniqueness
+- surrogate key uniqueness
+- valid current flag
+
+### Strong answer
+
+```text
+Data modeling should include quality rules. For SCD Type 2 dimensions, I would check that only one current row exists per natural key and that effective date ranges do not overlap.
+```
+
+---
+
+## 37. Performance Considerations
+
+Data models should support query performance.
+
+Techniques:
+
+- partition large facts by date
+- cluster/sort by common filter columns
+- use aggregate tables for dashboards
+- avoid unnecessary snowflaking
+- avoid many-to-many joins without bridge logic
+- avoid mixed-grain tables
+- use columnar storage
+- materialize expensive transformations when needed
+
+### Strong answer
+
+```text
+For a large fact table, I would partition by event or transaction date and optimize for common query patterns. If dashboards repeatedly query the same aggregates, I may create an aggregate mart.
+```
+
+---
+
+## 38. Data Modeling and SQL Interview Connection
+
+Many SQL mistakes are modeling mistakes.
+
+Examples:
+
+| SQL Mistake | Modeling Cause |
+|---|---|
+| duplicate revenue after join | wrong grain or many-to-many join |
+| need DISTINCT everywhere | unclear keys or duplicate data |
+| wrong aggregation | fact grain misunderstood |
+| wrong historical reporting | SCD not handled |
+| slow queries | poor partitioning/modeling |
+| inconsistent metrics | no metrics layer |
+
+### Mentor note
+
+If the candidate struggles in SQL with duplicate rows, check their understanding of grain and joins.
+
+---
+
+## 39. Wide Table vs Star Schema
+
+## 39.1 Wide Table
+
+A wide table has many attributes joined into one table.
+
+### Benefits
+
+- easy for analysts
+- fewer joins
+- dashboard-friendly
+- faster simple queries
+
+### Risks
+
+- duplicated attributes
+- hard to maintain
+- unclear grain
+- large storage
+- harder history handling
+
+## 39.2 Star Schema
+
+Benefits:
+
+- clear facts/dimensions
+- reusable dimensions
+- consistent modeling
+- better governance
+
+Risks:
+
+- joins required
+- harder for beginners
+- BI layer may need modeling
+
+### Strong answer
+
+```text
+A wide table may be useful for a specific dashboard or mart, but I would usually maintain a governed dimensional model underneath. The wide table can be a serving layer, not the only source of truth.
+```
+
+---
+
+## 40. Modeling for Metrics
+
+Metrics must be defined clearly.
+
+Example metric:
+
+```text
+Revenue
+```
+
+Questions:
+
+1. Gross or net?
+2. Include tax?
+3. Include shipping?
+4. Include cancelled orders?
+5. Subtract returns?
+6. Which date counts: order date, payment date, shipment date?
+7. Which currency?
+8. What timezone?
+9. What is the grain?
+10. Who owns the definition?
+
+### Strong answer
+
+```text
+Metric definitions should be explicit. For revenue, I would clarify gross vs net, returns, cancellations, taxes, currency, and date basis. Otherwise teams may report different numbers.
+```
+
+---
+
+## 41. Modeling for Historical Reporting
+
+Historical reporting asks:
+
+```text
+Should reports show the value as it was then or as it is now?
+```
+
+Example:
+
+Customer segment changed from Bronze to Gold.
+
+If analyzing last year's sales, should those sales show Bronze or Gold?
+
+Options:
+
+- current view: Type 1
+- historical view: Type 2
+- both views: maintain both current and historical attributes
+
+### Strong answer
+
+```text
+If historical accuracy matters, I would use SCD Type 2 so facts can be analyzed using the dimension attributes valid at the time of the event.
+```
+
+---
+
+## 42. Source-to-Target Mapping
+
+A source-to-target mapping defines how source fields map to model fields.
+
+Includes:
+
+- source table
+- source column
+- target table
+- target column
+- transformation logic
+- data type
+- nullable rule
+- default value
+- validation rule
+
+### Strong answer
+
+```text
+For production modeling, I would document source-to-target mappings so transformations are traceable, testable, and easier to debug.
+```
+
+---
+
+## 43. Modeling Documentation
+
+A good model should document:
+
+- table purpose
+- grain
+- primary key
+- foreign keys
+- source systems
+- refresh frequency
+- owner
+- SLA
+- key columns
+- metric definitions
+- quality rules
+- history handling
+- known limitations
+
+### Mentor correction
+
+```text
+If you cannot explain the grain and owner of a table, the model is not properly documented.
+```
+
+---
+
+## 44. Interview Questions
+
+## 44.1 Basic Questions
+
+1. What is data modeling?
+2. What is the difference between OLTP and OLAP?
+3. What is normalization?
+4. What is denormalization?
+5. What is a fact table?
+6. What is a dimension table?
+7. What is grain?
+8. What is a star schema?
+9. What is a snowflake schema?
+10. What is a surrogate key?
+
+## 44.2 Medium Questions
+
+1. Design a sales data model.
+2. What is SCD Type 2?
+3. How do you handle customer attribute changes?
+4. How do you avoid duplicate metrics?
+5. What is a periodic snapshot fact?
+6. What is a bridge table?
+7. How do you handle many-to-many relationships?
+8. How do you model returns?
+9. How do you model subscription analytics?
+10. How do you define revenue?
+
+## 44.3 Advanced Questions
+
+1. Design a customer 360 model.
+2. Design a data model for clickstream analytics.
+3. Design a model for inventory and explain semi-additive facts.
+4. Design a model that supports both current and historical reporting.
+5. How do you handle late-arriving facts and dimensions?
+6. How would you design a metrics layer?
+7. How do you handle source schema changes?
+8. How do you prevent metric inconsistency across teams?
+9. How do you migrate from raw source tables to dimensional model?
+10. How do you design a model for multi-tenant analytics?
+
+---
+
+## 45. Weak vs Strong Answers
+
+### Question: What is grain?
+
+Weak:
+
+```text
+Grain means level of data.
+```
+
+Strong:
+
+```text
+Grain defines what one row in a table represents. For example, in a sales fact table, the grain could be one row per order or one row per order line item. Choosing the wrong grain causes duplicate metrics and incorrect aggregation.
+```
+
+---
+
+### Question: What is SCD Type 2?
+
+Weak:
+
+```text
+It stores history.
+```
+
+Strong:
+
+```text
+SCD Type 2 stores history by creating a new dimension row when tracked attributes change. Each row has effective dates and usually a current flag. Facts should link to the correct dimension version for historical reporting.
+```
+
+---
+
+### Question: Star schema vs snowflake schema?
+
+Weak:
+
+```text
+Star is simple, snowflake is complex.
+```
+
+Strong:
+
+```text
+A star schema keeps dimensions denormalized around a central fact table, making analytics easier. A snowflake schema normalizes dimensions into sub-dimensions, reducing duplication but increasing joins and complexity. I would usually prefer star schema for BI unless dimension hierarchy reuse or consistency justifies snowflaking.
+```
+
+---
+
+### Question: How do you model inventory?
+
+Weak:
+
+```text
+Use product and inventory tables.
+```
+
+Strong:
+
+```text
+Inventory is usually a periodic snapshot fact with grain one row per product per location per day. Inventory quantity is semi-additive: it can be summed across products or locations for a day, but not across dates.
+```
+
+---
+
+## 46. Common Interview Red Flags
+
+Flag these:
+
+1. No grain defined.
+2. One huge table for everything.
+3. Mixing fact grains.
+4. Cannot explain fact vs dimension.
+5. Cannot explain SCD Type 2.
+6. Cannot handle historical reporting.
+7. Cannot handle many-to-many relationships.
+8. Cannot explain surrogate keys.
+9. Cannot handle late-arriving dimensions.
+10. Cannot define metrics clearly.
+11. Uses DISTINCT to fix modeling issues.
+12. Ignores data quality rules.
+13. Ignores query patterns.
+14. Ignores performance.
+15. No ownership of model decisions.
+16. No documentation.
+17. Cannot connect model to business questions.
+
+---
+
+## 47. Data Modeling Review Checklist
+
+When reviewing a candidate answer, check:
+
+```text
+Business process identified:
+Analytical questions clarified:
+Grain defined:
+Facts identified:
+Dimensions identified:
+Keys explained:
+SCD/history strategy explained:
+Many-to-many relationships handled:
+Late-arriving data considered:
+Metrics defined:
+Quality checks included:
+Query patterns considered:
+Performance discussed:
+Trade-offs explained:
+Schema summarized clearly:
+```
+
+If grain is missing, score low even if table names sound good.
+
+---
+
+## 48. Scoring Rubric
+
+### Score 0
+
+No usable modeling knowledge.
+
+Cannot explain:
+
+- fact
+- dimension
+- grain
+- schema
+
+### Score 1
+
+Knows terms but cannot design.
+
+May say:
+
+```text
+Fact table has numbers and dimension has descriptions.
+```
+
+But cannot apply it.
+
+### Score 2
+
+Can design simple tables but misses grain/history.
+
+Usually weak in:
+
+- SCD
+- keys
+- many-to-many
+- late data
+- query patterns
+
+### Score 3
+
+Can design basic star schema.
+
+Can explain:
+
+- grain
+- facts
+- dimensions
+- basic keys
+- simple SCD
+
+Needs improvement:
+
+- advanced cases
+- performance
+- historical reporting
+- quality rules
+
+### Score 4
+
+Interview-ready.
+
+Can design realistic models and defend:
+
+- grain
+- keys
+- SCD Type 2
+- fact types
+- many-to-many
+- metrics
+- quality
+- trade-offs
+
+### Score 5
+
+Strong.
+
+Can handle ambiguous business models, senior-level trade-offs, metrics governance, multi-domain models, and historical complexity.
+
+---
+
+## 49. Minimum Passing Standard
+
+Candidate must be able to:
+
+1. Define grain.
+2. Explain fact vs dimension.
+3. Design a simple star schema.
+4. Explain surrogate vs natural key.
+5. Explain SCD Type 1 and Type 2.
+6. Handle basic historical reporting.
+7. Explain transaction vs snapshot facts.
+8. Avoid mixed-grain tables.
+9. Define metrics clearly.
+10. Add quality checks.
+11. Explain trade-offs.
+
+---
+
+## 50. Strong Candidate Standard
+
+A strong candidate can also:
+
+1. Design customer 360 models.
+2. Handle many-to-many with bridge tables.
+3. Model subscriptions.
+4. Model inventory with semi-additive facts.
+5. Handle late-arriving dimensions.
+6. Design metrics layers.
+7. Explain conformed dimensions.
+8. Design marts for BI.
+9. Discuss performance and cost.
+10. Defend modeling decisions under follow-ups.
+
+---
+
+## 51. 7-Day Data Modeling Repair Plan
+
+### Day 1: OLTP vs OLAP, facts, dimensions, grain
+
+Drill:
+
+```text
+Explain the grain of orders, order lines, payments, and inventory.
+```
+
+### Day 2: Star schema and sales model
+
+Drill:
+
+```text
+Design an e-commerce sales model.
+```
+
+### Day 3: Keys and SCD
+
+Drill:
+
+```text
+Explain SCD Type 2 for customer address changes.
+```
+
+### Day 4: Fact table types
+
+Drill:
+
+```text
+Model transactions, daily snapshots, and order lifecycle.
+```
+
+### Day 5: Advanced relationships
+
+Drill:
+
+```text
+Model many-to-many customer segments with a bridge table.
+```
+
+### Day 6: Metrics and quality
+
+Drill:
+
+```text
+Define revenue, active customer, and churn with quality checks.
+```
+
+### Day 7: Mock modeling interview
+
+Prompt:
+
+```text
+Design a data model for subscription analytics with plan changes, churn, invoices, and monthly recurring revenue.
+```
+
+---
+
+## 52. 10-Minute Mock Interview
+
+### Prompt
+
+```text
+Design a data model for an online marketplace where customers place orders from multiple sellers. Each order can have multiple products, discounts, returns, and payments. Business users want revenue, seller performance, customer behavior, and product analytics.
+```
+
+### Candidate should clarify
+
+1. What is the desired grain?
+2. Can one order have multiple sellers?
+3. Are partial returns possible?
+4. Can payments be split?
+5. Do discounts apply at order or item level?
+6. Do product/customer attributes change over time?
+7. What are the key business metrics?
+
+### Expected model
+
+Facts:
+
+- fact_order_line
+- fact_payment
+- fact_return
+- possibly fact_seller_daily_snapshot
+
+Dimensions:
+
+- dim_customer
+- dim_seller
+- dim_product
+- dim_date
+- dim_payment_method
+- dim_promotion
+- dim_location
+
+Key points:
+
+- order_id as degenerate dimension
+- grain one row per order line
+- returns modeled separately or as negative adjustments
+- product/customer history with SCD Type 2 if required
+- revenue definition clarified
+- avoid double counting payments and order lines
+
+### Scoring
+
+| Area | Score |
+|---|---:|
+| Clarifying questions | /5 |
+| Grain | /5 |
+| Facts | /5 |
+| Dimensions | /5 |
+| SCD/history | /5 |
+| Keys | /5 |
+| Metrics | /5 |
+| Edge cases | /5 |
+| Trade-offs | /5 |
+| Communication | /5 |
+
+---
+
+## 53. Answer Template
+
+Use this template for modeling interviews.
+
+```text
+I will start by clarifying the business process and analytical questions.
+
+Business process:
+[what is being modeled]
+
+Main questions:
+[what users want to analyze]
+
+Grain:
+[what one row in the fact table represents]
+
+Fact table:
+[name and purpose]
+
+Measures:
+[list metrics]
+
+Dimensions:
+[list dimensions]
+
+Keys:
+[natural keys, surrogate keys, foreign keys]
+
+History handling:
+[SCD Type 1/2/current-only]
+
+Special cases:
+[returns, cancellations, late data, many-to-many, duplicates]
+
+Quality checks:
+[uniqueness, nulls, referential integrity, row counts]
+
+Performance:
+[partitioning, aggregates, marts]
+
+Trade-offs:
+[why this design]
+
+Summary:
+[final concise model]
+```
+
+---
+
+## 54. Mentor Behavior Rules
+
+When using this guide, the mentor should:
+
+1. Force the candidate to define grain.
+2. Challenge one-big-table designs.
+3. Ask whether history matters.
+4. Ask about SCD Type 2.
+5. Ask about metric definitions.
+6. Ask about many-to-many relationships.
+7. Ask about returns/cancellations if relevant.
+8. Ask about late-arriving data.
+9. Ask about quality checks.
+10. Ask about query patterns.
+11. Score strictly.
+12. Provide a repair plan.
+
+Strict correction:
+
+```text
+This is not a data model yet. It is just a list of tables. Define the business process, grain, facts, dimensions, keys, and history strategy.
+```
+
+---
+
+## 55. Exit Test
+
+Candidate must answer:
+
+```text
+Design a dimensional model for an e-commerce company that needs sales, returns, customer, product, promotion, and revenue analytics. The model must support historical customer/product attributes and avoid duplicate revenue.
+```
+
+Passing answer must include:
+
+- business process
+- order-line grain
+- fact_order_line
+- fact_return or return handling
+- dimensions
+- surrogate keys
+- SCD Type 2 for changing attributes if required
+- revenue definition
+- duplicate prevention
+- quality checks
+- query patterns
+- trade-offs
+
+If the candidate does not define grain, they fail.
+
+---
+
+## 56. Final Summary
+
+Data modeling is where business meaning becomes queryable structure.
+
+The strongest candidates do not just name tables. They define grain, facts, dimensions, keys, history, metrics, edge cases, and trade-offs.
+
+The weakest candidates jump straight to tables and hope the model works.
+
+In interviews, grain is the first checkpoint.
+
+If grain is missing, the model is not interview-ready.

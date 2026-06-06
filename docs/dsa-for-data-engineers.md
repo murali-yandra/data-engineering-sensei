@@ -1,0 +1,2587 @@
+# DSA for Data Engineers
+
+Generated: 2026-06-06
+
+This guide teaches **high-ROI Data Structures and Algorithms for Data Engineering interviews**.
+
+It is written for **Data Engineering Sensei**, a strict, no-sugarcoating Data Engineering interview mentor. The goal is not to turn a Data Engineer into a competitive programmer. The goal is to make the candidate strong enough to pass Data Engineering coding rounds that test problem solving, Python implementation, data structures, complexity, edge cases, and communication.
+
+Use this guide for:
+
+- Data Engineering DSA preparation
+- Python coding rounds
+- LeetCode-style interview practice
+- high-ROI pattern selection
+- DSA weakness repair
+- mock interview scoring
+- practice planning
+- roadmap generation
+
+---
+
+## 1. Scope
+
+DSA for Data Engineers should focus on practical, high-signal topics.
+
+This guide prioritizes:
+
+1. Arrays
+2. Strings
+3. Hash maps
+4. Sets
+5. Sorting
+6. Binary search
+7. Two pointers
+8. Sliding window
+9. Stack
+10. Queue
+11. Heap / priority queue
+12. Intervals
+13. Prefix sums
+14. Frequency counting
+15. Basic BFS
+16. Basic DFS
+17. Top K problems
+18. Basic graph dependency problems
+19. Clean Python implementation
+20. Time and space complexity explanation
+
+This guide does **not** prioritize:
+
+- segment trees
+- Fenwick trees
+- advanced dynamic programming
+- advanced graph algorithms
+- computational geometry
+- number theory
+- bit manipulation tricks beyond basics
+- competitive programming style puzzles
+- hard LeetCode grinding as the default path
+
+Those topics can be added only when the target company or role clearly requires them.
+
+---
+
+## 2. Why DSA Matters for Data Engineering Interviews
+
+Many Data Engineering interviews include coding rounds. These rounds may not be as hard as software engineering interviews, but they still test whether the candidate can:
+
+- reason clearly
+- choose the right data structure
+- write clean code
+- handle edge cases
+- explain time complexity
+- avoid brute force when avoidable
+- transform and aggregate records
+- process strings/logs/events
+- debug under pressure
+
+Data Engineering coding rounds often look like:
+
+- Python data processing tasks
+- SQL + Python mixed tasks
+- LeetCode easy/medium questions
+- log parsing
+- JSON transformation
+- frequency counting
+- top K analytics
+- duplicate detection
+- interval/time-window problems
+- dependency traversal
+- simple graph or DAG problems
+
+A candidate who cannot use hash maps, sets, sorting, and basic traversal will struggle.
+
+---
+
+## 3. No-Sugarcoating Rule
+
+The mentor should be direct.
+
+Allowed feedback:
+
+```text
+Your approach works, but it is O(n²) because you repeatedly search a list. For a coding interview, this is weak. Use a set or hash map.
+```
+
+```text
+You are trying to memorize the LeetCode solution. That is not enough. Explain the pattern and why it fits.
+```
+
+```text
+Your code passes the happy path but fails empty input and duplicate records. That is not interview-ready.
+```
+
+```text
+For Data Engineering interviews, you do not need advanced DP right now. Your priority is hash maps, sorting, sliding window, intervals, and clean Python.
+```
+
+Not useful:
+
+```text
+Good try, keep practicing.
+```
+
+Feedback must identify the issue and give the repair path.
+
+---
+
+## 4. What Data Engineers Actually Need
+
+A Data Engineer does not usually need to master every DSA topic.
+
+The highest-value topics map naturally to data work.
+
+| DSA Skill | Data Engineering Relevance |
+|---|---|
+| Hash map | frequency counts, joins, lookups, grouping |
+| Set | deduplication, membership checks |
+| Sorting | ranking, ordering, grouping, intervals |
+| Heap | top K events/products/users |
+| Sliding window | time windows, rolling activity, substring/log windows |
+| Two pointers | sorted records, merging, pair logic |
+| Stack | parsing, validation, nested structures |
+| Queue | BFS, dependency resolution, task scheduling |
+| Intervals | schedules, time ranges, batch windows |
+| Prefix sum | cumulative metrics, range sums |
+| BFS/DFS | dependency graphs, lineage, DAG traversal |
+| Binary search | sorted partitions, thresholds, monotonic checks |
+
+---
+
+## 5. Interview Standard
+
+A candidate should be able to do the following for every DSA problem:
+
+```text
+1. Restate the problem.
+2. Clarify input and output.
+3. Give a brute-force approach.
+4. Explain why brute force is inefficient.
+5. Identify the pattern.
+6. Choose the right data structure.
+7. Explain the optimized approach.
+8. Code cleanly.
+9. Test edge cases.
+10. Explain time complexity.
+11. Explain space complexity.
+12. Handle follow-up variations.
+```
+
+If the candidate jumps directly to code without explanation, interrupt.
+
+Mentor correction:
+
+```text
+Stop coding for a moment. In a real interview, you need to explain the approach first. What pattern is this and why?
+```
+
+---
+
+## 6. DSA Readiness Levels
+
+## 6.1 Score 0
+
+Candidate cannot solve basic array/string tasks.
+
+### Symptoms
+
+- cannot loop through array
+- cannot use dictionary
+- cannot explain complexity
+- cannot handle empty input
+
+### Action
+
+Start with Python basics and simple arrays before LeetCode.
+
+---
+
+## 6.2 Score 1
+
+Candidate can attempt easy problems but needs heavy help.
+
+### Symptoms
+
+- brute force only
+- no pattern recognition
+- no edge cases
+- poor code structure
+
+### Action
+
+Train arrays, strings, hash maps, and sets first.
+
+---
+
+## 6.3 Score 2
+
+Candidate can solve some easy problems.
+
+### Symptoms
+
+- can solve Two Sum after hints
+- struggles with sliding window
+- struggles with intervals
+- weak complexity explanation
+- slow coding
+
+### Action
+
+Drill high-ROI patterns one by one.
+
+---
+
+## 6.4 Score 3
+
+Candidate can solve easy and some medium problems.
+
+### Symptoms
+
+- recognizes hash map and sorting
+- can solve common patterns with guidance
+- still weak under pressure
+- misses edge cases
+
+### Action
+
+Timed practice and mock interviews.
+
+---
+
+## 6.5 Score 4
+
+Candidate is interview-ready for most Data Engineering DSA rounds.
+
+### Symptoms
+
+- solves common easy/medium questions
+- explains complexity
+- handles edge cases
+- communicates approach clearly
+
+### Action
+
+Maintain practice and add follow-up variations.
+
+---
+
+## 6.6 Score 5
+
+Candidate is strong.
+
+### Symptoms
+
+- handles unfamiliar variations
+- optimizes cleanly
+- explains trade-offs
+- stays calm under pressure
+- connects DSA to data problems
+
+### Action
+
+Use mixed interviews and harder variations if target requires.
+
+---
+
+## 7. Complexity Basics
+
+## 7.1 Time Complexity
+
+Time complexity describes how runtime grows with input size.
+
+Common complexities:
+
+| Complexity | Meaning | Example |
+|---|---|---|
+| O(1) | constant | dict lookup average |
+| O(log n) | logarithmic | binary search |
+| O(n) | linear | one pass through records |
+| O(n log n) | linearithmic | sorting |
+| O(n²) | quadratic | nested loop pair comparison |
+| O(2^n) | exponential | subsets |
+| O(n!) | factorial | permutations |
+
+### Interview expectation
+
+Candidate should not just state the complexity. They should explain why.
+
+Weak:
+
+```text
+Time is O(n).
+```
+
+Strong:
+
+```text
+Time is O(n) because we scan the list once and each hash map lookup is O(1) on average.
+```
+
+---
+
+## 7.2 Space Complexity
+
+Space complexity describes extra memory used.
+
+Common examples:
+
+| Structure | Space |
+|---|---|
+| set of n elements | O(n) |
+| dict of n elements | O(n) |
+| output list of n elements | O(n) |
+| heap of k elements | O(k) |
+| recursive stack depth h | O(h) |
+
+### Interview expectation
+
+Mention auxiliary space separately from output space when needed.
+
+---
+
+## 8. Python Complexity Cheat Sheet
+
+| Operation | Average Time |
+|---|---:|
+| list append | O(1) amortized |
+| list index access | O(1) |
+| `x in list` | O(n) |
+| `x in set` | O(1) average |
+| dict get/set | O(1) average |
+| sort list | O(n log n) |
+| heap push/pop | O(log n) |
+| deque append/popleft | O(1) |
+
+### Common candidate mistake
+
+Using list membership repeatedly:
+
+```python
+seen = []
+for x in records:
+    if x not in seen:
+        seen.append(x)
+```
+
+This is O(n²).
+
+Better:
+
+```python
+seen = set()
+for x in records:
+    if x not in seen:
+        seen.add(x)
+```
+
+This is O(n) average.
+
+---
+
+## 9. Pattern 1: Arrays
+
+Arrays are the foundation of most coding rounds.
+
+### When to use array thinking
+
+- one pass processing
+- max/min
+- cumulative values
+- index-based logic
+- pair/triplet problems
+- sorting problems
+- transformations
+
+### Interview checklist
+
+Ask:
+
+```text
+Can input be empty?
+Can values be negative?
+Are duplicates allowed?
+Do we need original order?
+Can we modify the input?
+What is the expected output?
+```
+
+### Common mistakes
+
+- index out of bounds
+- ignoring empty input
+- nested loops when hash map works
+- sorting when original order matters
+- not explaining complexity
+
+### Example DE-style problem
+
+```text
+Given a list of daily record counts, return the day with the largest increase compared to the previous day.
+```
+
+Pattern:
+
+- one pass
+- track max difference
+
+---
+
+## 10. Pattern 2: Strings
+
+Strings appear in:
+
+- log parsing
+- file names
+- event names
+- IDs
+- URLs
+- CSV-like rows
+- JSON keys
+- validation tasks
+
+### Common operations
+
+- split
+- strip
+- lower/upper
+- count
+- frequency map
+- substring
+- parsing tokens
+- validation
+
+### Common mistakes
+
+- not handling empty string
+- case sensitivity
+- extra spaces
+- malformed lines
+- assuming perfect input
+- inefficient repeated concatenation
+
+### DE-style problem
+
+```text
+Given log lines in the format "timestamp user_id event_type", count events per event_type.
+```
+
+Pattern:
+
+- string split
+- dictionary count
+- malformed line handling
+
+---
+
+## 11. Pattern 3: Hash Map
+
+Hash map is one of the most important DSA tools for Data Engineers.
+
+### Use hash maps for
+
+- frequency counting
+- grouping
+- lookup
+- deduplication with metadata
+- joining small datasets
+- mapping IDs to records
+- caching computed values
+- counting occurrences
+
+### Signal words
+
+- count
+- frequency
+- group by
+- lookup
+- pair sum
+- duplicates
+- seen before
+- map ID to value
+- aggregate by key
+
+### Strong explanation
+
+```text
+A hash map is useful here because I need fast lookup by key. Instead of scanning previous records repeatedly, I can store what I have seen and check in O(1) average time.
+```
+
+### Common mistakes
+
+- using list instead of dict/set
+- not handling missing keys
+- overwriting needed values
+- not thinking about duplicates
+- not explaining O(1) average
+- assuming ordering in all contexts
+
+---
+
+## 12. Hash Map Template
+
+```python
+def count_by_key(records):
+    counts = {}
+
+    for record in records:
+        key = record["key"]
+        counts[key] = counts.get(key, 0) + 1
+
+    return counts
+```
+
+### With `defaultdict`
+
+```python
+from collections import defaultdict
+
+def group_by_key(records):
+    groups = defaultdict(list)
+
+    for record in records:
+        groups[record["key"]].append(record)
+
+    return dict(groups)
+```
+
+### Interview note
+
+Using `defaultdict` is good, but be able to explain what it does.
+
+---
+
+## 13. LeetCode: Hash Map Problems
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 1 | Two Sum | Easy | https://leetcode.com/problems/two-sum/ | lookup and pair detection |
+| 217 | Contains Duplicate | Easy | https://leetcode.com/problems/contains-duplicate/ | deduplication |
+| 242 | Valid Anagram | Easy | https://leetcode.com/problems/valid-anagram/ | frequency counting |
+| 49 | Group Anagrams | Medium | https://leetcode.com/problems/group-anagrams/ | grouping by normalized key |
+| 347 | Top K Frequent Elements | Medium | https://leetcode.com/problems/top-k-frequent-elements/ | top K frequency analytics |
+| 560 | Subarray Sum Equals K | Medium | https://leetcode.com/problems/subarray-sum-equals-k/ | prefix sum + frequency map |
+
+### Mentor rule
+
+Do not let the candidate memorize code. Ask:
+
+```text
+What key are you storing?
+What value are you storing?
+Why does lookup become faster?
+What happens with duplicates?
+```
+
+---
+
+## 14. Pattern 4: Set
+
+Sets are used for uniqueness and membership.
+
+### Use sets for
+
+- removing duplicates
+- checking whether seen before
+- fast membership
+- intersection/union logic
+- validating allowed values
+- detecting repeated IDs
+
+### Strong explanation
+
+```text
+A set is useful because I only care whether a value has appeared before, not how many times or where.
+```
+
+### Common mistakes
+
+- using set when counts are needed
+- losing order when order matters
+- assuming set stores duplicates
+- using list membership instead of set membership
+
+### DE-style problem
+
+```text
+Given a list of transaction IDs, return whether any duplicate transaction ID exists.
+```
+
+Pattern:
+
+- set membership
+
+---
+
+## 15. Pattern 5: Sorting
+
+Sorting is used when order helps simplify the problem.
+
+### Use sorting for
+
+- ranking
+- top values
+- intervals
+- grouping adjacent records
+- detecting duplicates
+- two pointers
+- merge logic
+- chronological processing
+
+### Complexity
+
+Sorting is usually:
+
+```text
+O(n log n)
+```
+
+### Strong explanation
+
+```text
+Sorting costs O(n log n), but it organizes records so duplicates or overlapping intervals become adjacent, which simplifies the rest of the logic.
+```
+
+### Common mistakes
+
+- sorting when O(n) hash map works
+- forgetting sorting changes order
+- not using key function correctly
+- sorting full data when heap top K is better
+- failing to handle tie-breakers
+
+---
+
+## 16. Python Sorting Templates
+
+### Sort numbers
+
+```python
+nums.sort()
+```
+
+### Sort records by timestamp
+
+```python
+records.sort(key=lambda r: r["timestamp"])
+```
+
+### Sort by amount descending
+
+```python
+records.sort(key=lambda r: r["amount"], reverse=True)
+```
+
+### Sort by multiple keys
+
+```python
+records.sort(key=lambda r: (r["user_id"], r["event_time"]))
+```
+
+### Sort by descending amount and ascending user
+
+```python
+records.sort(key=lambda r: (-r["amount"], r["user_id"]))
+```
+
+---
+
+## 17. Pattern 6: Two Pointers
+
+Two pointers use two indexes to scan efficiently.
+
+### Common types
+
+1. Left and right from both ends.
+2. Slow and fast pointer.
+3. Merge two sorted arrays/lists.
+4. Sliding pair logic.
+
+### Signal words
+
+- sorted array
+- pair sum
+- palindrome
+- remove duplicates
+- merge sorted
+- compare from both ends
+
+### Strong explanation
+
+```text
+Because the input is sorted, I can move pointers based on whether the current sum is too small or too large. This avoids checking every pair.
+```
+
+### Common mistakes
+
+- using two pointers on unsorted input without sorting
+- moving wrong pointer
+- infinite loop
+- not handling duplicates
+- missing boundary conditions
+
+---
+
+## 18. LeetCode: Two Pointers
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 125 | Valid Palindrome | Easy | https://leetcode.com/problems/valid-palindrome/ | string validation |
+| 167 | Two Sum II - Input Array Is Sorted | Medium | https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/ | sorted pair search |
+| 15 | 3Sum | Medium | https://leetcode.com/problems/3sum/ | sorting + duplicate handling |
+| 11 | Container With Most Water | Medium | https://leetcode.com/problems/container-with-most-water/ | pointer movement reasoning |
+| 26 | Remove Duplicates from Sorted Array | Easy | https://leetcode.com/problems/remove-duplicates-from-sorted-array/ | in-place deduplication |
+
+---
+
+## 19. Pattern 7: Sliding Window
+
+Sliding window is used for contiguous subarrays or substrings.
+
+### Use sliding window when
+
+- contiguous segment
+- longest substring
+- shortest subarray
+- window with condition
+- running count
+- limited distinct values
+- fixed-size window
+- variable-size window
+
+### Signal words
+
+- contiguous
+- subarray
+- substring
+- longest
+- shortest
+- at most
+- window
+- consecutive
+- running
+
+### Strong explanation
+
+```text
+This is a sliding window problem because we need to track a contiguous range and adjust the left boundary when the condition becomes invalid.
+```
+
+### Common mistakes
+
+- using sliding window when data is not contiguous
+- not updating counts when shrinking
+- off-by-one window length
+- infinite while loop
+- not understanding fixed vs variable window
+
+---
+
+## 20. Sliding Window Template
+
+```python
+def sliding_window(arr):
+    left = 0
+    result = 0
+    window_state = {}
+
+    for right in range(len(arr)):
+        # add arr[right] to window
+
+        while window_is_invalid:
+            # remove arr[left] from window
+            left += 1
+
+        # update result
+
+    return result
+```
+
+### Fixed-size window template
+
+```python
+def fixed_window(nums, k):
+    window_sum = 0
+    best = float("-inf")
+
+    for i, value in enumerate(nums):
+        window_sum += value
+
+        if i >= k:
+            window_sum -= nums[i - k]
+
+        if i >= k - 1:
+            best = max(best, window_sum)
+
+    return best
+```
+
+---
+
+## 21. LeetCode: Sliding Window
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 3 | Longest Substring Without Repeating Characters | Medium | https://leetcode.com/problems/longest-substring-without-repeating-characters/ | unique window tracking |
+| 424 | Longest Repeating Character Replacement | Medium | https://leetcode.com/problems/longest-repeating-character-replacement/ | window with frequency |
+| 567 | Permutation in String | Medium | https://leetcode.com/problems/permutation-in-string/ | fixed window frequency |
+| 76 | Minimum Window Substring | Hard | https://leetcode.com/problems/minimum-window-substring/ | advanced window, optional |
+| 121 | Best Time to Buy and Sell Stock | Easy | https://leetcode.com/problems/best-time-to-buy-and-sell-stock/ | one-pass window-like min tracking |
+
+---
+
+## 22. Pattern 8: Prefix Sum
+
+Prefix sum stores cumulative values to answer range-sum questions efficiently.
+
+### Use prefix sum for
+
+- cumulative metrics
+- range sums
+- subarray sum
+- running totals
+- difference between two positions
+- fast window sum
+
+### Strong explanation
+
+```text
+Prefix sum lets me compute a range sum in O(1) after O(n) preprocessing because sum(i, j) equals prefix[j + 1] - prefix[i].
+```
+
+### DE relevance
+
+Prefix sums map to:
+
+- running totals
+- cumulative revenue
+- event counts over ranges
+- metric deltas
+- windowed calculations
+
+### Common mistakes
+
+- off-by-one prefix indexes
+- not handling zero prefix
+- not handling negative numbers in sliding-window alternatives
+- confusing prefix sum with window sum
+
+---
+
+## 23. Prefix Sum Template
+
+```python
+def build_prefix(nums):
+    prefix = [0]
+
+    for num in nums:
+        prefix.append(prefix[-1] + num)
+
+    return prefix
+
+def range_sum(prefix, left, right):
+    return prefix[right + 1] - prefix[left]
+```
+
+---
+
+## 24. Pattern 9: Binary Search
+
+Binary search finds values in sorted data or a monotonic search space.
+
+### Use binary search when
+
+- data is sorted
+- answer space is monotonic
+- find first/last valid value
+- search threshold
+- minimize maximum
+- maximize minimum
+
+### Signal words
+
+- sorted
+- search
+- first occurrence
+- last occurrence
+- minimum possible
+- maximum possible
+- threshold
+- monotonic
+
+### Strong explanation
+
+```text
+Binary search works because the search space is monotonic. If a value works, all larger values also work, or the reverse. That lets us discard half the space each step.
+```
+
+### Common mistakes
+
+- applying binary search to non-monotonic data
+- wrong loop condition
+- off-by-one
+- infinite loop
+- not updating answer
+- not explaining why monotonic
+
+---
+
+## 25. Binary Search Template
+
+```python
+def binary_search(nums, target):
+    left, right = 0, len(nums) - 1
+
+    while left <= right:
+        mid = left + (right - left) // 2
+
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1
+```
+
+### Lower bound template
+
+```python
+def lower_bound(nums, target):
+    left, right = 0, len(nums)
+
+    while left < right:
+        mid = left + (right - left) // 2
+
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+---
+
+## 26. LeetCode: Binary Search
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 704 | Binary Search | Easy | https://leetcode.com/problems/binary-search/ | basic sorted search |
+| 35 | Search Insert Position | Easy | https://leetcode.com/problems/search-insert-position/ | boundary search |
+| 33 | Search in Rotated Sorted Array | Medium | https://leetcode.com/problems/search-in-rotated-sorted-array/ | conditional binary search |
+| 153 | Find Minimum in Rotated Sorted Array | Medium | https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/ | boundary logic |
+| 875 | Koko Eating Bananas | Medium | https://leetcode.com/problems/koko-eating-bananas/ | binary search on answer |
+
+---
+
+## 27. Pattern 10: Stack
+
+Stacks are last-in-first-out.
+
+### Use stack for
+
+- parentheses validation
+- nested structure parsing
+- undo-like operations
+- monotonic stack problems
+- expression evaluation
+- path simplification
+
+### DE relevance
+
+Stacks can appear in:
+
+- parsing nested logs
+- validating expressions
+- checking brackets in JSON-like strings
+- processing nested events
+- dependency rollback logic
+
+### Strong explanation
+
+```text
+A stack is useful when the most recent unmatched item should be resolved first, such as matching closing brackets with the latest opening bracket.
+```
+
+### Common mistakes
+
+- popping from empty stack
+- not checking remaining stack
+- matching wrong pair
+- using stack when queue is needed
+
+---
+
+## 28. LeetCode: Stack
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 20 | Valid Parentheses | Easy | https://leetcode.com/problems/valid-parentheses/ | validation/parsing |
+| 155 | Min Stack | Medium | https://leetcode.com/problems/min-stack/ | stack state tracking |
+| 739 | Daily Temperatures | Medium | https://leetcode.com/problems/daily-temperatures/ | monotonic stack |
+| 71 | Simplify Path | Medium | https://leetcode.com/problems/simplify-path/ | path/string parsing |
+
+---
+
+## 29. Pattern 11: Queue
+
+Queues are first-in-first-out.
+
+### Use queues for
+
+- BFS
+- task scheduling
+- processing in arrival order
+- level-order traversal
+- dependency processing
+- event simulation
+
+### Python tool
+
+Use `collections.deque`.
+
+```python
+from collections import deque
+
+queue = deque()
+queue.append("task")
+task = queue.popleft()
+```
+
+### Common mistake
+
+Using `list.pop(0)` repeatedly.
+
+That is O(n). Use deque for O(1) popleft.
+
+---
+
+## 30. Pattern 12: Heap / Priority Queue
+
+A heap gives efficient access to smallest or largest item.
+
+Python has `heapq`, which is a min heap.
+
+### Use heap for
+
+- top K
+- kth largest/smallest
+- merge sorted streams
+- priority scheduling
+- running median
+- smallest next event
+- most frequent items
+
+### Complexity
+
+- push: O(log n)
+- pop: O(log n)
+- peek min: O(1)
+
+### Strong explanation
+
+```text
+A heap is useful when I only need the top K items instead of sorting the entire list. Maintaining a heap of size K can reduce space and avoid full sorting.
+```
+
+### Common mistakes
+
+- sorting everything when heap is better
+- using max heap incorrectly in Python
+- not limiting heap size for top K
+- not explaining O(log k)
+- forgetting heapq is min heap
+
+---
+
+## 31. Heap Templates
+
+### Min heap
+
+```python
+import heapq
+
+heap = []
+
+for value in values:
+    heapq.heappush(heap, value)
+
+smallest = heapq.heappop(heap)
+```
+
+### Max heap using negative values
+
+```python
+import heapq
+
+heap = []
+
+for value in values:
+    heapq.heappush(heap, -value)
+
+largest = -heapq.heappop(heap)
+```
+
+### Top K with min heap
+
+```python
+import heapq
+
+def top_k_largest(nums, k):
+    heap = []
+
+    for num in nums:
+        heapq.heappush(heap, num)
+
+        if len(heap) > k:
+            heapq.heappop(heap)
+
+    return heap
+```
+
+---
+
+## 32. LeetCode: Heap / Top K
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 347 | Top K Frequent Elements | Medium | https://leetcode.com/problems/top-k-frequent-elements/ | top K analytics |
+| 215 | Kth Largest Element in an Array | Medium | https://leetcode.com/problems/kth-largest-element-in-an-array/ | ranking |
+| 973 | K Closest Points to Origin | Medium | https://leetcode.com/problems/k-closest-points-to-origin/ | top K with custom metric |
+| 295 | Find Median from Data Stream | Hard | https://leetcode.com/problems/find-median-from-data-stream/ | streaming median, optional |
+| 23 | Merge k Sorted Lists | Hard | https://leetcode.com/problems/merge-k-sorted-lists/ | merging sorted streams, optional |
+
+---
+
+## 33. Pattern 13: Intervals
+
+Intervals represent ranges.
+
+Examples:
+
+- time windows
+- job schedules
+- bookings
+- active periods
+- campaign date ranges
+- partition ranges
+- SLA windows
+
+### Use interval logic for
+
+- merge overlapping ranges
+- insert interval
+- find conflicts
+- count active intervals
+- schedule tasks
+- detect gaps
+
+### Strong explanation
+
+```text
+Sorting intervals by start time makes overlapping intervals adjacent, so I can merge or compare them in one pass.
+```
+
+### Common mistakes
+
+- not sorting intervals
+- wrong overlap condition
+- not handling touching boundaries
+- ignoring inclusive vs exclusive endpoints
+- modifying input without saying so
+
+---
+
+## 34. Interval Template: Merge Intervals
+
+```python
+def merge_intervals(intervals):
+    if not intervals:
+        return []
+
+    intervals.sort(key=lambda x: x[0])
+    merged = [intervals[0]]
+
+    for start, end in intervals[1:]:
+        last_start, last_end = merged[-1]
+
+        if start <= last_end:
+            merged[-1][1] = max(last_end, end)
+        else:
+            merged.append([start, end])
+
+    return merged
+```
+
+### Interview note
+
+Clarify whether `[1, 3]` and `[3, 5]` overlap. Some problems treat endpoints differently.
+
+---
+
+## 35. LeetCode: Intervals
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 56 | Merge Intervals | Medium | https://leetcode.com/problems/merge-intervals/ | time windows and ranges |
+| 57 | Insert Interval | Medium | https://leetcode.com/problems/insert-interval/ | schedule/range insertion |
+| 435 | Non-overlapping Intervals | Medium | https://leetcode.com/problems/non-overlapping-intervals/ | conflict resolution |
+| 252 | Meeting Rooms | Easy/Premium | no public free link guaranteed | schedule conflict |
+| 253 | Meeting Rooms II | Medium/Premium | no public free link guaranteed | resource scheduling |
+
+---
+
+## 36. Pattern 14: BFS
+
+Breadth-first search explores level by level.
+
+### Use BFS for
+
+- shortest path in unweighted graph
+- level-order traversal
+- dependency expansion
+- nearest target
+- grid distance
+- task layers
+
+### DE relevance
+
+BFS can appear in:
+
+- dependency graph traversal
+- lineage depth
+- DAG processing
+- finding downstream tables
+- graph of tasks
+- grid-based LeetCode problems
+
+### Strong explanation
+
+```text
+BFS is useful when we need the shortest number of steps in an unweighted graph because it explores all nodes at distance 1 before distance 2.
+```
+
+---
+
+## 37. BFS Template
+
+```python
+from collections import deque
+
+def bfs(graph, start):
+    queue = deque([start])
+    visited = {start}
+
+    while queue:
+        node = queue.popleft()
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+```
+
+---
+
+## 38. Pattern 15: DFS
+
+Depth-first search explores one path deeply before backtracking.
+
+### Use DFS for
+
+- connected components
+- cycle detection
+- graph traversal
+- tree paths
+- dependency exploration
+- island counting
+- recursive structures
+
+### DE relevance
+
+DFS can appear in:
+
+- dependency graphs
+- lineage trees
+- DAG validation
+- nested JSON traversal
+- connected components
+
+### Strong explanation
+
+```text
+DFS is useful when I need to explore all reachable nodes or components. I track visited nodes to avoid cycles and repeated work.
+```
+
+---
+
+## 39. DFS Template
+
+```python
+def dfs(graph, node, visited):
+    if node in visited:
+        return
+
+    visited.add(node)
+
+    for neighbor in graph[node]:
+        dfs(graph, neighbor, visited)
+```
+
+### Iterative DFS
+
+```python
+def dfs_iterative(graph, start):
+    stack = [start]
+    visited = set()
+
+    while stack:
+        node = stack.pop()
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                stack.append(neighbor)
+
+    return visited
+```
+
+---
+
+## 40. LeetCode: BFS / DFS
+
+| Number | Title | Difficulty | Link | Why It Matters for DE |
+|---:|---|---|---|---|
+| 200 | Number of Islands | Medium | https://leetcode.com/problems/number-of-islands/ | connected components |
+| 994 | Rotting Oranges | Medium | https://leetcode.com/problems/rotting-oranges/ | BFS levels |
+| 207 | Course Schedule | Medium | https://leetcode.com/problems/course-schedule/ | dependency graph / cycle detection |
+| 133 | Clone Graph | Medium | https://leetcode.com/problems/clone-graph/ | graph traversal |
+| 102 | Binary Tree Level Order Traversal | Medium | https://leetcode.com/problems/binary-tree-level-order-traversal/ | BFS structure |
+
+---
+
+## 41. Pattern 16: Graph Dependencies
+
+Graph dependency questions are especially relevant for Data Engineers.
+
+Examples:
+
+- tasks in Airflow DAG
+- tables depending on upstream tables
+- course schedule
+- build order
+- pipeline lineage
+- job scheduling
+
+### Key ideas
+
+- node = task/table/course
+- edge = dependency
+- topological order
+- cycle detection
+- in-degree
+- BFS queue
+
+### Strong answer
+
+```text
+This is a dependency graph problem. If there is a cycle, the tasks cannot be completed. I can use topological sort with in-degree counts to process nodes with no remaining dependencies.
+```
+
+### Common mistakes
+
+- not detecting cycles
+- reversing edge direction
+- not including isolated nodes
+- modifying graph incorrectly
+- confusing BFS traversal with topological sort
+
+---
+
+## 42. Topological Sort Template
+
+```python
+from collections import defaultdict, deque
+
+def can_finish(num_nodes, edges):
+    graph = defaultdict(list)
+    indegree = [0] * num_nodes
+
+    for src, dest in edges:
+        graph[src].append(dest)
+        indegree[dest] += 1
+
+    queue = deque([i for i in range(num_nodes) if indegree[i] == 0])
+    processed = 0
+
+    while queue:
+        node = queue.popleft()
+        processed += 1
+
+        for neighbor in graph[node]:
+            indegree[neighbor] -= 1
+
+            if indegree[neighbor] == 0:
+                queue.append(neighbor)
+
+    return processed == num_nodes
+```
+
+### Interview note
+
+Clarify edge direction.
+
+For `A depends on B`, decide whether edge is `B -> A` or `A -> B`.
+
+---
+
+## 43. Data Engineering Coding Problem Types
+
+## 43.1 Record Aggregation
+
+Example:
+
+```text
+Given transaction records, calculate total amount per user.
+```
+
+Pattern:
+
+- hash map aggregation
+
+Expected:
+
+- handle empty input
+- missing amount
+- negative values if refunds possible
+- output format
+
+---
+
+## 43.2 Deduplication
+
+Example:
+
+```text
+Given event records with event_id and updated_at, keep the latest version of each event.
+```
+
+Pattern:
+
+- hash map with tie-breaker
+- sorting or comparison
+
+Expected:
+
+- define key
+- define latest
+- handle ties
+- preserve needed fields
+
+---
+
+## 43.3 Top K Analytics
+
+Example:
+
+```text
+Return top K most frequent event types.
+```
+
+Pattern:
+
+- frequency map + heap or sorting
+
+Expected:
+
+- complexity explanation
+- tie handling
+- k larger than unique count
+
+---
+
+## 43.4 Log Parsing
+
+Example:
+
+```text
+Parse log lines and count errors by service.
+```
+
+Pattern:
+
+- string parsing + dictionary
+
+Expected:
+
+- malformed line handling
+- timestamp assumptions
+- case sensitivity
+
+---
+
+## 43.5 Windowed Activity
+
+Example:
+
+```text
+Find the longest sequence of user activity without repeating event type.
+```
+
+Pattern:
+
+- sliding window
+
+Expected:
+
+- contiguous window
+- set/hash map
+- left pointer movement
+
+---
+
+## 43.6 Time Intervals
+
+Example:
+
+```text
+Merge overlapping batch processing windows.
+```
+
+Pattern:
+
+- sort + merge intervals
+
+Expected:
+
+- boundary condition
+- inclusive/exclusive endpoints
+- empty input
+
+---
+
+## 43.7 Dependency Resolution
+
+Example:
+
+```text
+Given pipeline task dependencies, determine if all tasks can run.
+```
+
+Pattern:
+
+- graph + topological sort
+
+Expected:
+
+- cycle detection
+- isolated tasks
+- edge direction
+
+---
+
+## 44. DE-Style Python Problem: Aggregate Transactions
+
+### Prompt
+
+```text
+Given a list of transactions:
+[
+  {"user_id": "u1", "amount": 100},
+  {"user_id": "u2", "amount": 50},
+  {"user_id": "u1", "amount": 25}
+]
+
+Return total amount per user.
+```
+
+### Expected approach
+
+Use dictionary.
+
+### Code
+
+```python
+def total_by_user(transactions):
+    totals = {}
+
+    for txn in transactions:
+        user_id = txn.get("user_id")
+        amount = txn.get("amount", 0)
+
+        if user_id is None:
+            continue
+
+        totals[user_id] = totals.get(user_id, 0) + amount
+
+    return totals
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(u), where u is number of unique users
+```
+
+### Interview follow-ups
+
+1. What if amount is missing?
+2. What if amount is negative?
+3. What if user_id is missing?
+4. What if data is too large for memory?
+5. What if we need top 10 users by amount?
+
+---
+
+## 45. DE-Style Python Problem: Deduplicate Events
+
+### Prompt
+
+```text
+Given events with event_id and updated_at, keep the latest record for each event_id.
+```
+
+### Expected approach
+
+Hash map from event_id to latest record.
+
+### Code
+
+```python
+def dedupe_latest(events):
+    latest = {}
+
+    for event in events:
+        event_id = event.get("event_id")
+        updated_at = event.get("updated_at")
+
+        if event_id is None or updated_at is None:
+            continue
+
+        if event_id not in latest or updated_at > latest[event_id]["updated_at"]:
+            latest[event_id] = event
+
+    return list(latest.values())
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+### Follow-ups
+
+1. What if timestamps are strings?
+2. What if two records have same updated_at?
+3. Should malformed records be skipped or quarantined?
+4. How do you preserve original order?
+5. How would you do this in SQL?
+
+---
+
+## 46. DE-Style Python Problem: Top K Events
+
+### Prompt
+
+```text
+Given a list of event names, return the top K most frequent event types.
+```
+
+### Approach options
+
+1. Frequency map + sorting
+2. Frequency map + heap
+3. Bucket sort if frequency range matters
+
+### Sorting version
+
+```python
+from collections import Counter
+
+def top_k_events(events, k):
+    counts = Counter(events)
+    return [event for event, count in counts.most_common(k)]
+```
+
+### Interview note
+
+`Counter.most_common` is fine in Python, but the candidate should still explain the underlying idea.
+
+### Follow-ups
+
+1. What if k is larger than unique event types?
+2. How do you break ties?
+3. What if events stream continuously?
+4. How would you reduce memory?
+
+---
+
+## 47. DE-Style Python Problem: Parse Logs
+
+### Prompt
+
+```text
+Each log line has format:
+timestamp service level message
+
+Return count of ERROR logs per service.
+```
+
+### Code
+
+```python
+from collections import defaultdict
+
+def count_errors_by_service(lines):
+    counts = defaultdict(int)
+
+    for line in lines:
+        parts = line.split(" ", 3)
+
+        if len(parts) < 4:
+            continue
+
+        timestamp, service, level, message = parts
+
+        if level == "ERROR":
+            counts[service] += 1
+
+    return dict(counts)
+```
+
+### Follow-ups
+
+1. What if service names contain spaces?
+2. What if format changes?
+3. What if log volume is huge?
+4. How would you stream this?
+5. How would you test malformed lines?
+
+---
+
+## 48. LeetCode High-ROI Master List
+
+This is the recommended base list for Data Engineering candidates.
+
+| Priority | Number | Title | Difficulty | Pattern | Link |
+|---:|---:|---|---|---|---|
+| 1 | 217 | Contains Duplicate | Easy | Set | https://leetcode.com/problems/contains-duplicate/ |
+| 2 | 1 | Two Sum | Easy | Hash Map | https://leetcode.com/problems/two-sum/ |
+| 3 | 242 | Valid Anagram | Easy | Frequency Map | https://leetcode.com/problems/valid-anagram/ |
+| 4 | 49 | Group Anagrams | Medium | Hash Map | https://leetcode.com/problems/group-anagrams/ |
+| 5 | 347 | Top K Frequent Elements | Medium | Heap / Bucket | https://leetcode.com/problems/top-k-frequent-elements/ |
+| 6 | 125 | Valid Palindrome | Easy | Two Pointers | https://leetcode.com/problems/valid-palindrome/ |
+| 7 | 3 | Longest Substring Without Repeating Characters | Medium | Sliding Window | https://leetcode.com/problems/longest-substring-without-repeating-characters/ |
+| 8 | 121 | Best Time to Buy and Sell Stock | Easy | One Pass | https://leetcode.com/problems/best-time-to-buy-and-sell-stock/ |
+| 9 | 20 | Valid Parentheses | Easy | Stack | https://leetcode.com/problems/valid-parentheses/ |
+| 10 | 704 | Binary Search | Easy | Binary Search | https://leetcode.com/problems/binary-search/ |
+| 11 | 56 | Merge Intervals | Medium | Intervals | https://leetcode.com/problems/merge-intervals/ |
+| 12 | 238 | Product of Array Except Self | Medium | Prefix/Suffix | https://leetcode.com/problems/product-of-array-except-self/ |
+| 13 | 15 | 3Sum | Medium | Sorting + Two Pointers | https://leetcode.com/problems/3sum/ |
+| 14 | 215 | Kth Largest Element in an Array | Medium | Heap / Quickselect | https://leetcode.com/problems/kth-largest-element-in-an-array/ |
+| 15 | 200 | Number of Islands | Medium | BFS/DFS | https://leetcode.com/problems/number-of-islands/ |
+| 16 | 994 | Rotting Oranges | Medium | BFS | https://leetcode.com/problems/rotting-oranges/ |
+| 17 | 207 | Course Schedule | Medium | Graph / Topological Sort | https://leetcode.com/problems/course-schedule/ |
+| 18 | 560 | Subarray Sum Equals K | Medium | Prefix Sum + Hash Map | https://leetcode.com/problems/subarray-sum-equals-k/ |
+| 19 | 424 | Longest Repeating Character Replacement | Medium | Sliding Window | https://leetcode.com/problems/longest-repeating-character-replacement/ |
+| 20 | 973 | K Closest Points to Origin | Medium | Heap | https://leetcode.com/problems/k-closest-points-to-origin/ |
+
+### Optional harder problems
+
+| Number | Title | Difficulty | Pattern | Use |
+|---:|---|---|---|---|
+| 76 | Minimum Window Substring | Hard | Sliding Window | only if target requires hard string/window |
+| 295 | Find Median from Data Stream | Hard | Two Heaps | streaming analytics concept |
+| 23 | Merge k Sorted Lists | Hard | Heap | merging sorted streams |
+| 42 | Trapping Rain Water | Hard | Two Pointers/Stack | optional SWE-style prep |
+
+---
+
+## 49. 30-Problem DSA Plan for Data Engineers
+
+### Week 1: Hash Map and Set
+
+1. Contains Duplicate
+2. Two Sum
+3. Valid Anagram
+4. Group Anagrams
+5. Top K Frequent Elements
+
+Exit criteria:
+
+- explain hash map key/value choice
+- solve without nested-loop brute force
+- handle duplicates
+
+### Week 2: Strings, Two Pointers, Sliding Window
+
+1. Valid Palindrome
+2. Longest Substring Without Repeating Characters
+3. Longest Repeating Character Replacement
+4. Permutation in String
+5. 3Sum
+
+Exit criteria:
+
+- identify contiguous window vs sorted pointer logic
+- handle edge cases
+
+### Week 3: Sorting, Binary Search, Stack, Intervals
+
+1. Binary Search
+2. Search Insert Position
+3. Valid Parentheses
+4. Merge Intervals
+5. Insert Interval
+
+Exit criteria:
+
+- explain sorting cost
+- explain boundary conditions
+- explain stack behavior
+
+### Week 4: Heap, Prefix Sum, BFS/DFS, Dependency Graph
+
+1. Kth Largest Element in an Array
+2. K Closest Points to Origin
+3. Subarray Sum Equals K
+4. Number of Islands
+5. Course Schedule
+
+Exit criteria:
+
+- explain heap O(log k)
+- explain prefix sum map
+- explain visited set
+- explain topological sort cycle detection
+
+---
+
+## 50. 7-Day Emergency DSA Plan
+
+Use this when the candidate has very little time.
+
+### Day 1: Hash map basics
+
+Problems:
+
+- Two Sum
+- Contains Duplicate
+- Valid Anagram
+
+### Day 2: Frequency and grouping
+
+Problems:
+
+- Group Anagrams
+- Top K Frequent Elements
+
+### Day 3: Two pointers and strings
+
+Problems:
+
+- Valid Palindrome
+- Two Sum II
+
+### Day 4: Sliding window
+
+Problems:
+
+- Longest Substring Without Repeating Characters
+- Best Time to Buy and Sell Stock
+
+### Day 5: Stack and binary search
+
+Problems:
+
+- Valid Parentheses
+- Binary Search
+
+### Day 6: Intervals and heap
+
+Problems:
+
+- Merge Intervals
+- Kth Largest Element
+
+### Day 7: Graph basics
+
+Problems:
+
+- Number of Islands
+- Course Schedule
+
+### Reality check
+
+This plan does not make a weak candidate fully ready. It only covers survival-level high-ROI patterns.
+
+---
+
+## 51. How to Explain a DSA Problem in an Interview
+
+Use this template:
+
+```text
+I will first clarify the input and output.
+
+Brute force:
+[explain simple approach]
+
+Issue:
+[why brute force is inefficient]
+
+Optimized pattern:
+[this is a hash map / sliding window / heap / etc.]
+
+Approach:
+[step-by-step]
+
+Correctness:
+[why it works]
+
+Complexity:
+Time:
+Space:
+
+Edge cases:
+-
+-
+-
+```
+
+---
+
+## 52. Code Review Rubric for DSA
+
+When reviewing a candidate’s DSA solution, check:
+
+```text
+Correct output:
+Handles empty input:
+Handles single element:
+Handles duplicates:
+Handles negative values if relevant:
+Handles malformed input if DE-style:
+Uses suitable data structure:
+Avoids unnecessary O(n²):
+Readable variable names:
+Clear function boundaries:
+No silent assumptions:
+Time complexity explained:
+Space complexity explained:
+Candidate can explain pattern:
+Candidate can handle follow-up:
+```
+
+### Verdict labels
+
+Use:
+
+```text
+Not acceptable for interview
+Needs major improvement
+Partially interview-ready
+Good for standard interviews
+Strong
+```
+
+---
+
+## 53. Common DSA Mistakes
+
+### Mistake 1: Brute force without improvement
+
+Example:
+
+```python
+for i in range(len(nums)):
+    for j in range(i + 1, len(nums)):
+        ...
+```
+
+This may be okay as a starting explanation, but not as final if O(n) is expected.
+
+### Mistake 2: Wrong data structure
+
+Using a list for membership checks when set works.
+
+### Mistake 3: No edge cases
+
+Forgetting:
+
+- empty input
+- one element
+- duplicates
+- negative values
+- k = 0
+- k larger than input
+- malformed records
+
+### Mistake 4: Memorized solution
+
+Candidate cannot explain why it works.
+
+### Mistake 5: Complexity bluffing
+
+Candidate says O(n) without understanding sorting or nested loops.
+
+### Mistake 6: Poor communication
+
+Candidate codes silently.
+
+### Mistake 7: Overengineering
+
+Candidate uses advanced structures when simple dict/set works.
+
+---
+
+## 54. Edge Case Checklist
+
+Always test:
+
+```text
+Empty input
+Single element
+All duplicates
+No duplicates
+Negative numbers
+Zero values
+Large input
+k = 0
+k > number of elements
+Already sorted
+Reverse sorted
+Malformed records
+Missing fields
+Ties
+Case sensitivity
+Whitespace
+Time boundaries
+```
+
+Not all apply to every problem, but the candidate should know which ones matter.
+
+---
+
+## 55. DSA Mock Interview Format
+
+### Opening
+
+```text
+I will give you one coding problem. Think out loud. First clarify the problem, then explain your approach before coding.
+```
+
+### Candidate expectations
+
+1. Clarify.
+2. Give brute force.
+3. Optimize.
+4. Code.
+5. Test.
+6. Analyze complexity.
+
+### Interviewer follow-ups
+
+- Can you improve time complexity?
+- Can you reduce space?
+- What if input is streamed?
+- What if data is too large for memory?
+- What if records are malformed?
+- What if there are duplicates?
+- What if k is very large?
+- How would you do this in SQL?
+
+---
+
+## 56. Data Engineering Follow-Up Variations
+
+For any DSA problem, add DE-style follow-ups.
+
+### Two Sum
+
+Follow-ups:
+
+- What if numbers arrive as a stream?
+- What if we need all pairs?
+- What if duplicates exist?
+- How would you solve this with SQL self join?
+
+### Top K Frequent
+
+Follow-ups:
+
+- What if events stream continuously?
+- What if k changes?
+- What if memory is limited?
+- How would you solve in SQL?
+
+### Merge Intervals
+
+Follow-ups:
+
+- What if intervals are job run windows?
+- Are endpoints inclusive?
+- How do you find gaps?
+- How would you merge per user_id?
+
+### Course Schedule
+
+Follow-ups:
+
+- How does this map to Airflow DAGs?
+- How do you detect circular dependencies in pipelines?
+- How do you return execution order?
+- What if tasks have priorities?
+
+### Number of Islands
+
+Follow-ups:
+
+- What is the visited structure?
+- Could recursion stack overflow?
+- How would you handle huge grids?
+- What does connected component mean?
+
+---
+
+## 57. Pattern Recognition Guide
+
+### If question says “count” or “frequency”
+
+Think:
+
+```text
+hash map / Counter
+```
+
+### If question says “unique” or “duplicate”
+
+Think:
+
+```text
+set / hash map
+```
+
+### If question says “top K”
+
+Think:
+
+```text
+heap / sorting / bucket
+```
+
+### If question says “contiguous subarray/substring”
+
+Think:
+
+```text
+sliding window / prefix sum
+```
+
+### If question says “sorted”
+
+Think:
+
+```text
+binary search / two pointers
+```
+
+### If question says “overlap” or “time range”
+
+Think:
+
+```text
+interval sorting
+```
+
+### If question says “dependencies”
+
+Think:
+
+```text
+graph / topological sort
+```
+
+### If question says “shortest steps”
+
+Think:
+
+```text
+BFS
+```
+
+### If question says “all connected”
+
+Think:
+
+```text
+DFS/BFS
+```
+
+---
+
+## 58. Pattern Confusion Rules
+
+### Sliding Window vs Two Pointers
+
+Sliding window:
+
+- contiguous range
+- dynamic left/right
+- usually arrays/strings
+- condition can become invalid
+
+Two pointers:
+
+- often sorted data
+- pair comparison
+- left/right movement based on condition
+
+### Hash Map vs Sorting
+
+Hash map:
+
+- O(n) average
+- good for lookup/count
+- extra space
+
+Sorting:
+
+- O(n log n)
+- good when order helps
+- can reduce complexity after sorting
+
+### Heap vs Sorting
+
+Heap:
+
+- better when only top K is needed
+- O(n log k)
+
+Sorting:
+
+- simpler
+- O(n log n)
+- fine if n small or full order needed
+
+### BFS vs DFS
+
+BFS:
+
+- shortest path in unweighted graph
+- level-order
+
+DFS:
+
+- explore components
+- cycle detection
+- recursive paths
+
+---
+
+## 59. Minimum Passing Standard
+
+A Data Engineering candidate should be able to solve and explain:
+
+1. Two Sum
+2. Contains Duplicate
+3. Valid Anagram
+4. Group Anagrams
+5. Top K Frequent Elements
+6. Valid Palindrome
+7. Longest Substring Without Repeating Characters
+8. Binary Search
+9. Valid Parentheses
+10. Merge Intervals
+11. Kth Largest Element
+12. Number of Islands
+13. Course Schedule
+14. One DE-style record aggregation problem
+15. One DE-style deduplication problem
+16. One DE-style log parsing problem
+
+If the candidate cannot solve at least the core easy problems, they are not coding-round ready.
+
+---
+
+## 60. Strong Candidate Standard
+
+A strong candidate can:
+
+1. Recognize patterns without being told.
+2. Explain brute force and optimized approach.
+3. Code cleanly in Python.
+4. Handle edge cases.
+5. Explain time and space complexity.
+6. Solve medium problems under time pressure.
+7. Adapt to DE-style follow-ups.
+8. Explain how the same idea maps to SQL/data pipelines.
+9. Avoid overengineering.
+10. Recover from mistakes during mock interviews.
+
+---
+
+## 61. Mentor Behavior Rules
+
+When using this guide, the mentor should:
+
+1. Keep DSA high-ROI.
+2. Do not push advanced DSA unless required.
+3. Ask candidate to explain pattern before code.
+4. Require complexity analysis.
+5. Require edge case discussion.
+6. Review code strictly.
+7. Add Data Engineering-style follow-ups.
+8. Recommend LeetCode number, title, difficulty, and pattern.
+9. Use Python by default unless user asks another language.
+10. Connect DSA patterns to Data Engineering use cases.
+
+### Strict correction
+
+```text
+This is not ready. You solved by memory but cannot explain the pattern. In interviews, that fails when the problem changes slightly.
+```
+
+### Repair direction
+
+```text
+Your weak area is not syntax. It is pattern recognition. Drill hash map, sliding window, intervals, and heap in that order.
+```
+
+---
+
+## 62. DSA Drill Template
+
+Use this for practice.
+
+```text
+## DSA Drill
+
+Problem:
+LeetCode:
+Difficulty:
+Pattern:
+Expected time:
+Why it matters for Data Engineering:
+
+## Prompt
+
+[problem statement]
+
+## What I Expect From You
+
+1. Clarify input/output.
+2. Explain brute force.
+3. Identify pattern.
+4. Explain optimized approach.
+5. Code in Python.
+6. Test edge cases.
+7. Explain time and space complexity.
+
+Do not jump directly to code.
+```
+
+---
+
+## 63. DSA Review Template
+
+Use this to review solutions.
+
+```text
+## Verdict
+
+[Not acceptable / Needs major improvement / Partially interview-ready / Good / Strong]
+
+## Correctness
+
+-
+
+## Pattern Recognition
+
+-
+
+## Complexity
+
+Time:
+Space:
+
+## Code Quality
+
+-
+
+## Edge Cases
+
+-
+
+## Interview Communication
+
+-
+
+## Improved Approach
+
+-
+
+## Follow-Up Questions
+
+1.
+2.
+3.
+
+## Score
+
+Correctness:
+Efficiency:
+Clarity:
+Interview readiness:
+
+## Next Drill
+
+-
+```
+
+---
+
+## 64. 10-Minute DSA Mock Interview
+
+### Prompt
+
+```text
+Given a list of event names, return the top K most frequent events. If two events have the same frequency, return them in alphabetical order.
+```
+
+### Candidate should clarify
+
+1. Can input be empty?
+2. What if k is 0?
+3. What if k exceeds unique events?
+4. How should ties be handled?
+5. Should output include counts or only event names?
+
+### Expected approach
+
+- count frequencies using hash map
+- sort by frequency descending and event name ascending, or use heap with tie logic
+- return top K
+
+### Strong explanation
+
+```text
+I will count event frequencies using a dictionary in O(n). Then I can sort unique events by negative frequency and event name. If there are u unique events, sorting costs O(u log u). Since the tie-breaker is alphabetical, sorting is simpler and clear.
+```
+
+### Follow-ups
+
+1. What if events stream continuously?
+2. What if memory is limited?
+3. What if k is very small compared to unique events?
+4. How would you do this in SQL?
+5. How would you test malformed events?
+
+---
+
+## 65. 30-Minute DSA Mock Interview
+
+### Prompt
+
+```text
+You are given pipeline tasks and dependency pairs. Each pair [a, b] means task a depends on task b. Return whether all tasks can be completed.
+```
+
+### Candidate should identify
+
+- graph
+- dependency direction
+- cycle detection
+- topological sort
+- queue
+- indegree
+
+### Expected approach
+
+1. Build graph from dependency to dependent task.
+2. Count indegrees.
+3. Start with tasks with zero indegree.
+4. Process queue.
+5. Reduce indegree of downstream tasks.
+6. If processed count equals number of tasks, no cycle.
+
+### DE relevance
+
+This maps directly to Airflow/DAG dependency validation.
+
+### Follow-ups
+
+1. Return execution order.
+2. Detect which tasks are in a cycle.
+3. Handle task names instead of numeric IDs.
+4. Add task priority.
+5. What if dependencies change daily?
+
+---
+
+## 66. Final Exit Test
+
+Candidate must solve and explain this mixed Data Engineering DSA problem:
+
+```text
+You receive a list of event records:
+[
+  {"event_id": "e1", "user_id": "u1", "event_type": "click", "event_time": "2025-01-01T10:00:00"},
+  ...
+]
+
+Tasks:
+1. Remove duplicate event_id records, keeping the latest event_time.
+2. Count events by event_type.
+3. Return top K event types by count.
+4. Explain time and space complexity.
+5. Mention edge cases.
+```
+
+Passing solution must include:
+
+- hash map for deduplication
+- deterministic latest record logic
+- frequency map
+- sorting or heap for top K
+- edge cases
+- complexity explanation
+- clear Python implementation
+- interview-ready communication
+
+If the candidate cannot solve this, they are not Data Engineering Python/DSA interview-ready.
+
+---
+
+## 67. Final Summary
+
+DSA for Data Engineers is not about solving every hard LeetCode problem.
+
+It is about being reliable with the patterns that appear repeatedly in real coding rounds:
+
+- hash maps
+- sets
+- sorting
+- sliding window
+- two pointers
+- heaps
+- intervals
+- prefix sums
+- BFS/DFS
+- dependency graphs
+- clean Python
+
+The strongest candidates can explain the pattern, code cleanly, handle edge cases, analyze complexity, and connect the solution to Data Engineering work.
+
+The weakest candidates memorize solutions and collapse when the problem changes.
+
+Data Engineering Sensei should train pattern recognition, not solution memorization.

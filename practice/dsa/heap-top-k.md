@@ -1,0 +1,5977 @@
+# Heap and Top K Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/dsa/heap-top-k.md
+```
+
+This guide teaches and drills **heap / priority queue / Top K patterns for Data Engineering interviews**.
+
+This is not a generic heap theory document. It is an interview-focused guide for Data Engineering candidates who need to solve Top K, Kth largest/smallest, streaming rank, merge sorted data, priority scheduling, and frequency-ranking problems.
+
+Heap and Top K patterns are high-ROI because they appear in:
+
+- coding interviews
+- Python data-processing questions
+- log analytics
+- monitoring and alerting
+- error ranking
+- top customers/products/merchants
+- top K frequent events
+- streaming leaderboards
+- rolling priority queues
+- merging sorted files
+- merging sorted API pages
+- scheduling highest-priority jobs
+- finding nearest records by score/distance
+- memory-efficient selection
+- online/streaming kth largest
+- median tracking
+- backfill prioritization
+- anomaly ranking
+
+Use this guide with:
+
+- `docs/dsa-for-data-engineers.md`
+- `docs/python-interview-guide.md`
+- `docs/leetcode-practice-map.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/dsa-drill-mode.md`
+- `modes/python-drill-mode.md`
+- `modes/pattern-mapper-mode.md`
+- `modes/tutor-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `modes/interview-mode.md`
+- `practice/dsa/arrays-strings.md`
+- `practice/dsa/hashmaps.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering coding standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at heap and Top K patterns.
+
+The candidate should learn to answer:
+
+```text
+When should I use a heap?
+When is sorting enough?
+When is a min-heap better than max-heap?
+How do I maintain top K without sorting everything?
+How do I find kth largest?
+How do I process a stream?
+How do I merge K sorted lists/files?
+How do I rank by frequency?
+How do I handle tie-breakers?
+How do I use Python heapq correctly?
+How do I explain time and space complexity?
+How does this pattern apply to Data Engineering?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+identify heap/top-k trigger clues
+explain brute force and optimized approach
+choose sort vs heap intentionally
+use Python heapq correctly
+simulate max-heap with negative values
+maintain fixed-size heap of K items
+rank by frequency after counting
+handle tie-breakers
+handle streaming updates
+merge sorted lists/files
+explain complexity clearly
+dry run heap state
+connect the pattern to Data Engineering scenarios
+```
+
+
+## 2. Why Heap / Top K Matters for Data Engineers
+
+Heap and Top K patterns are very common in Data Engineering-style coding.
+
+Real Data Engineering examples:
+
+```text
+Top 10 services by error count.
+Top 5 merchants by transaction volume.
+Top 100 customers by spend.
+K largest files by size.
+K slowest pipelines by runtime.
+K most frequent event types.
+K closest users by feature distance.
+Merge K sorted event streams.
+Merge sorted partition files.
+Keep running top K anomalies.
+Find median latency from streaming events.
+Schedule highest-priority backfill tasks.
+Track kth largest metric in a stream.
+Find smallest K missing partitions by priority.
+```
+
+A weak candidate solves these by sorting everything every time.
+
+A strong candidate explains:
+
+```text
+If I only need top K and K is much smaller than N, I can maintain a size-K heap and avoid sorting all N values.
+```
+
+Interviewers ask heap questions to test whether the candidate can optimize selection/ranking problems without overprocessing data.
+
+
+## 3. Core Mental Model
+
+A heap is a data structure that efficiently gives access to the smallest or largest priority item.
+
+Python's `heapq` is a **min-heap**.
+
+```text
+heap[0] is always the smallest item.
+```
+
+Example min-heap:
+
+```python
+import heapq
+
+heap = []
+heapq.heappush(heap, 5)
+heapq.heappush(heap, 2)
+heapq.heappush(heap, 8)
+
+smallest = heapq.heappop(heap)  # 2
+```
+
+For max-heap behavior in Python:
+
+```text
+push negative values
+```
+
+Example:
+
+```python
+import heapq
+
+heap = []
+heapq.heappush(heap, -5)
+heapq.heappush(heap, -2)
+heapq.heappush(heap, -8)
+
+largest = -heapq.heappop(heap)  # 8
+```
+
+Core interview question:
+
+```text
+Do I need all sorted values, or only K best values?
+```
+
+If only K best values:
+
+```text
+Use heap.
+```
+
+
+## 4. Heap vs Sorting
+
+### Sorting
+
+Use sorting when:
+
+```text
+you need all items ordered
+N is small
+code simplicity matters
+K is close to N
+one-time ranking is enough
+```
+
+Complexity:
+
+```text
+O(n log n)
+```
+
+### Heap
+
+Use heap when:
+
+```text
+you only need top K
+K is much smaller than N
+data is streaming
+you need repeated smallest/largest extraction
+you need merge K sorted sources
+you need dynamic priority scheduling
+```
+
+Complexity examples:
+
+```text
+Top K with size-K heap: O(n log k)
+Kth largest with size-K heap: O(n log k)
+Heapify all then pop K: O(n + k log n)
+Merge K sorted lists: O(N log k)
+```
+
+Interview line:
+
+```text
+Sorting is simpler, but a heap is better when K is small compared to N or when data arrives as a stream.
+```
+
+
+## 5. Min-Heap vs Max-Heap
+
+### Min-heap
+
+Smallest element is at top.
+
+Use min-heap when:
+
+```text
+maintaining K largest values
+removing smallest among current top K
+finding kth largest with size-K heap
+priority queue where lower number = higher priority
+merge sorted lists
+```
+
+Example:
+
+```text
+Keep top 3 largest values.
+Heap contains current top 3.
+If new value is larger than heap[0], replace heap[0].
+```
+
+### Max-heap
+
+Largest element is at top.
+
+Use max-heap when:
+
+```text
+need repeatedly pop largest
+finding kth smallest with size-K max behavior
+simulate using negative values in Python
+```
+
+Python max-heap simulation:
+
+```python
+heapq.heappush(heap, -value)
+largest = -heapq.heappop(heap)
+```
+
+Strict rule:
+
+```text
+For Top K largest, a min-heap of size K is usually the cleanest solution.
+```
+
+
+## 6. Standard Answer Framework
+
+Use this framework for heap/top-k problems:
+
+```text
+1. Restate the problem.
+2. Clarify whether we need values, indices, records, or counts.
+3. Clarify tie-breaking.
+4. Explain brute force sorting approach.
+5. Explain why heap can improve or simplify.
+6. Define heap item shape.
+7. Define heap size rule.
+8. Explain push/pop or replace logic.
+9. Write code.
+10. Dry run heap state.
+11. Explain time complexity.
+12. Explain space complexity.
+13. Handle edge cases.
+14. Connect to Data Engineering scenario.
+```
+
+Short version:
+
+```text
+Need:
+Heap type:
+Heap item:
+Heap size:
+Update rule:
+Result:
+Complexity:
+```
+
+Example:
+
+```text
+Need: top K largest values.
+Heap type: min-heap.
+Heap item: value.
+Heap size: K.
+Update: push until K, then replace if value > heap[0].
+Result: heap contains top K values.
+Complexity: O(n log k).
+```
+
+
+## 7. Scoring Rubric
+
+Score each heap/top-k attempt from 0 to 5.
+
+### Score 0
+
+No meaningful attempt.
+
+### Score 1
+
+Does not understand heap or Top K requirement.
+
+### Score 2
+
+Uses sorting or heap partially but wrong logic or wrong result.
+
+### Score 3
+
+Correct for common cases but weak tie-breakers, edge cases, or complexity.
+
+### Score 4
+
+Interview-ready. Correct heap choice, clean code, edge cases, and complexity.
+
+### Score 5
+
+Strong. Handles streaming, tie-breakers, merge patterns, and Data Engineering variants.
+
+Do not give 4+ if:
+
+```text
+candidate cannot explain why heap is useful
+candidate uses max-heap/min-heap incorrectly
+candidate cannot explain heap item shape
+candidate cannot handle k = 0 or k > n
+candidate ignores tie-breaker requirement
+candidate sorts when heap is clearly expected and cannot justify it
+candidate gives wrong O(n log k) vs O(n log n)
+candidate cannot dry run heap state
+candidate cannot connect to DE scenario
+```
+
+
+## 8. Python heapq Essentials
+
+Python's `heapq` functions:
+
+```python
+import heapq
+```
+
+### Push
+
+```python
+heapq.heappush(heap, item)
+```
+
+### Pop smallest
+
+```python
+smallest = heapq.heappop(heap)
+```
+
+### Push then pop efficiently
+
+```python
+removed = heapq.heappushpop(heap, item)
+```
+
+### Pop then push efficiently
+
+```python
+removed = heapq.heapreplace(heap, item)
+```
+
+### Convert list into heap
+
+```python
+heapq.heapify(items)
+```
+
+### Get n largest
+
+```python
+heapq.nlargest(k, items)
+```
+
+### Get n smallest
+
+```python
+heapq.nsmallest(k, items)
+```
+
+Important:
+
+```text
+heapq is a min-heap.
+heapq does not keep the full list sorted.
+Only heap[0] is guaranteed to be the smallest.
+```
+
+Bad assumption:
+
+```text
+The heap list is sorted.
+```
+
+Correct:
+
+```text
+The heap maintains heap property, not full sorted order.
+```
+
+
+## 9. Heap Tuple Ordering
+
+Python heaps compare tuple items lexicographically.
+
+Example:
+
+```python
+heapq.heappush(heap, (count, word))
+```
+
+Ordering:
+
+```text
+first compare count
+if count ties, compare word
+```
+
+This is useful for tie-breakers.
+
+Example:
+
+```text
+Top services by error count, tie by service name.
+```
+
+If heap items include non-comparable objects and tie happens, Python can error.
+
+Bad:
+
+```python
+heapq.heappush(heap, (priority, record_dict))
+```
+
+If two priorities tie, Python tries to compare dictionaries and fails.
+
+Fix:
+
+```python
+heapq.heappush(heap, (priority, counter, record_dict))
+```
+
+Where `counter` is a unique increasing integer.
+
+Interview line:
+
+```text
+I will include a deterministic tie-breaker in the heap tuple so equal priorities do not cause comparison errors.
+```
+
+
+## 10. Complexity Rules
+
+Common heap complexities:
+
+```text
+heappush: O(log n)
+heappop: O(log n)
+heapify: O(n)
+peek heap[0]: O(1)
+sort all: O(n log n)
+size-K heap over n items: O(n log k)
+pop K from heap of n: O(k log n)
+merge K sorted lists with total N items: O(N log k)
+```
+
+Memory:
+
+```text
+size-K heap: O(k)
+heapify all items: O(n)
+frequency map + heap: O(u + k), where u is unique values
+merge K sorted lists: O(k) heap plus output
+two heaps for median: O(n)
+```
+
+Interview wording:
+
+```text
+Time is O(n log k) because for each of n items, heap operations cost O(log k), and the heap never grows beyond k.
+```
+
+Do not say:
+
+```text
+Heap makes it O(n)
+```
+
+unless using heapify plus specific operation or bucket sort.
+
+
+## 11. Edge Case Checklist
+
+Heap/top-k edge cases:
+
+```text
+empty input
+k = 0
+k = 1
+k > n
+k = n
+duplicates
+negative numbers
+tie-breaking
+same priority values
+records missing priority field
+invalid numeric values
+streaming input
+memory limit
+large N small K
+K close to N
+need sorted output or any order
+need values vs indices vs full records
+min vs max confusion
+non-comparable heap tuple elements
+```
+
+Data Engineering-specific edge cases:
+
+```text
+log record missing service
+metric value is None
+same count tie by name
+same spend tie by customer_id
+late-arriving event changes ranking
+streaming top K cannot store all records
+API sends duplicate records
+merge sorted files with empty files
+tasks with same priority
+priority job fails and must be retried
+```
+
+
+## 12. Pattern Map
+
+Heap/top-k patterns:
+
+```text
+1. K largest values
+2. K smallest values
+3. Kth largest
+4. Kth smallest
+5. Top K frequent
+6. Top K by custom score
+7. K closest points/items
+8. Merge K sorted lists
+9. Streaming kth largest
+10. Streaming top K
+11. Median from data stream
+12. Priority queue scheduler
+13. Repeated extraction
+14. Heapify then pop K
+15. Size-K heap selection
+16. Frequency map + heap
+17. Two heaps balancing
+18. Minimize/maximize by priority
+19. Tie-breaker ranking
+20. Data Engineering top metrics
+```
+
+Selection rule:
+
+```text
+If the problem asks for best K items, think heap.
+If it asks for counts first, think hash map + heap.
+If it asks for sorted sources merging, think heap of source heads.
+If it asks for stream median, think two heaps.
+```
+
+
+## 13. Common Mistakes
+
+Common heap mistakes:
+
+```text
+Using max-heap when min-heap is needed for top K largest.
+Using min-heap when max-heap is needed for repeated largest extraction.
+Forgetting Python heapq is min-heap.
+Not limiting heap size to K.
+Popping too early.
+Returning heap directly when sorted output is required.
+Assuming heap list is sorted.
+Using tuple with dict/object and no tie-breaker.
+Ignoring k = 0.
+Ignoring k > n.
+Confusing kth largest with top K largest.
+Counting frequencies after trying heap directly.
+Using sorting but claiming O(n log k).
+Not explaining why heap improves over sorting.
+Not handling duplicate values.
+Not handling ties.
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. You used heapq, but the heap size is never limited to K, so the complexity becomes O(n log n) instead of O(n log k).
+```
+
+
+## 14. Pattern: K Largest Values
+
+### Use case
+
+Find K largest values from an unsorted list.
+
+### Best heap pattern
+
+Use min-heap of size K.
+
+Why min-heap?
+
+```text
+The smallest among the current top K is at heap[0].
+If a new value is larger than heap[0], it belongs in the top K.
+```
+
+Template:
+
+```python
+import heapq
+
+def k_largest(nums, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for value in nums:
+        if len(heap) < k:
+            heapq.heappush(heap, value)
+        elif value > heap[0]:
+            heapq.heapreplace(heap, value)
+
+    return heap
+```
+
+Complexity:
+
+```text
+Time: O(n log k)
+Space: O(k)
+```
+
+If sorted descending output required:
+
+```python
+return sorted(heap, reverse=True)
+```
+
+Additional cost:
+
+```text
+O(k log k)
+```
+
+Data Engineering connection:
+
+```text
+Find K largest files, K slowest jobs, K highest transaction amounts.
+```
+
+
+## 15. Pattern: K Smallest Values
+
+### Use case
+
+Find K smallest values from an unsorted list.
+
+### Options
+
+Python simple approach:
+
+```python
+import heapq
+
+def k_smallest(nums, k):
+    return heapq.nsmallest(k, nums)
+```
+
+Manual max-heap of size K using negatives:
+
+```python
+import heapq
+
+def k_smallest(nums, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for value in nums:
+        neg_value = -value
+
+        if len(heap) < k:
+            heapq.heappush(heap, neg_value)
+        elif value < -heap[0]:
+            heapq.heapreplace(heap, neg_value)
+
+    return sorted([-value for value in heap])
+```
+
+Why max behavior?
+
+```text
+For K smallest, keep current K smallest.
+The largest among them should be removed if a smaller value arrives.
+Python min-heap can simulate max-heap using negatives.
+```
+
+Complexity:
+
+```text
+Time: O(n log k)
+Space: O(k)
+```
+
+Data Engineering connection:
+
+```text
+Find K smallest partitions by row count, K fastest jobs, K lowest-latency endpoints.
+```
+
+
+## 16. Problem: Kth Largest Element in an Array
+
+LeetCode:
+
+```text
+215. Kth Largest Element in an Array
+Difficulty: Medium
+Pattern: Size-K min-heap
+```
+
+Problem:
+
+```text
+Return the kth largest element, not the kth distinct element.
+```
+
+Approach:
+
+```text
+Maintain min-heap of size k.
+After processing all values, heap[0] is kth largest.
+```
+
+Code:
+
+```python
+import heapq
+
+def find_kth_largest(nums, k):
+    heap = []
+
+    for value in nums:
+        if len(heap) < k:
+            heapq.heappush(heap, value)
+        elif value > heap[0]:
+            heapq.heapreplace(heap, value)
+
+    return heap[0]
+```
+
+Alternative:
+
+```python
+import heapq
+
+def find_kth_largest(nums, k):
+    return heapq.nlargest(k, nums)[-1]
+```
+
+Complexity:
+
+```text
+Manual heap: O(n log k) time, O(k) space
+Sorting: O(n log n) time, O(n) or O(1) extra depending implementation
+```
+
+Edge cases:
+
+```text
+duplicates count separately
+k = 1 means largest
+k = len(nums) means smallest
+negative values
+```
+
+Data Engineering connection:
+
+```text
+Find kth slowest pipeline runtime or kth largest transaction amount.
+```
+
+Common mistake:
+
+```text
+Using set and accidentally finding kth distinct largest.
+```
+
+
+## 17. Problem: Kth Smallest Element
+
+Custom pattern:
+
+```text
+Return kth smallest value.
+```
+
+Approach:
+
+```text
+Use max-heap of size k via negative values.
+After processing, -heap[0] is kth smallest.
+```
+
+Code:
+
+```python
+import heapq
+
+def find_kth_smallest(nums, k):
+    heap = []
+
+    for value in nums:
+        neg_value = -value
+
+        if len(heap) < k:
+            heapq.heappush(heap, neg_value)
+        elif value < -heap[0]:
+            heapq.heapreplace(heap, neg_value)
+
+    return -heap[0]
+```
+
+Complexity:
+
+```text
+Time: O(n log k)
+Space: O(k)
+```
+
+Data Engineering connection:
+
+```text
+Find kth fastest job, kth smallest file, kth lowest latency.
+```
+
+Common mistake:
+
+```text
+Using min-heap of size K for kth smallest without negative values. That keeps smallest at top but does not remove the largest among current K.
+```
+
+
+## 18. Problem: Last Stone Weight
+
+LeetCode:
+
+```text
+1046. Last Stone Weight
+Difficulty: Easy
+Pattern: Max-heap simulation
+```
+
+Problem:
+
+```text
+Repeatedly smash two largest stones.
+If unequal, push difference back.
+```
+
+Python max-heap using negatives:
+
+```python
+import heapq
+
+def last_stone_weight(stones):
+    heap = [-stone for stone in stones]
+    heapq.heapify(heap)
+
+    while len(heap) > 1:
+        first = -heapq.heappop(heap)
+        second = -heapq.heappop(heap)
+
+        if first != second:
+            heapq.heappush(heap, -(first - second))
+
+    return -heap[0] if heap else 0
+```
+
+Complexity:
+
+```text
+Time: O(n + m log n), where m is number of smash operations
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Repeatedly process highest-priority/largest workload items and push residual work back.
+```
+
+Common mistake:
+
+```text
+Forgetting to negate values when pushing residual.
+```
+
+
+## 19. Pattern: Top K Frequent
+
+Top K frequent usually requires two stages.
+
+```text
+1. Count frequency using hash map / Counter.
+2. Select top K using heap, sort, or bucket.
+```
+
+Decision:
+
+```text
+If simplicity is fine → Counter + sort.
+If K is small and unique values are large → heap.
+If frequency range is bounded by n → bucket sort.
+```
+
+Interview line:
+
+```text
+This is not heap directly on the original array. I first need a frequency map, then rank by frequency.
+```
+
+Data Engineering examples:
+
+```text
+Top K error services.
+Top K event types.
+Top K merchants by transaction count.
+Top K API status codes.
+Top K failed DAGs.
+```
+
+
+## 20. Problem: Top K Frequent Elements
+
+LeetCode:
+
+```text
+347. Top K Frequent Elements
+Difficulty: Medium
+Pattern: Frequency map + heap/sort/bucket
+```
+
+Sort approach:
+
+```python
+from collections import Counter
+
+def top_k_frequent(nums, k):
+    counts = Counter(nums)
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
+    return [value for value, count in ranked[:k]]
+```
+
+Heap approach:
+
+```python
+from collections import Counter
+import heapq
+
+def top_k_frequent(nums, k):
+    counts = Counter(nums)
+    heap = []
+
+    for value, count in counts.items():
+        heapq.heappush(heap, (count, value))
+
+        if len(heap) > k:
+            heapq.heappop(heap)
+
+    return [value for count, value in heap]
+```
+
+Bucket approach:
+
+```python
+from collections import Counter
+
+def top_k_frequent(nums, k):
+    counts = Counter(nums)
+    buckets = [[] for _ in range(len(nums) + 1)]
+
+    for value, count in counts.items():
+        buckets[count].append(value)
+
+    result = []
+
+    for frequency in range(len(buckets) - 1, -1, -1):
+        for value in buckets[frequency]:
+            result.append(value)
+
+            if len(result) == k:
+                return result
+
+    return result
+```
+
+Complexity:
+
+```text
+Sort: O(n + u log u), O(u) space
+Heap: O(n + u log k), O(u + k) space
+Bucket: O(n + u), O(n + u) space
+```
+
+Data Engineering connection:
+
+```text
+Top K event types or top K services by error count.
+```
+
+Common mistake:
+
+```text
+Sorting original numbers instead of counts.
+```
+
+
+## 21. Problem: Top K Frequent Words
+
+LeetCode:
+
+```text
+692. Top K Frequent Words
+Difficulty: Medium
+Pattern: Frequency map + sorting/heap with tie-breaker
+```
+
+Requirement:
+
+```text
+Return words by frequency descending.
+If frequency ties, word with lower alphabetical order comes first.
+```
+
+Sort approach:
+
+```python
+from collections import Counter
+
+def top_k_frequent(words, k):
+    counts = Counter(words)
+    ranked = sorted(counts.keys(), key=lambda word: (-counts[word], word))
+    return ranked[:k]
+```
+
+Complexity:
+
+```text
+Time: O(n + u log u)
+Space: O(u)
+```
+
+Heap approach note:
+
+```text
+Tie-breaking with min-heap for this exact ordering can be tricky because we want frequency high and word lexicographically small.
+For interviews, sort approach is acceptable unless heap is required.
+```
+
+Data Engineering connection:
+
+```text
+Top K error messages, event names, merchant tokens, or normalized categories with deterministic tie-breaker.
+```
+
+Strict interview point:
+
+```text
+Tie-breaking must be explicit and deterministic.
+```
+
+
+## 22. Problem: Sort Characters By Frequency
+
+LeetCode:
+
+```text
+451. Sort Characters By Frequency
+Difficulty: Medium
+Pattern: Frequency map + ranking
+```
+
+Code:
+
+```python
+from collections import Counter
+
+def frequency_sort(s):
+    counts = Counter(s)
+    parts = []
+
+    for char, count in sorted(counts.items(), key=lambda item: item[1], reverse=True):
+        parts.append(char * count)
+
+    return "".join(parts)
+```
+
+Complexity:
+
+```text
+Time: O(n + u log u)
+Space: O(n + u)
+```
+
+Data Engineering connection:
+
+```text
+Sort categories/statuses by frequency for debugging summaries.
+```
+
+Common mistake:
+
+```text
+Repeated string concatenation in loop instead of list + join.
+```
+
+
+## 23. Data Engineering Custom Problem: Top Error Services
+
+Problem:
+
+```text
+Given log records with service and level, return top k services by ERROR count.
+Skip invalid records missing service or level.
+Tie-break by service name ascending.
+```
+
+Pattern:
+
+```text
+Counter + sort/heap
+```
+
+Code:
+
+```python
+from collections import Counter
+
+def top_error_services(logs, k):
+    counts = Counter()
+    invalid_count = 0
+
+    for log in logs:
+        service = log.get("service")
+        level = log.get("level")
+
+        if service is None or level is None:
+            invalid_count += 1
+            continue
+
+        if level == "ERROR":
+            counts[service] += 1
+
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+
+    return {
+        "top_services": ranked[:k],
+        "invalid_count": invalid_count,
+    }
+```
+
+Complexity:
+
+```text
+Time: O(n + u log u)
+Space: O(u)
+```
+
+Heap alternative:
+
+```text
+Use heap when u is very large and k is small.
+Tie-breakers must be handled carefully.
+```
+
+Follow-ups:
+
+```text
+What if logs are streaming?
+What if K changes per request?
+What if invalid rate exceeds threshold?
+```
+
+
+## 24. Data Engineering Custom Problem: Top K Merchants by Spend
+
+Problem:
+
+```text
+Given transactions with merchant_id and amount, return top k merchants by total spend.
+Skip invalid records.
+Tie-break by merchant_id ascending.
+```
+
+Pattern:
+
+```text
+Hash map aggregation + Top K
+```
+
+Code:
+
+```python
+from collections import defaultdict
+
+def top_merchants_by_spend(transactions, k):
+    totals = defaultdict(float)
+    invalid_count = 0
+
+    for transaction in transactions:
+        merchant_id = transaction.get("merchant_id")
+        amount = transaction.get("amount")
+
+        if merchant_id is None or amount is None:
+            invalid_count += 1
+            continue
+
+        totals[merchant_id] += amount
+
+    ranked = sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+
+    return {
+        "top_merchants": ranked[:k],
+        "invalid_count": invalid_count,
+    }
+```
+
+Heap version for small K:
+
+```python
+import heapq
+from collections import defaultdict
+
+def top_merchants_by_spend_heap(transactions, k):
+    totals = defaultdict(float)
+
+    for transaction in transactions:
+        merchant_id = transaction.get("merchant_id")
+        amount = transaction.get("amount")
+
+        if merchant_id is None or amount is None:
+            continue
+
+        totals[merchant_id] += amount
+
+    heap = []
+
+    for merchant_id, total in totals.items():
+        heapq.heappush(heap, (total, merchant_id))
+
+        if len(heap) > k:
+            heapq.heappop(heap)
+
+    return sorted(heap, key=lambda item: (-item[0], item[1]))
+```
+
+Complexity:
+
+```text
+Aggregation: O(n)
+Sort: O(u log u)
+Heap: O(u log k)
+Space: O(u)
+```
+
+Interview point:
+
+```text
+First aggregate to merchant grain, then rank. Do not rank individual transactions.
+```
+
+
+## 25. Pattern: K Closest Items
+
+K closest problems usually rank items by a distance/score.
+
+Examples:
+
+```text
+K closest points to origin
+K closest users by feature distance
+K nearest stores
+K most similar records
+```
+
+Common approach:
+
+```text
+Compute distance/score.
+Maintain size-K max-heap of closest items.
+```
+
+In Python:
+
+```text
+Use negative distance to simulate max-heap.
+```
+
+Why max-heap of size K?
+
+```text
+Among current K closest, the farthest should be removed if a closer item arrives.
+```
+
+Interview line:
+
+```text
+For K closest, I keep a size-K heap where the worst item among the selected K is at the top, so it can be replaced.
+```
+
+
+## 26. Problem: K Closest Points to Origin
+
+LeetCode:
+
+```text
+973. K Closest Points to Origin
+Difficulty: Medium
+Pattern: Size-K max-heap or sort
+```
+
+Sort approach:
+
+```python
+def k_closest(points, k):
+    return sorted(points, key=lambda point: point[0] * point[0] + point[1] * point[1])[:k]
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Heap approach:
+
+```python
+import heapq
+
+def k_closest(points, k):
+    heap = []
+
+    for x, y in points:
+        distance = x * x + y * y
+        item = (-distance, x, y)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif distance < -heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    return [[x, y] for neg_distance, x, y in heap]
+```
+
+Complexity:
+
+```text
+Time: O(n log k)
+Space: O(k)
+```
+
+Why squared distance:
+
+```text
+No need to compute square root because ordering is same.
+```
+
+Data Engineering connection:
+
+```text
+Find K closest feature vectors, nearest stores/users, or most similar records by distance score.
+```
+
+Common mistake:
+
+```text
+Using min-heap of distances and popping K after pushing all items gives O(n + k log n), which is fine but uses O(n) space.
+```
+
+
+## 27. Problem: K Closest Records by Score
+
+Custom Data Engineering problem:
+
+```text
+Given records with id and anomaly_score, return K records closest to a target score.
+Tie-break by id ascending.
+```
+
+Pattern:
+
+```text
+Size-K max-heap by distance
+```
+
+Code:
+
+```python
+import heapq
+
+def k_closest_records(records, target_score, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for record in records:
+        record_id = record.get("id")
+        score = record.get("anomaly_score")
+
+        if record_id is None or score is None:
+            continue
+
+        distance = abs(score - target_score)
+
+        # negative distance gives max-heap behavior.
+        # negative record_id tie trick only works if IDs are numeric.
+        item = (-distance, record_id, record)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif distance < -heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    result = [record for neg_distance, record_id, record in heap]
+    return sorted(result, key=lambda record: (abs(record["anomaly_score"] - target_score), record["id"]))
+```
+
+Complexity:
+
+```text
+Time: O(n log k + k log k)
+Space: O(k)
+```
+
+Interview point:
+
+```text
+Clarify whether output must be sorted. Heap contents are not sorted.
+```
+
+
+## 28. Pattern: Merge K Sorted Lists / Streams
+
+Use heap when merging multiple sorted sources.
+
+Examples:
+
+```text
+merge K sorted linked lists
+merge sorted files
+merge sorted event streams
+merge sorted API pages
+merge partition outputs sorted by timestamp
+```
+
+Core idea:
+
+```text
+Put the first item from each sorted source into a min-heap.
+Repeatedly pop the smallest item.
+Then push the next item from the same source.
+```
+
+Heap item:
+
+```text
+(value, source_index, item_index)
+```
+
+Why source/index fields?
+
+```text
+After popping an item, we need to know which source to advance.
+```
+
+Complexity:
+
+```text
+If total items = N and sources = K:
+Time: O(N log K)
+Space: O(K)
+```
+
+Interview line:
+
+```text
+The heap size stays at most K because it only stores one current item from each sorted source.
+```
+
+
+## 29. Problem: Merge k Sorted Lists
+
+LeetCode:
+
+```text
+23. Merge k Sorted Lists
+Difficulty: Hard
+Pattern: Min-heap merge K sorted lists
+```
+
+For arrays version:
+
+```python
+import heapq
+
+def merge_k_sorted_arrays(arrays):
+    heap = []
+    result = []
+
+    for array_index, array in enumerate(arrays):
+        if array:
+            heapq.heappush(heap, (array[0], array_index, 0))
+
+    while heap:
+        value, array_index, item_index = heapq.heappop(heap)
+        result.append(value)
+
+        next_index = item_index + 1
+
+        if next_index < len(arrays[array_index]):
+            next_value = arrays[array_index][next_index]
+            heapq.heappush(heap, (next_value, array_index, next_index))
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(N log K)
+Space: O(K) excluding output
+```
+
+Data Engineering connection:
+
+```text
+Merge K sorted event files by timestamp without loading all records into one sorted list.
+```
+
+Common mistakes:
+
+```text
+Pushing all N items into heap, using O(N) space instead of O(K).
+Not tracking source index.
+Failing on empty arrays.
+```
+
+
+## 30. Data Engineering Custom Problem: Merge Sorted Event Streams
+
+Problem:
+
+```text
+Given K sorted event streams, each sorted by event_time, merge them into one sorted list.
+Each event has event_time and payload.
+```
+
+Pattern:
+
+```text
+Min-heap of stream heads
+```
+
+Code:
+
+```python
+import heapq
+
+def merge_sorted_event_streams(streams):
+    heap = []
+    result = []
+
+    for stream_index, stream in enumerate(streams):
+        if stream:
+            event = stream[0]
+            heapq.heappush(heap, (event["event_time"], stream_index, 0, event))
+
+    while heap:
+        event_time, stream_index, event_index, event = heapq.heappop(heap)
+        result.append(event)
+
+        next_index = event_index + 1
+
+        if next_index < len(streams[stream_index]):
+            next_event = streams[stream_index][next_index]
+            heapq.heappush(
+                heap,
+                (next_event["event_time"], stream_index, next_index, next_event),
+            )
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(N log K)
+Space: O(K) excluding output
+```
+
+Follow-ups:
+
+```text
+What if event_time ties?
+What if streams are generators?
+What if one stream is delayed?
+What if data is too large to return as list?
+```
+
+Expected:
+
+```text
+Add tie-breaker, yield records, handle watermark/late events, write output incrementally.
+```
+
+
+## 31. Pattern: Streaming Kth Largest
+
+Streaming problems require maintaining state as values arrive.
+
+Use when:
+
+```text
+values arrive one by one
+need kth largest after each insert
+cannot sort all values every time
+```
+
+Pattern:
+
+```text
+Maintain min-heap of size k.
+After each add, heap[0] is kth largest.
+```
+
+Complexity per add:
+
+```text
+O(log k)
+```
+
+Space:
+
+```text
+O(k)
+```
+
+Interview line:
+
+```text
+For a stream, I keep only the top K values in a min-heap, so updates are O(log K) instead of sorting all values repeatedly.
+```
+
+
+## 32. Problem: Kth Largest Element in a Stream
+
+LeetCode:
+
+```text
+703. Kth Largest Element in a Stream
+Difficulty: Easy
+Pattern: Streaming size-K min-heap
+```
+
+Code:
+
+```python
+import heapq
+
+class KthLargest:
+    def __init__(self, k, nums):
+        self.k = k
+        self.heap = []
+
+        for value in nums:
+            self.add(value)
+
+    def add(self, val):
+        if len(self.heap) < self.k:
+            heapq.heappush(self.heap, val)
+        elif val > self.heap[0]:
+            heapq.heapreplace(self.heap, val)
+
+        return self.heap[0]
+```
+
+Complexity:
+
+```text
+Constructor: O(n log k)
+Add: O(log k)
+Space: O(k)
+```
+
+Data Engineering connection:
+
+```text
+Track kth highest latency or kth largest transaction amount as events stream in.
+```
+
+Common mistake:
+
+```text
+Keeping all values and sorting after every add.
+```
+
+
+## 33. Data Engineering Custom Problem: Streaming Top K Error Services
+
+Problem:
+
+```text
+Events arrive one by one:
+{"service": "...", "level": "ERROR" or "INFO"}
+
+Maintain error counts and return current top K services on request.
+```
+
+Pattern:
+
+```text
+Counter + ranking
+```
+
+Important nuance:
+
+```text
+Dynamic top K with changing counts is harder than static top K because heap entries can become stale.
+```
+
+Simple interview-friendly approach:
+
+```python
+from collections import Counter
+
+class ErrorServiceTracker:
+    def __init__(self, k):
+        self.k = k
+        self.counts = Counter()
+
+    def add(self, log):
+        service = log.get("service")
+        level = log.get("level")
+
+        if service is None or level is None:
+            return
+
+        if level == "ERROR":
+            self.counts[service] += 1
+
+    def top_k(self):
+        ranked = sorted(self.counts.items(), key=lambda item: (-item[1], item[0]))
+        return ranked[:self.k]
+```
+
+Complexity:
+
+```text
+add: O(1)
+top_k: O(u log u)
+```
+
+Discussion:
+
+```text
+If top_k is called very often and u is large, we need a more advanced structure or accept lazy heap cleanup depending requirements.
+```
+
+Interview point:
+
+```text
+Do not pretend dynamic Top K is always simple O(log k) if counts update for existing keys. Be honest about stale heap entries.
+```
+
+
+## 34. Pattern: Median from Data Stream
+
+Median from stream uses two heaps.
+
+Use:
+
+```text
+max-heap for lower half
+min-heap for upper half
+```
+
+Python:
+
+```text
+lower half max-heap simulated with negative values
+upper half min-heap normal
+```
+
+Invariant:
+
+```text
+all lower values <= all upper values
+heap sizes differ by at most 1
+```
+
+Median:
+
+```text
+if sizes equal → average of tops
+else → top of larger heap
+```
+
+Interview line:
+
+```text
+Two heaps let me keep the lower and upper halves balanced, so insertion is O(log n) and median lookup is O(1).
+```
+
+
+## 35. Problem: Find Median from Data Stream
+
+LeetCode:
+
+```text
+295. Find Median from Data Stream
+Difficulty: Hard
+Pattern: Two heaps
+```
+
+Code:
+
+```python
+import heapq
+
+class MedianFinder:
+    def __init__(self):
+        self.lower = []  # max-heap using negatives
+        self.upper = []  # min-heap
+
+    def addNum(self, num):
+        heapq.heappush(self.lower, -num)
+
+        # Ensure every lower value <= every upper value
+        if self.upper and -self.lower[0] > self.upper[0]:
+            value = -heapq.heappop(self.lower)
+            heapq.heappush(self.upper, value)
+
+        # Balance sizes
+        if len(self.lower) > len(self.upper) + 1:
+            value = -heapq.heappop(self.lower)
+            heapq.heappush(self.upper, value)
+        elif len(self.upper) > len(self.lower):
+            value = heapq.heappop(self.upper)
+            heapq.heappush(self.lower, -value)
+
+    def findMedian(self):
+        if len(self.lower) > len(self.upper):
+            return -self.lower[0]
+
+        return (-self.lower[0] + self.upper[0]) / 2
+```
+
+Complexity:
+
+```text
+addNum: O(log n)
+findMedian: O(1)
+space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Track median latency, transaction amount, or event delay from a stream.
+```
+
+Common mistakes:
+
+```text
+not balancing heaps
+forgetting lower heap stores negatives
+wrong median for even count
+```
+
+
+## 36. Pattern: Priority Queue Scheduler
+
+Priority queues are useful for scheduling.
+
+Examples:
+
+```text
+process highest priority job
+process earliest deadline
+process smallest next timestamp
+process retry queue by next_run_at
+process backfill tasks by priority
+```
+
+Heap item:
+
+```text
+(priority, tie_breaker, task)
+```
+
+Why tie_breaker:
+
+```text
+If priorities tie and tasks are dictionaries, Python cannot compare dictionaries.
+```
+
+Template:
+
+```python
+import heapq
+from itertools import count
+
+counter = count()
+heap = []
+
+heapq.heappush(heap, (priority, next(counter), task))
+priority, _, task = heapq.heappop(heap)
+```
+
+Data Engineering connection:
+
+```text
+Schedule backfills by priority, process retry tasks by next retry time, or run smallest-lag source first.
+```
+
+
+## 37. Data Engineering Custom Problem: Backfill Task Scheduler
+
+Problem:
+
+```text
+Given backfill tasks with:
+task_id, priority, estimated_rows
+
+Process tasks by:
+1. lower priority number first
+2. if tie, smaller estimated_rows first
+3. if tie, task_id ascending
+```
+
+Pattern:
+
+```text
+Priority queue
+```
+
+Code:
+
+```python
+import heapq
+
+def schedule_backfill_tasks(tasks):
+    heap = []
+
+    for task in tasks:
+        task_id = task.get("task_id")
+        priority = task.get("priority")
+        estimated_rows = task.get("estimated_rows")
+
+        if task_id is None or priority is None or estimated_rows is None:
+            continue
+
+        heapq.heappush(heap, (priority, estimated_rows, task_id, task))
+
+    order = []
+
+    while heap:
+        priority, estimated_rows, task_id, task = heapq.heappop(heap)
+        order.append(task)
+
+    return order
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-up:
+
+```text
+What if new urgent tasks arrive during processing?
+```
+
+Expected:
+
+```text
+Push new tasks into heap dynamically; each insertion is O(log n).
+```
+
+
+## 38. Problem: Task Scheduler
+
+LeetCode:
+
+```text
+621. Task Scheduler
+Difficulty: Medium
+Pattern: Max-heap + cooldown
+```
+
+Problem:
+
+```text
+Given tasks and cooldown n, return least intervals to finish all tasks.
+```
+
+Approach:
+
+```text
+Use max-heap by remaining count.
+Use queue for tasks cooling down with available time.
+```
+
+Code:
+
+```python
+from collections import Counter, deque
+import heapq
+
+def least_interval(tasks, n):
+    counts = Counter(tasks)
+    max_heap = [-count for count in counts.values()]
+    heapq.heapify(max_heap)
+
+    time = 0
+    cooldown = deque()  # (available_time, remaining_count_negative)
+
+    while max_heap or cooldown:
+        time += 1
+
+        if max_heap:
+            count = heapq.heappop(max_heap)
+            count += 1  # because count is negative
+
+            if count != 0:
+                cooldown.append((time + n, count))
+
+        if cooldown and cooldown[0][0] == time:
+            available_time, count = cooldown.popleft()
+            heapq.heappush(max_heap, count)
+
+    return time
+```
+
+Complexity:
+
+```text
+Time: O(T log U), where T is intervals and U is unique tasks
+Space: O(U)
+```
+
+Data Engineering connection:
+
+```text
+Schedule recurring jobs with cooldown/resource constraints.
+```
+
+Common mistake:
+
+```text
+Not handling idle time or cooldown re-entry correctly.
+```
+
+
+## 39. Pattern: Heapify Then Pop K
+
+Alternative to size-K heap.
+
+Use when:
+
+```text
+you need repeatedly extract min/max
+K may not be much smaller than N
+heapifying all items is acceptable
+```
+
+For K smallest:
+
+```python
+import heapq
+
+def k_smallest_heapify(nums, k):
+    heap = list(nums)
+    heapq.heapify(heap)
+
+    result = []
+
+    for _ in range(min(k, len(heap))):
+        result.append(heapq.heappop(heap))
+
+    return result
+```
+
+Complexity:
+
+```text
+heapify: O(n)
+pop K: O(k log n)
+total: O(n + k log n)
+space: O(n)
+```
+
+Compare with size-K heap:
+
+```text
+O(n log k) time, O(k) space
+```
+
+Interview line:
+
+```text
+Heapifying all items is simple but uses O(n) space. A size-K heap is more memory-efficient for small K.
+```
+
+
+## 40. Pattern: Quickselect Alternative
+
+Some Top K/Kth problems can be solved by Quickselect.
+
+Quickselect:
+
+```text
+Average O(n)
+Worst O(n²)
+In-place possible
+```
+
+Heap:
+
+```text
+O(n log k)
+Stable and easier to explain
+Works well for streaming
+```
+
+Sorting:
+
+```text
+O(n log n)
+Simplest
+```
+
+When asked for kth largest:
+
+```text
+Heap is acceptable and safer.
+Quickselect may be expected for optimal average time in some interviews.
+```
+
+Data Engineering interview strategy:
+
+```text
+For DE roles, heap solution is usually strong enough unless interviewer asks for O(n) average.
+```
+
+Interview line:
+
+```text
+A heap gives O(n log k) and works for streaming. If we need average O(n) and can modify the array, Quickselect is another option.
+```
+
+
+## 41. Problem: Kth Smallest Element in a Sorted Matrix
+
+LeetCode:
+
+```text
+378. Kth Smallest Element in a Sorted Matrix
+Difficulty: Medium
+Pattern: Min-heap over sorted rows or binary search
+```
+
+Heap approach:
+
+```text
+Each row is sorted.
+Push first element of each row.
+Pop smallest, then push next element from same row.
+```
+
+Code:
+
+```python
+import heapq
+
+def kth_smallest(matrix, k):
+    n = len(matrix)
+    heap = []
+
+    for row in range(min(n, k)):
+        heapq.heappush(heap, (matrix[row][0], row, 0))
+
+    count = 0
+
+    while heap:
+        value, row, col = heapq.heappop(heap)
+        count += 1
+
+        if count == k:
+            return value
+
+        next_col = col + 1
+
+        if next_col < len(matrix[row]):
+            heapq.heappush(heap, (matrix[row][next_col], row, next_col))
+```
+
+Complexity:
+
+```text
+Time: O(k log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Find kth item while merging sorted partition outputs.
+```
+
+Common mistake:
+
+```text
+Pushing all matrix elements and losing sorted-row advantage.
+```
+
+
+## 42. Problem: Find K Pairs with Smallest Sums
+
+LeetCode:
+
+```text
+373. Find K Pairs with Smallest Sums
+Difficulty: Medium
+Pattern: Min-heap over sorted pair candidates
+```
+
+Problem:
+
+```text
+Given two sorted arrays, return k pairs with smallest sums.
+```
+
+Approach:
+
+```text
+Start with pairs (nums1[i], nums2[0]) for first min(k, len(nums1)) rows.
+Pop smallest pair.
+Push next pair in same row: (nums1[i], nums2[j+1]).
+```
+
+Code:
+
+```python
+import heapq
+
+def k_smallest_pairs(nums1, nums2, k):
+    if not nums1 or not nums2 or k <= 0:
+        return []
+
+    heap = []
+    result = []
+
+    for i in range(min(k, len(nums1))):
+        heapq.heappush(heap, (nums1[i] + nums2[0], i, 0))
+
+    while heap and len(result) < k:
+        pair_sum, i, j = heapq.heappop(heap)
+        result.append([nums1[i], nums2[j]])
+
+        if j + 1 < len(nums2):
+            heapq.heappush(heap, (nums1[i] + nums2[j + 1], i, j + 1))
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(k log min(k, n))
+Space: O(min(k, n))
+```
+
+Data Engineering connection:
+
+```text
+Find K lowest-cost pairings between two sorted candidate lists.
+```
+
+
+## 43. Data Engineering Custom Problem: Top K Slowest Pipelines
+
+Problem:
+
+```text
+Given pipeline run records with pipeline_id and runtime_seconds, return top k slowest pipeline runs.
+Tie-break by pipeline_id ascending.
+Skip invalid records.
+```
+
+Pattern:
+
+```text
+Size-K min-heap by runtime
+```
+
+Code:
+
+```python
+import heapq
+
+def top_k_slowest_pipeline_runs(runs, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for run in runs:
+        pipeline_id = run.get("pipeline_id")
+        runtime = run.get("runtime_seconds")
+
+        if pipeline_id is None or runtime is None:
+            continue
+
+        item = (runtime, pipeline_id, run)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif runtime > heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    result = [run for runtime, pipeline_id, run in heap]
+    return sorted(result, key=lambda run: (-run["runtime_seconds"], run["pipeline_id"]))
+```
+
+Complexity:
+
+```text
+Time: O(n log k + k log k)
+Space: O(k)
+```
+
+Follow-ups:
+
+```text
+What if we need top k pipelines by average runtime, not individual runs?
+What if data is streaming?
+What if tie-break uses latest run timestamp?
+```
+
+Expected:
+
+```text
+Aggregate first if ranking pipeline-level metrics.
+```
+
+
+## 44. Data Engineering Custom Problem: Top K Largest Files
+
+Problem:
+
+```text
+Given file metadata records with file_path and size_bytes, return K largest files.
+Skip invalid records.
+```
+
+Pattern:
+
+```text
+Size-K min-heap
+```
+
+Code:
+
+```python
+import heapq
+
+def top_k_largest_files(files, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for file in files:
+        file_path = file.get("file_path")
+        size = file.get("size_bytes")
+
+        if file_path is None or size is None:
+            continue
+
+        item = (size, file_path, file)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif size > heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    result = [file for size, file_path, file in heap]
+    return sorted(result, key=lambda file: (-file["size_bytes"], file["file_path"]))
+```
+
+Complexity:
+
+```text
+Time: O(n log k + k log k)
+Space: O(k)
+```
+
+Data Engineering connection:
+
+```text
+Find largest files causing storage or processing cost.
+```
+
+
+## 45. Data Engineering Custom Problem: Priority Retry Queue
+
+Problem:
+
+```text
+Given failed tasks with next_retry_at and task_id, return tasks in retry order.
+Earlier next_retry_at first, tie task_id ascending.
+```
+
+Pattern:
+
+```text
+Min-heap priority queue
+```
+
+Code:
+
+```python
+import heapq
+
+def retry_order(tasks):
+    heap = []
+
+    for task in tasks:
+        task_id = task.get("task_id")
+        next_retry_at = task.get("next_retry_at")
+
+        if task_id is None or next_retry_at is None:
+            continue
+
+        heapq.heappush(heap, (next_retry_at, task_id, task))
+
+    result = []
+
+    while heap:
+        next_retry_at, task_id, task = heapq.heappop(heap)
+        result.append(task)
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Retry failed ingestion jobs or API calls in scheduled order.
+```
+
+Follow-up:
+
+```text
+What if tasks arrive continuously?
+```
+
+Expected:
+
+```text
+Keep heap live and push new tasks as they arrive.
+```
+
+
+## 46. Data Engineering Custom Problem: Merge Sorted File Partitions
+
+Problem:
+
+```text
+Given multiple sorted file partitions, each containing records sorted by event_time, produce global sorted output.
+```
+
+Pattern:
+
+```text
+Merge K sorted sources using min-heap
+```
+
+Generator-style code:
+
+```python
+import heapq
+
+def merge_sorted_partitions(partitions):
+    heap = []
+
+    for partition_index, partition in enumerate(partitions):
+        iterator = iter(partition)
+
+        try:
+            first_record = next(iterator)
+            heapq.heappush(
+                heap,
+                (first_record["event_time"], partition_index, first_record, iterator),
+            )
+        except StopIteration:
+            continue
+
+    while heap:
+        event_time, partition_index, record, iterator = heapq.heappop(heap)
+        yield record
+
+        try:
+            next_record = next(iterator)
+            heapq.heappush(
+                heap,
+                (next_record["event_time"], partition_index, next_record, iterator),
+            )
+        except StopIteration:
+            continue
+```
+
+Complexity:
+
+```text
+Time: O(N log K)
+Space: O(K)
+```
+
+Interview point:
+
+```text
+Using a generator avoids materializing all output at once.
+```
+
+Follow-ups:
+
+```text
+What if event_time ties?
+What if partitions are files on disk?
+What if records can arrive late?
+```
+
+
+## 47. Pattern: Tie-Breakers
+
+Tie-breakers matter in ranking.
+
+Examples:
+
+```text
+Top K services by error count, tie by service name.
+Top K customers by spend, tie by customer_id.
+K closest points, tie by x then y.
+Task priority, tie by created_at.
+```
+
+Sort tie-breaker:
+
+```python
+ranked = sorted(items, key=lambda item: (-item["score"], item["id"]))
+```
+
+Heap tie-breaker:
+
+```python
+heapq.heappush(heap, (priority, tie_breaker, item_id))
+```
+
+If item is dictionary:
+
+```text
+Do not put dictionary in comparable position unless earlier tuple fields always break ties.
+```
+
+Safer:
+
+```python
+from itertools import count
+
+counter = count()
+heapq.heappush(heap, (priority, next(counter), record))
+```
+
+Interview line:
+
+```text
+I will make tie-breaking explicit because production rankings should be deterministic.
+```
+
+
+## 48. Pattern: Stale Heap Entries
+
+Stale heap entries happen when priorities change after an item is pushed.
+
+Example:
+
+```text
+service A count was 5, pushed to heap.
+later service A count becomes 10.
+old heap entry (5, A) is now stale.
+```
+
+This occurs in:
+
+```text
+dynamic top K frequencies
+streaming counters
+priority updates
+decrease-key/increase-key problems
+```
+
+Options:
+
+```text
+lazy deletion / ignore stale entries when popped
+rebuild heap periodically
+use sorted structure outside standard Python heapq
+use full sort on query if queries are rare
+```
+
+Interview line:
+
+```text
+Python heapq does not support efficient priority update directly, so if priorities change I would use lazy invalidation or rebuild depending update/query frequency.
+```
+
+Data Engineering connection:
+
+```text
+Streaming top services by error count can have stale heap entries if counts update continuously.
+```
+
+
+## 49. Data Engineering Custom Problem: Lazy Top K Counter
+
+Problem:
+
+```text
+Maintain counts by key and support top_k queries.
+Use lazy heap entries.
+```
+
+Pattern:
+
+```text
+Counter + max-heap with stale-entry cleanup
+```
+
+Code:
+
+```python
+from collections import Counter
+import heapq
+
+class LazyTopKCounter:
+    def __init__(self):
+        self.counts = Counter()
+        self.heap = []
+
+    def add(self, key, amount=1):
+        self.counts[key] += amount
+        heapq.heappush(self.heap, (-self.counts[key], key))
+
+    def top_k(self, k):
+        result = []
+        used = set()
+        temp = []
+
+        while self.heap and len(result) < k:
+            neg_count, key = heapq.heappop(self.heap)
+            count = -neg_count
+
+            if key in used:
+                continue
+
+            if self.counts[key] != count:
+                continue
+
+            result.append((key, count))
+            used.add(key)
+            temp.append((neg_count, key))
+
+        for item in temp:
+            heapq.heappush(self.heap, item)
+
+        return result
+```
+
+Complexity:
+
+```text
+add: O(log h), h = heap entries including stale entries
+top_k: depends on stale entries; worst-case can be high
+space: can grow with number of updates unless rebuilt
+```
+
+Interview point:
+
+```text
+This is more advanced. Be honest that lazy heaps need cleanup/rebuild strategy.
+```
+
+
+## 50. Heap Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Find kth largest transaction amount.
+2. Return top 10 services by error count.
+3. Merge 20 sorted event files by timestamp.
+4. Find K closest users to a feature vector.
+5. Track kth largest latency as events stream in.
+6. Find median transaction amount from stream.
+7. Schedule failed tasks by next_retry_at.
+8. Find top K merchants by total spend.
+9. Return K smallest files by size.
+10. Repeatedly process largest workload and push residual.
+11. Find top K frequent words with alphabetical tie-break.
+12. Return all records sorted by score.
+13. Find shortest path in graph.
+14. Find latest record per ID.
+15. Merge two sorted arrays.
+16. Find K pairs with smallest sums.
+17. Find kth smallest in sorted matrix.
+18. Process jobs by priority with dynamic arrivals.
+19. Find top K event types when logs are streaming.
+20. Sort all customers by spend descending.
+```
+
+Expected pattern answers:
+
+```text
+1. size-K min-heap
+2. Counter + heap/sort
+3. min-heap merge K sorted sources
+4. size-K max-heap or sort by distance
+5. streaming size-K min-heap
+6. two heaps
+7. priority queue min-heap
+8. aggregation + top K
+9. size-K max-heap or nsmallest
+10. max-heap simulation
+11. Counter + deterministic sorting/heap
+12. sorting, not necessarily heap
+13. BFS/Dijkstra depending weights, not basic top K
+14. hash map latest record, not heap
+15. two pointers, heap unnecessary
+16. min-heap pair candidates
+17. min-heap row heads or binary search
+18. priority queue heap
+19. Counter + dynamic top K strategy
+20. sorting if all ordered results needed
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed heap mocks.
+```
+
+
+## 51. High-ROI LeetCode List
+
+Practice these first.
+
+| No. | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 215 | Kth Largest Element in an Array | Medium | Size-K min-heap |
+| 347 | Top K Frequent Elements | Medium | Counter + heap/sort/bucket |
+| 692 | Top K Frequent Words | Medium | Counter + tie-break |
+| 973 | K Closest Points to Origin | Medium | Size-K heap / sort |
+| 703 | Kth Largest Element in a Stream | Easy | Streaming size-K heap |
+| 295 | Find Median from Data Stream | Hard | Two heaps |
+| 23 | Merge k Sorted Lists | Hard | Min-heap merge |
+| 1046 | Last Stone Weight | Easy | Max-heap simulation |
+| 451 | Sort Characters By Frequency | Medium | Frequency + rank |
+| 378 | Kth Smallest Element in a Sorted Matrix | Medium | Min-heap merge rows |
+| 373 | Find K Pairs with Smallest Sums | Medium | Min-heap pair candidates |
+| 621 | Task Scheduler | Medium | Max-heap + cooldown |
+| 767 | Reorganize String | Medium | Max-heap greedy |
+| 253 | Meeting Rooms II | Medium | Min-heap end times |
+| 355 | Design Twitter | Medium | Heap merge feeds |
+
+
+## 52. Problem: Meeting Rooms II
+
+LeetCode:
+
+```text
+253. Meeting Rooms II
+Difficulty: Medium
+Pattern: Min-heap of end times
+```
+
+Problem:
+
+```text
+Given meeting intervals, return minimum number of rooms required.
+```
+
+Approach:
+
+```text
+Sort meetings by start time.
+Use min-heap of current meeting end times.
+If earliest end time <= current start, reuse room.
+Push current end time.
+Max heap size is rooms required.
+```
+
+Code:
+
+```python
+import heapq
+
+def min_meeting_rooms(intervals):
+    if not intervals:
+        return 0
+
+    intervals.sort(key=lambda interval: interval[0])
+    heap = []
+
+    for start, end in intervals:
+        if heap and heap[0] <= start:
+            heapq.heappop(heap)
+
+        heapq.heappush(heap, end)
+
+    return len(heap)
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Data Engineering connection:
+
+```text
+Estimate parallel worker slots needed for overlapping pipeline runs or backfill windows.
+```
+
+Common mistake:
+
+```text
+Not sorting by start time first.
+```
+
+
+## 53. Problem: Reorganize String
+
+LeetCode:
+
+```text
+767. Reorganize String
+Difficulty: Medium
+Pattern: Max-heap greedy
+```
+
+Problem:
+
+```text
+Rearrange string so no two adjacent characters are same.
+```
+
+Approach:
+
+```text
+Always choose most frequent available character that is not same as previous.
+Use max-heap by remaining count.
+```
+
+Code:
+
+```python
+from collections import Counter
+import heapq
+
+def reorganize_string(s):
+    counts = Counter(s)
+    heap = [(-count, char) for char, count in counts.items()]
+    heapq.heapify(heap)
+
+    result = []
+    previous = None
+
+    while heap or previous:
+        if not heap and previous:
+            return ""
+
+        count, char = heapq.heappop(heap)
+        result.append(char)
+        count += 1  # because negative count moves toward zero
+
+        if previous:
+            heapq.heappush(heap, previous)
+            previous = None
+
+        if count != 0:
+            previous = (count, char)
+
+    return "".join(result)
+```
+
+Complexity:
+
+```text
+Time: O(n log u)
+Space: O(u)
+```
+
+Data Engineering connection:
+
+```text
+Greedy scheduling where same task type cannot run consecutively.
+```
+
+Common mistake:
+
+```text
+Immediately pushing same char back before choosing next, causing adjacent duplicates.
+```
+
+
+## 54. Data Engineering Custom Problem: Top K Partitions by Anomaly Score
+
+Problem:
+
+```text
+Given partition metrics with partition_date and anomaly_score, return top K anomalous partitions.
+Tie-break by partition_date ascending.
+```
+
+Pattern:
+
+```text
+Size-K min-heap by anomaly_score
+```
+
+Code:
+
+```python
+import heapq
+
+def top_anomalous_partitions(partitions, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for partition in partitions:
+        partition_date = partition.get("partition_date")
+        score = partition.get("anomaly_score")
+
+        if partition_date is None or score is None:
+            continue
+
+        item = (score, partition_date, partition)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif score > heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    result = [partition for score, partition_date, partition in heap]
+    return sorted(result, key=lambda partition: (-partition["anomaly_score"], partition["partition_date"]))
+```
+
+Complexity:
+
+```text
+Time: O(n log k + k log k)
+Space: O(k)
+```
+
+Follow-ups:
+
+```text
+What if anomaly score updates over time?
+What if top K query runs every minute?
+What if partition_date strings are not comparable?
+```
+
+
+## 55. Data Engineering Custom Problem: K Smallest Lagging Sources
+
+Problem:
+
+```text
+Given source metrics with source_name and lag_minutes, return K sources with smallest lag.
+Tie-break by source_name ascending.
+```
+
+Pattern:
+
+```text
+K smallest values
+```
+
+Simple sort code:
+
+```python
+def k_smallest_lag_sources(sources, k):
+    valid = []
+
+    for source in sources:
+        source_name = source.get("source_name")
+        lag = source.get("lag_minutes")
+
+        if source_name is None or lag is None:
+            continue
+
+        valid.append(source)
+
+    return sorted(valid, key=lambda source: (source["lag_minutes"], source["source_name"]))[:k]
+```
+
+Heap code:
+
+```python
+import heapq
+
+def k_smallest_lag_sources_heap(sources, k):
+    if k <= 0:
+        return []
+
+    heap = []
+
+    for source in sources:
+        source_name = source.get("source_name")
+        lag = source.get("lag_minutes")
+
+        if source_name is None or lag is None:
+            continue
+
+        item = (-lag, source_name, source)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif lag < -heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    result = [source for neg_lag, source_name, source in heap]
+    return sorted(result, key=lambda source: (source["lag_minutes"], source["source_name"]))
+```
+
+Complexity:
+
+```text
+Sort: O(n log n)
+Heap: O(n log k + k log k)
+```
+
+Interview point:
+
+```text
+If k is small compared to n, heap is more efficient.
+```
+
+
+## 56. Data Engineering Custom Problem: K Highest Spend Customers with Aggregation
+
+Problem:
+
+```text
+Given transactions with customer_id and amount, return top K customers by total spend.
+Tie-break by customer_id ascending.
+```
+
+Pattern:
+
+```text
+Hash map aggregation + Top K heap
+```
+
+Code:
+
+```python
+from collections import defaultdict
+import heapq
+
+def top_customers_by_spend(transactions, k):
+    totals = defaultdict(float)
+
+    for transaction in transactions:
+        customer_id = transaction.get("customer_id")
+        amount = transaction.get("amount")
+
+        if customer_id is None or amount is None:
+            continue
+
+        totals[customer_id] += amount
+
+    heap = []
+
+    for customer_id, total in totals.items():
+        item = (total, customer_id)
+
+        if len(heap) < k:
+            heapq.heappush(heap, item)
+        elif total > heap[0][0]:
+            heapq.heapreplace(heap, item)
+
+    return sorted(heap, key=lambda item: (-item[0], item[1]))
+```
+
+Complexity:
+
+```text
+Aggregation: O(n)
+Heap ranking: O(u log k)
+Final sort: O(k log k)
+Space: O(u + k)
+```
+
+Interview point:
+
+```text
+The Top K is over customers, not transactions. Aggregate first.
+```
+
+
+## 57. Pattern: Top K Over Aggregated Grain
+
+This is critical for Data Engineering.
+
+Wrong:
+
+```text
+Rank raw transactions.
+```
+
+Correct:
+
+```text
+Aggregate to the required grain first, then rank.
+```
+
+Examples:
+
+```text
+Top merchants by spend → aggregate amount by merchant_id.
+Top products by revenue → aggregate revenue by product_id.
+Top services by error count → count errors by service.
+Top customers by order count → count orders by customer_id.
+Top pipelines by average runtime → aggregate runtime by pipeline_id.
+```
+
+Interview line:
+
+```text
+Before applying Top K, I need to define the output grain. The heap should rank aggregated entities, not raw rows.
+```
+
+This connects to SQL:
+
+```text
+GROUP BY first, then ORDER BY / LIMIT or window rank.
+```
+
+
+## 58. Pattern: Heap with Records
+
+When heap stores records, define priority fields clearly.
+
+Example:
+
+```python
+item = (score, record_id, record)
+```
+
+Why include record_id?
+
+```text
+Tie-breaker and deterministic order.
+```
+
+If record_id can be non-comparable mixed type:
+
+```python
+from itertools import count
+
+counter = count()
+item = (score, next(counter), record)
+```
+
+For top K largest records:
+
+```text
+min-heap stores current K best records.
+heap[0] is the weakest among selected records.
+```
+
+For K closest records:
+
+```text
+max behavior stores current K closest records.
+heap[0] is farthest among selected records.
+```
+
+Common mistake:
+
+```text
+Pushing raw dictionaries directly into heap.
+```
+
+Bad:
+
+```python
+heapq.heappush(heap, (score, record))
+```
+
+If scores tie, dictionary comparison can fail.
+
+
+## 59. Pattern: Output Ordering
+
+Heap output may not be sorted.
+
+If the prompt says:
+
+```text
+return the top K values
+```
+
+Any order may be accepted depending platform.
+
+If the prompt says:
+
+```text
+return sorted descending
+return by frequency desc and name asc
+```
+
+Then sort final K results.
+
+Example:
+
+```python
+result = sorted(heap, key=lambda item: (-item[0], item[1]))
+```
+
+Additional complexity:
+
+```text
+O(k log k)
+```
+
+Interview line:
+
+```text
+The heap gives me the selected K items. If the interviewer requires ordered output, I will sort only those K items at the end.
+```
+
+Common mistake:
+
+```text
+Returning heap list and assuming it is sorted.
+```
+
+
+## 60. Heap Debugging Checklist
+
+When heap solution fails, check:
+
+```text
+1. Is Python heapq min-heap understood?
+2. Did I negate values for max-heap simulation?
+3. Did I limit heap size to K?
+4. Did I compare new item against heap[0] correctly?
+5. Did I use heapreplace only when replacement is needed?
+6. Did I handle k <= 0?
+7. Did I handle k > n?
+8. Did I define tuple tie-breakers?
+9. Did I avoid pushing dictionaries without tie-breaker?
+10. Did I sort final output if required?
+11. Did I aggregate before ranking?
+12. Did I count frequencies before Top K frequent?
+13. Did I use O(n log k) but accidentally wrote O(n log n)?
+14. Did I dry run heap state?
+```
+
+Strict repair:
+
+```text
+If candidate repeatedly confuses min-heap vs max-heap, run weakness-repair-mode.md with K largest/K smallest contrast drills.
+```
+
+
+## 61. Heap/Top K Mock Set 1: Beginner
+
+Problems:
+
+```text
+1. K largest values.
+2. Kth Largest Element in an Array.
+3. Last Stone Weight.
+4. Top K largest files custom.
+5. Retry order custom.
+```
+
+Expected skills:
+
+```text
+min-heap
+max-heap simulation
+priority queue
+heapify
+basic complexity
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains Python heapq min-heap behavior.
+```
+
+
+## 62. Heap/Top K Mock Set 2: Core
+
+Problems:
+
+```text
+1. Top K Frequent Elements.
+2. K Closest Points to Origin.
+3. Kth Largest Element in a Stream.
+4. Top error services custom.
+5. Top merchants by spend custom.
+```
+
+Expected skills:
+
+```text
+Counter + heap
+size-K heap
+streaming kth largest
+aggregation before ranking
+tie-breakers
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains heap size and complexity.
+```
+
+
+## 63. Heap/Top K Mock Set 3: Data Engineering Flavor
+
+Problems:
+
+```text
+1. Top K slowest pipeline runs.
+2. Merge sorted event streams.
+3. Backfill task scheduler.
+4. Top K anomalous partitions.
+5. Top K customers by aggregated spend.
+```
+
+Expected skills:
+
+```text
+heap with records
+merge K sorted sources
+priority queue scheduling
+aggregation before ranking
+deterministic tie-breakers
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles invalid records and DE-specific edge cases.
+```
+
+
+## 64. Heap/Top K Mock Set 4: Strong Candidate
+
+Problems:
+
+```text
+1. Find Median from Data Stream.
+2. Merge k Sorted Lists.
+3. Kth Smallest in Sorted Matrix.
+4. Find K Pairs with Smallest Sums.
+5. Dynamic streaming top K error services discussion.
+```
+
+Expected skills:
+
+```text
+two heaps
+merge K sorted sources
+heap candidate expansion
+stale heap awareness
+streaming trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles follow-ups and explains trade-offs.
+```
+
+
+## 65. 7-Day Heap/Top K Plan
+
+### Day 1: Heap basics
+
+Problems:
+
+```text
+K largest values
+K smallest values
+Kth Largest Element
+Last Stone Weight
+```
+
+Focus:
+
+```text
+min-heap
+max-heap simulation
+heap size K
+heapq syntax
+```
+
+### Day 2: Top K frequent
+
+Problems:
+
+```text
+Top K Frequent Elements
+Top K Frequent Words
+Sort Characters By Frequency
+Top Error Services custom
+```
+
+Focus:
+
+```text
+Counter first
+ranking second
+tie-breakers
+```
+
+### Day 3: K closest and kth
+
+Problems:
+
+```text
+K Closest Points
+K closest records custom
+Kth smallest custom
+Top anomalous partitions custom
+```
+
+Focus:
+
+```text
+distance/score ranking
+size-K heap
+final output sorting
+```
+
+### Day 4: Merge K sorted sources
+
+Problems:
+
+```text
+Merge K sorted arrays
+Merge sorted event streams
+Kth smallest in sorted matrix
+K smallest pairs
+```
+
+Focus:
+
+```text
+heap item source_index/item_index
+O(N log K)
+```
+
+### Day 5: Streaming heaps
+
+Problems:
+
+```text
+Kth Largest in Stream
+Median from Data Stream
+Streaming top K error services discussion
+```
+
+Focus:
+
+```text
+stateful class
+two heaps
+stale heap awareness
+```
+
+### Day 6: Scheduling and DE tasks
+
+Problems:
+
+```text
+Backfill task scheduler
+Priority retry queue
+Top K slowest pipelines
+Top customers by spend
+```
+
+Focus:
+
+```text
+priority tuples
+tie-breakers
+aggregation grain
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run Mock Set 2 or 3.
+Review mistakes.
+Repair weakest heap pattern.
+Update progress.
+```
+
+
+## 66. 30-Day Heap/Top K Plan
+
+### Week 1: Heap fundamentals
+
+Focus:
+
+```text
+heapq
+min-heap
+max-heap simulation
+K largest/smallest
+kth largest
+priority queue basics
+```
+
+Problems:
+
+```text
+215, 1046, custom K largest/files/retry queue
+```
+
+Exit:
+
+```text
+Candidate can write size-K heap and max-heap simulation from memory.
+```
+
+### Week 2: Top K frequency and aggregation
+
+Focus:
+
+```text
+Counter
+top K frequent
+top K words
+aggregation before ranking
+tie-breakers
+```
+
+Problems:
+
+```text
+347, 692, 451, top services, top merchants, top customers
+```
+
+Exit:
+
+```text
+Candidate can aggregate first, rank second.
+```
+
+### Week 3: Merge and closest
+
+Focus:
+
+```text
+K closest
+merge K sorted lists
+sorted matrix
+K pairs
+event stream merge
+```
+
+Problems:
+
+```text
+973, 23, 378, 373, merge sorted streams
+```
+
+Exit:
+
+```text
+Candidate can explain heap item shape and O(N log K).
+```
+
+### Week 4: Streaming and advanced
+
+Focus:
+
+```text
+streaming kth largest
+median stream
+dynamic top K
+scheduler
+mock interviews
+```
+
+Problems:
+
+```text
+703, 295, 621, 767, DE custom mocks
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 67. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Easy heap problem
+
+```text
+10-15 minutes
+```
+
+### Medium top K problem
+
+```text
+25-35 minutes
+```
+
+### Hard streaming/merge problem
+
+```text
+35-45 minutes
+```
+
+Per problem:
+
+```text
+Minute 0-3:
+Restate and clarify output ordering/tie-breakers.
+
+Minute 3-6:
+Compare sorting vs heap.
+
+Minute 6-9:
+Define heap type, heap item, heap size rule.
+
+Minute 9-25:
+Code.
+
+Minute 25-30:
+Dry run heap state.
+
+Minute 30-35:
+Complexity and follow-up.
+```
+
+If candidate cannot explain min-heap vs max-heap:
+
+```text
+Switch to tutor-mode.md or weakness-repair-mode.md.
+```
+
+
+## 68. Review Checklist
+
+Review heap/top-k solutions using:
+
+```text
+1. Did candidate identify Top K / priority trigger?
+2. Did candidate clarify tie-breakers?
+3. Did candidate compare sorting vs heap?
+4. Did candidate choose min-heap or max-heap correctly?
+5. Did candidate define heap item shape?
+6. Did candidate limit heap size to K when needed?
+7. Did candidate handle k = 0, k > n?
+8. Did candidate avoid assuming heap output is sorted?
+9. Did candidate sort final K if required?
+10. Did candidate count/aggregate before ranking?
+11. Did candidate handle duplicates?
+12. Did candidate handle invalid records in DE tasks?
+13. Did candidate explain O(n log k), O(u log k), or O(N log K)?
+14. Did candidate dry run heap state?
+15. Did candidate connect to Data Engineering scenario?
+```
+
+Verdict examples:
+
+```text
+Correct heap type but wrong replacement condition.
+Correct result but O(n log n) when O(n log k) expected.
+Good sort solution but cannot explain heap trade-off.
+Heap works but output ordering is wrong.
+Aggregation missing before Top K.
+Interview-ready.
+Strong.
+```
+
+
+## 69. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Confuses min-heap/max-heap | K largest vs K smallest contrast drills |
+| Forgets Python heapq is min-heap | Max-heap negation drills |
+| Does not limit heap size | Size-K heap drills |
+| Wrong replacement condition | heap[0] comparison drills |
+| Sorts everything always | Sorting vs heap trade-off drills |
+| Cannot handle Top K frequent | Counter + heap drills |
+| Ranks raw rows before aggregation | Output grain repair |
+| Tie-breaker bugs | Tuple ordering drills |
+| Pushes dict into heap | Unique counter/tie-breaker repair |
+| Assumes heap is sorted | Final output ordering drills |
+| Cannot merge K sorted lists | Source index heap drills |
+| Dynamic top K confusion | Stale heap explanation drills |
+| Wrong complexity | Complexity explanation drills |
+| No DE connection | Custom top metrics drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 70. Communication Scripts
+
+### Top K script
+
+```text
+The brute force is to sort all values, which is O(n log n). Since we only need K values, I can maintain a heap of size K, reducing the selection cost to O(n log K).
+```
+
+### Kth largest script
+
+```text
+I use a min-heap of size K. It stores the K largest values seen so far, and the smallest among them, heap[0], is the kth largest.
+```
+
+### Top K frequent script
+
+```text
+First I count frequencies using a hash map. Then I rank the unique values by frequency using sorting or a heap.
+```
+
+### Merge K sorted script
+
+```text
+I push the first item from each sorted source into a min-heap. Each pop gives the next global smallest item, and then I push the next item from the same source.
+```
+
+### Streaming script
+
+```text
+For streaming kth largest, I keep a min-heap of size K, so each new event updates the answer in O(log K) time.
+```
+
+### Data Engineering script
+
+```text
+This is the same pattern as ranking services by error count or merging sorted event files: keep only the priority state needed instead of sorting all data repeatedly.
+```
+
+
+## 71. Candidate Self-Review Questions
+
+After every heap/top-k problem, candidate should answer:
+
+```text
+1. What makes this a heap or Top K problem?
+2. Is sorting enough?
+3. Why use heap?
+4. Is it min-heap or max-heap?
+5. What is the heap item?
+6. What is the heap size?
+7. What does heap[0] represent?
+8. What is the replacement condition?
+9. Is final output required to be sorted?
+10. What are tie-breakers?
+11. What is time complexity?
+12. What is space complexity?
+13. What Data Engineering scenario uses this pattern?
+```
+
+If candidate cannot answer these:
+
+```text
+The problem is not fully learned.
+```
+
+
+## 72. Maintenance Drills
+
+After completing heap/top-k, maintain skill with:
+
+```text
+1 kth largest/smallest drill per week
+1 top K frequent drill per week
+1 merge K sorted sources drill every 2 weeks
+1 streaming heap drill every 2 weeks
+1 Data Engineering Top K custom problem per week
+1 tie-breaker ranking drill per week
+```
+
+Maintenance rotation:
+
+```text
+Week 1: kth largest + top K frequent
+Week 2: K closest + top K DE metric
+Week 3: merge sorted streams + scheduler
+Week 4: median stream + mixed mock
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed pattern.
+```
+
+
+## 73. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# Heap and Top K Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Pattern | Difficulty | Score | Time | Mistake | Next Action
+
+## Pattern Scores
+
+K largest:
+K smallest:
+Kth largest:
+Top K frequent:
+Top K aggregated metrics:
+K closest:
+Merge K sorted:
+Streaming kth largest:
+Median stream:
+Priority scheduler:
+Tie-breakers:
+Dynamic/stale heap:
+Data Engineering custom:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 74. Final Exit Test
+
+Candidate passes heap/top-k when they can solve:
+
+```text
+1. Kth Largest Element in an Array
+2. Top K Frequent Elements
+3. Top K Frequent Words
+4. K Closest Points to Origin
+5. Kth Largest Element in a Stream
+6. Merge K Sorted Lists / Arrays
+7. Last Stone Weight
+8. Find Median from Data Stream
+9. Kth Smallest in Sorted Matrix
+10. K Pairs with Smallest Sums
+11. Meeting Rooms II
+12. Data Engineering: top K error services
+13. Data Engineering: top K merchants by spend
+14. Data Engineering: merge sorted event streams
+15. Data Engineering: backfill task scheduler
+16. Data Engineering: top K slowest pipelines
+17. Data Engineering: priority retry queue
+18. Data Engineering: top K anomalous partitions
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No min-heap/max-heap confusion.
+No missing heap size rule.
+No wrong complexity explanation.
+No missing tie-breaker when required.
+Can explain sorting vs heap trade-off.
+Can explain Data Engineering relevance.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles streaming and dynamic-priority follow-ups.
+```
+
+
+## 75. Final Summary
+
+Heap and Top K patterns are essential for Data Engineering interviews.
+
+They map directly to:
+
+```text
+ranking
+monitoring
+top metrics
+streaming leaderboards
+priority queues
+sorted stream merging
+schedulers
+kth largest/smallest metrics
+median latency
+backfill ordering
+anomaly ranking
+```
+
+The candidate must master:
+
+```text
+Python heapq
+min-heap behavior
+max-heap simulation with negatives
+size-K heap
+frequency map + heap
+aggregation before ranking
+K closest
+merge K sorted sources
+streaming kth largest
+two heaps for median
+priority scheduling
+tie-breakers
+final output ordering
+stale heap awareness
+```
+
+The mentor must be strict:
+
+```text
+No heap type explanation → not interview-ready.
+No complexity → not interview-ready.
+Wrong replacement condition → not interview-ready.
+Ranking raw rows before aggregation → not interview-ready.
+Only sample passes → not interview-ready.
+```
+
+The goal is not to memorize heap syntax.
+
+The goal is to know when a heap is the right tool for priority, ranking, and streaming selection problems.
+
+
+## 76. Problem Card Appendix
+
+### Card 1: Kth Largest Element in an Array
+
+LeetCode:
+
+```text
+215. Kth Largest Element in an Array
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Size-K min-heap
+```
+
+Core idea:
+
+```text
+Keep K largest values; heap[0] is kth largest.
+```
+
+Data Engineering connection:
+
+```text
+Kth slowest pipeline or kth largest transaction.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Top K Frequent Elements
+
+LeetCode:
+
+```text
+347. Top K Frequent Elements
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Counter + heap/sort/bucket
+```
+
+Core idea:
+
+```text
+Count first, then rank unique values.
+```
+
+Data Engineering connection:
+
+```text
+Top event types/services.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Top K Frequent Words
+
+LeetCode:
+
+```text
+692. Top K Frequent Words
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Counter + tie-break
+```
+
+Core idea:
+
+```text
+Frequency desc, word asc.
+```
+
+Data Engineering connection:
+
+```text
+Top error messages with deterministic tie.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: K Closest Points to Origin
+
+LeetCode:
+
+```text
+973. K Closest Points to Origin
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+K closest / size-K heap
+```
+
+Core idea:
+
+```text
+Rank by squared distance.
+```
+
+Data Engineering connection:
+
+```text
+K nearest users/stores/records.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Kth Largest Element in a Stream
+
+LeetCode:
+
+```text
+703. Kth Largest Element in a Stream
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Streaming size-K heap
+```
+
+Core idea:
+
+```text
+Maintain min-heap of top K values.
+```
+
+Data Engineering connection:
+
+```text
+Streaming kth largest latency.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Find Median from Data Stream
+
+LeetCode:
+
+```text
+295. Find Median from Data Stream
+Difficulty: Hard
+```
+
+Primary pattern:
+
+```text
+Two heaps
+```
+
+Core idea:
+
+```text
+Lower max-heap and upper min-heap.
+```
+
+Data Engineering connection:
+
+```text
+Median latency/amount from stream.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Merge k Sorted Lists
+
+LeetCode:
+
+```text
+23. Merge k Sorted Lists
+Difficulty: Hard
+```
+
+Primary pattern:
+
+```text
+Min-heap merge
+```
+
+Core idea:
+
+```text
+Heap contains current head from each source.
+```
+
+Data Engineering connection:
+
+```text
+Merge sorted event files.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Last Stone Weight
+
+LeetCode:
+
+```text
+1046. Last Stone Weight
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Max-heap simulation
+```
+
+Core idea:
+
+```text
+Repeatedly pop two largest.
+```
+
+Data Engineering connection:
+
+```text
+Process largest workloads and residuals.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Sort Characters By Frequency
+
+LeetCode:
+
+```text
+451. Sort Characters By Frequency
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Frequency + rank
+```
+
+Core idea:
+
+```text
+Count characters and sort by count.
+```
+
+Data Engineering connection:
+
+```text
+Frequency summary.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: Kth Smallest in Sorted Matrix
+
+LeetCode:
+
+```text
+378. Kth Smallest in Sorted Matrix
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Min-heap row heads
+```
+
+Core idea:
+
+```text
+Push first from rows, pop/push next.
+```
+
+Data Engineering connection:
+
+```text
+Kth record from sorted partitions.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Find K Pairs with Smallest Sums
+
+LeetCode:
+
+```text
+373. Find K Pairs with Smallest Sums
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Min-heap candidates
+```
+
+Core idea:
+
+```text
+Expand next pair from same row.
+```
+
+Data Engineering connection:
+
+```text
+K lowest-cost pairings.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Task Scheduler
+
+LeetCode:
+
+```text
+621. Task Scheduler
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Max-heap + cooldown
+```
+
+Core idea:
+
+```text
+Process highest remaining count with cooldown.
+```
+
+Data Engineering connection:
+
+```text
+Schedule repeated jobs with cooldown.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Reorganize String
+
+LeetCode:
+
+```text
+767. Reorganize String
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Max-heap greedy
+```
+
+Core idea:
+
+```text
+Always pick most frequent valid char.
+```
+
+Data Engineering connection:
+
+```text
+Avoid adjacent repeated job types.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Meeting Rooms II
+
+LeetCode:
+
+```text
+253. Meeting Rooms II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Min-heap end times
+```
+
+Core idea:
+
+```text
+Track active intervals by earliest end.
+```
+
+Data Engineering connection:
+
+```text
+Parallel pipeline slot estimation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Design Twitter
+
+LeetCode:
+
+```text
+355. Design Twitter
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Heap merge feeds
+```
+
+Core idea:
+
+```text
+Merge recent tweets from followed users.
+```
+
+Data Engineering connection:
+
+```text
+Merge recent events from subscribed sources.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why heap or ranking applies.
+2. Sorting brute force.
+3. Heap type and heap item.
+4. Heap size rule.
+5. Tie-breakers.
+6. Edge cases.
+7. Time complexity.
+8. Space complexity.
+9. One follow-up variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 77. Data Engineering Custom Problem Card Appendix
+
+### Custom Card 1: Top Error Services
+
+Priority / ranking field:
+
+```text
+service → error_count
+```
+
+Pattern:
+
+```text
+Counter + Top K
+```
+
+Task:
+
+```text
+Rank services by ERROR logs.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 2: Top Merchants by Spend
+
+Priority / ranking field:
+
+```text
+merchant_id → total_amount
+```
+
+Pattern:
+
+```text
+Aggregation + Top K
+```
+
+Task:
+
+```text
+Rank merchants after aggregation.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 3: Top Slowest Pipelines
+
+Priority / ranking field:
+
+```text
+runtime_seconds
+```
+
+Pattern:
+
+```text
+Size-K heap
+```
+
+Task:
+
+```text
+Find slowest pipeline runs.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 4: Top Largest Files
+
+Priority / ranking field:
+
+```text
+size_bytes
+```
+
+Pattern:
+
+```text
+Size-K heap
+```
+
+Task:
+
+```text
+Find largest storage cost files.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 5: Retry Queue
+
+Priority / ranking field:
+
+```text
+next_retry_at
+```
+
+Pattern:
+
+```text
+Min-heap priority queue
+```
+
+Task:
+
+```text
+Process retries in time order.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 6: Backfill Scheduler
+
+Priority / ranking field:
+
+```text
+priority + estimated_rows
+```
+
+Pattern:
+
+```text
+Priority queue
+```
+
+Task:
+
+```text
+Order backfill tasks.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 7: Merge Event Streams
+
+Priority / ranking field:
+
+```text
+event_time
+```
+
+Pattern:
+
+```text
+Min-heap merge
+```
+
+Task:
+
+```text
+Merge K sorted sources.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 8: Top Anomalous Partitions
+
+Priority / ranking field:
+
+```text
+anomaly_score
+```
+
+Pattern:
+
+```text
+Size-K heap
+```
+
+Task:
+
+```text
+Rank partitions by anomaly.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 9: Streaming Kth Latency
+
+Priority / ranking field:
+
+```text
+latency_ms
+```
+
+Pattern:
+
+```text
+Streaming size-K heap
+```
+
+Task:
+
+```text
+Track kth highest latency.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 10: Median Transaction Amount
+
+Priority / ranking field:
+
+```text
+amount
+```
+
+Pattern:
+
+```text
+Two heaps
+```
+
+Task:
+
+```text
+Track median in stream.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 11: Top Customers by Spend
+
+Priority / ranking field:
+
+```text
+customer_id → total
+```
+
+Pattern:
+
+```text
+Aggregation + Top K
+```
+
+Task:
+
+```text
+Rank customers after aggregation.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 12: K Closest Records
+
+Priority / ranking field:
+
+```text
+distance from target score
+```
+
+Pattern:
+
+```text
+Size-K max behavior
+```
+
+Task:
+
+```text
+Find closest anomaly scores.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 13: K Smallest Lag Sources
+
+Priority / ranking field:
+
+```text
+lag_minutes
+```
+
+Pattern:
+
+```text
+K smallest heap/sort
+```
+
+Task:
+
+```text
+Find least lagging sources.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 14: Priority Job Queue
+
+Priority / ranking field:
+
+```text
+priority + tie-breaker
+```
+
+Pattern:
+
+```text
+Min-heap
+```
+
+Task:
+
+```text
+Run jobs by priority.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 15: Dynamic Top K Errors
+
+Priority / ranking field:
+
+```text
+service counts update
+```
+
+Pattern:
+
+```text
+Counter + stale heap/sort
+```
+
+Task:
+
+```text
+Handle streaming count updates honestly.
+```
+
+Minimum expected answer:
+
+```text
+1. Define ranking grain.
+2. Define heap item or sorting key.
+3. Handle invalid records.
+4. Handle tie-breakers.
+5. Explain sorting vs heap trade-off.
+6. Explain time and space complexity.
+7. Explain production edge case.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 78. Drill Appendix
+
+### Drill 1: Min-Heap Basics
+
+Task:
+
+```text
+Use heapq to push/pop values and explain heap[0].
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Max-Heap Simulation
+
+Task:
+
+```text
+Use negative values to repeatedly pop largest.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Size-K Heap
+
+Task:
+
+```text
+Solve K largest, K smallest, kth largest, kth smallest.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Top K Frequent
+
+Task:
+
+```text
+Count frequencies, then rank with sort and heap.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Tie-Breakers
+
+Task:
+
+```text
+Rank top services by count desc and service asc.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: K Closest
+
+Task:
+
+```text
+Solve K closest points and custom K closest records.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Merge K Sorted
+
+Task:
+
+```text
+Merge sorted arrays and sorted event streams.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Streaming Kth
+
+Task:
+
+```text
+Implement KthLargest class.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Median Stream
+
+Task:
+
+```text
+Implement two heaps and explain balancing.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Priority Scheduler
+
+Task:
+
+```text
+Schedule tasks by priority and retry time.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Aggregation Before Ranking
+
+Task:
+
+```text
+Top customers/merchants by total spend.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Final Output Ordering
+
+Task:
+
+```text
+Return heap-selected records sorted by required output order.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Stale Heap Discussion
+
+Task:
+
+```text
+Explain dynamic top K counts and lazy stale entries.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Complexity Drill
+
+Task:
+
+```text
+Compare sort, size-K heap, heapify-pop, bucket.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Data Engineering Mock
+
+Task:
+
+```text
+Top errors, slowest pipelines, merge streams, retry queue, anomaly partitions.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Explain sorting brute force.
+3. Define heap type and heap item.
+4. Define heap size/update rule.
+5. Write clean Python.
+6. Dry run heap state.
+7. Explain time and space complexity.
+8. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 79. Quick Reference Cards
+
+### Quick Card 1: Python heapq
+
+Summary:
+
+```text
+Min-heap only; heap[0] is smallest.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 2: Max-heap
+
+Summary:
+
+```text
+Use negative values or reverse priority.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 3: Top K largest
+
+Summary:
+
+```text
+Use min-heap of size K.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 4: Top K smallest
+
+Summary:
+
+```text
+Use max behavior of size K or heapq.nsmallest.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 5: Kth largest
+
+Summary:
+
+```text
+Min-heap size K; heap[0] is answer.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 6: Top K frequent
+
+Summary:
+
+```text
+Counter first, then rank.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 7: Merge K sorted
+
+Summary:
+
+```text
+Heap stores one current item from each source.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 8: Streaming kth
+
+Summary:
+
+```text
+Maintain heap state across add calls.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 9: Median stream
+
+Summary:
+
+```text
+Use two heaps and balance sizes.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 10: Priority queue
+
+Summary:
+
+```text
+Heap item should include priority and tie-breaker.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 11: Tie-breaker
+
+Summary:
+
+```text
+Use tuple fields or unique counter.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 12: Heap output
+
+Summary:
+
+```text
+Not fully sorted; sort final K if required.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 13: Aggregation grain
+
+Summary:
+
+```text
+Aggregate before ranking.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 14: Stale heap
+
+Summary:
+
+```text
+Changing priorities require lazy cleanup or rebuild.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 15: Complexity
+
+Summary:
+
+```text
+Size-K heap is O(n log K), merge K sorted is O(N log K).
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```

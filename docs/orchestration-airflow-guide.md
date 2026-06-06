@@ -1,0 +1,3024 @@
+# Orchestration and Airflow Guide
+
+Generated: 2026-06-06
+
+This guide teaches **workflow orchestration and Apache Airflow-style pipeline scheduling for Data Engineering interviews**.
+
+It is written for **Data Engineering Sensei**, a strict, no-sugarcoating Data Engineering interview mentor. The goal is not to memorize Airflow syntax. The goal is to make the candidate capable of explaining how production data workflows are scheduled, dependency-managed, retried, monitored, backfilled, and operated safely.
+
+Use this guide for:
+
+- Data Engineering fundamentals interviews
+- Airflow and orchestration interview questions
+- ETL/ELT pipeline design
+- system design interviews
+- project deep dives
+- workflow reliability discussions
+- backfill and retry discussions
+- failure handling and monitoring discussions
+- mock interview review
+
+---
+
+## 1. What Is Orchestration?
+
+Orchestration is the coordination of tasks in a workflow.
+
+In Data Engineering, orchestration manages:
+
+1. What tasks run
+2. When tasks run
+3. In what order tasks run
+4. What happens when tasks fail
+5. How retries happen
+6. How dependencies are enforced
+7. How backfills run
+8. How alerts are triggered
+9. How runs are tracked
+10. How pipeline SLAs are monitored
+
+A weak answer:
+
+```text
+Orchestration means scheduling jobs.
+```
+
+A stronger answer:
+
+```text
+Orchestration manages data pipeline workflows by defining tasks, dependencies, schedules, retries, backfills, alerts, and run metadata. It ensures pipeline tasks run in the right order and makes failures visible and recoverable.
+```
+
+---
+
+## 2. Interview Standard
+
+A candidate should explain orchestration beyond “schedule jobs.”
+
+An interview-ready orchestration answer should include:
+
+```text
+DAG:
+Tasks:
+Dependencies:
+Schedule:
+Retries:
+Idempotency:
+Backfills:
+Catchup:
+Sensors:
+Alerts:
+SLAs:
+Parameters:
+Run metadata:
+Failure handling:
+Monitoring:
+Security:
+Operational trade-offs:
+```
+
+If the candidate only says:
+
+```text
+I used Airflow to schedule the pipeline.
+```
+
+that is not enough.
+
+---
+
+## 3. What Is Airflow?
+
+Apache Airflow is a workflow orchestration tool commonly used to define, schedule, and monitor data pipelines.
+
+In Airflow-style workflows:
+
+- workflows are usually represented as DAGs
+- tasks are units of work
+- dependencies define order
+- schedules define when runs are created
+- retries handle transient failures
+- logs help debugging
+- backfills rerun historical intervals
+- operators or tasks execute work
+- sensors wait for external conditions
+
+### Interview-safe explanation
+
+```text
+Airflow is used to orchestrate workflows as DAGs. Each DAG contains tasks and dependencies. It helps schedule pipeline runs, retry failures, monitor task status, and support backfills. The important interview point is not Airflow syntax, but how the workflow is made reliable and idempotent.
+```
+
+---
+
+## 4. What Airflow Is Not
+
+Airflow is not usually the system that does all heavy data processing.
+
+Airflow should orchestrate work, not become the processing engine.
+
+A weak design:
+
+```text
+Put all transformation logic directly inside Airflow task code.
+```
+
+A stronger design:
+
+```text
+Use Airflow to orchestrate jobs. Heavy processing should run in the warehouse, Spark, dbt, cloud jobs, or dedicated compute. Airflow triggers, monitors, and coordinates these jobs.
+```
+
+### Interview explanation
+
+```text
+Airflow should coordinate tasks, not necessarily perform all compute itself. For large transformations, I would trigger warehouse SQL, Spark jobs, or other processing systems from Airflow.
+```
+
+---
+
+## 5. Core Airflow Concepts
+
+Core concepts candidates must know:
+
+1. DAG
+2. Task
+3. Dependency
+4. Operator / task function
+5. Schedule
+6. DAG run
+7. Task instance
+8. Execution date / logical date concept
+9. Retries
+10. Sensors
+11. Backfills
+12. Catchup
+13. XCom-style communication
+14. Variables and connections
+15. Pools and concurrency
+16. Logs
+17. Alerts
+18. SLA/freshness monitoring
+
+The mentor should not require exact current syntax unless the candidate’s target role specifically requires Airflow coding.
+
+---
+
+## 6. DAG
+
+DAG stands for Directed Acyclic Graph.
+
+Directed:
+
+```text
+Tasks have direction/order.
+```
+
+Acyclic:
+
+```text
+There must be no cycles.
+```
+
+Graph:
+
+```text
+Tasks are nodes and dependencies are edges.
+```
+
+### Strong answer
+
+```text
+A DAG represents a workflow where tasks run in a defined order without cycles. In data pipelines, this ensures upstream tasks such as extraction and validation finish before downstream tasks such as transformation and publishing.
+```
+
+### Weak answer
+
+```text
+A DAG is a workflow.
+```
+
+This is technically close but too shallow for interviews.
+
+---
+
+## 7. Why DAGs Must Be Acyclic
+
+If a workflow has a cycle, tasks can wait forever.
+
+Example:
+
+```text
+Task A depends on Task B.
+Task B depends on Task C.
+Task C depends on Task A.
+```
+
+This cannot be executed.
+
+### Interview-ready explanation
+
+```text
+A DAG must be acyclic because a cycle creates impossible dependencies. If A waits for B and B waits for A, the workflow cannot start. Orchestration systems require acyclic dependencies to determine execution order.
+```
+
+### DSA connection
+
+This maps to topological sort.
+
+Relevant LeetCode:
+
+```text
+207 - Course Schedule
+210 - Course Schedule II
+```
+
+---
+
+## 8. Task
+
+A task is one unit of work in a workflow.
+
+Examples:
+
+- extract data from API
+- check file arrival
+- validate schema
+- load staging table
+- run SQL transformation
+- trigger Spark job
+- run data quality checks
+- publish dashboard table
+- send alert
+- archive files
+
+### Strong answer
+
+```text
+A task should be a clear, retry-safe unit of work. It should have one responsibility and should be idempotent if possible.
+```
+
+### Common mistake
+
+Making one huge task that does everything.
+
+Bad:
+
+```text
+One task extracts, transforms, loads, validates, and publishes everything.
+```
+
+Better:
+
+```text
+Separate extraction, validation, staging load, transformation, quality check, and publish tasks so failures are easier to debug and rerun.
+```
+
+---
+
+## 9. Task Instance
+
+A task is the definition.
+
+A task instance is a specific run of that task for a specific DAG run.
+
+### Strong explanation
+
+```text
+The task is the reusable definition, while a task instance is the execution of that task for a specific scheduled run or data interval.
+```
+
+This distinction matters when debugging failed historical runs.
+
+---
+
+## 10. DAG Run
+
+A DAG run is one scheduled or manually triggered execution of the DAG.
+
+Examples:
+
+- daily run for 2025-01-01
+- manual rerun for failed date
+- backfill run for last month
+- hourly run for 10 AM interval
+
+### Strong answer
+
+```text
+A DAG run represents one execution of the workflow for a logical data interval. Each task inside that DAG has its own task instance for that run.
+```
+
+---
+
+## 11. Logical Date / Data Interval
+
+Airflow-style systems often separate:
+
+- when the job physically runs
+- what data interval the run represents
+
+Example:
+
+A daily job that processes data for `2025-01-01` may run at `2025-01-02 01:00`.
+
+### Strong answer
+
+```text
+A scheduled run usually processes a logical data interval, not necessarily the wall-clock time when the job starts. This matters for partitioned processing and backfills.
+```
+
+### Interview warning
+
+Hardcoding “today” inside pipelines is a red flag.
+
+Bad:
+
+```python
+process_date = date.today()
+```
+
+Better:
+
+```text
+Use the orchestration-provided logical date or configured partition date.
+```
+
+---
+
+## 12. Dependencies
+
+Dependencies define task order.
+
+Example:
+
+```text
+extract_orders >> validate_orders >> load_orders >> transform_sales >> quality_check >> publish
+```
+
+### Dependency types
+
+- task A before task B
+- multiple upstream tasks before one downstream task
+- one task triggering many downstream tasks
+- branch-based dependencies
+- external dependencies
+- dataset/table/file dependencies
+
+### Strong answer
+
+```text
+Dependencies ensure tasks run only after required upstream tasks succeed. For example, transformation should not run before extraction and validation complete.
+```
+
+### Common mistake
+
+Dependencies based on time instead of actual completion.
+
+Weak design:
+
+```text
+Start transformation 10 minutes after extraction starts.
+```
+
+Better:
+
+```text
+Start transformation only after extraction and validation tasks succeed.
+```
+
+---
+
+## 13. Schedules
+
+A schedule defines when a workflow should run.
+
+Common schedules:
+
+- hourly
+- daily
+- weekly
+- monthly
+- event-triggered
+- manual
+- external dependency triggered
+
+### Strong answer
+
+```text
+The schedule should match the business freshness requirement. If dashboards are needed by 8 AM daily, the pipeline should be scheduled early enough to finish with retries and validation before that SLA.
+```
+
+### Common mistakes
+
+- schedule does not match SLA
+- no buffer for retries
+- hardcoded dates
+- overlapping runs
+- wrong timezone
+- not accounting for upstream data arrival
+
+---
+
+## 14. Schedule vs SLA
+
+Schedule is when the workflow starts.
+
+SLA/freshness is when data must be ready.
+
+Example:
+
+```text
+Schedule: 2 AM daily
+SLA: sales dashboard fresh by 8 AM
+```
+
+### Strong answer
+
+```text
+Scheduling is not the same as meeting an SLA. I need monitoring to verify the output table is fresh by the business deadline.
+```
+
+---
+
+## 15. Timezones
+
+Timezone mistakes can break data pipelines.
+
+Common issues:
+
+- source timestamps in UTC
+- business reporting timezone differs
+- daylight saving time changes
+- date partition calculated incorrectly
+- “today” differs by region
+
+### Strong answer
+
+```text
+I would standardize pipeline processing on a clear timezone, often UTC for system timestamps, while converting to business timezone for reporting if required.
+```
+
+### Interview red flag
+
+Candidate ignores timezone in date-based pipelines.
+
+---
+
+## 16. Retries
+
+Retries rerun failed tasks automatically.
+
+Good for transient failures:
+
+- network timeout
+- temporary API failure
+- warehouse connection issue
+- temporary cloud service issue
+- rate limit after backoff
+
+Bad for permanent failures:
+
+- schema mismatch
+- bad data
+- missing required column
+- logic bug
+- invalid credentials
+- permission denied
+
+### Strong answer
+
+```text
+Retries are useful for transient failures, but they must be combined with idempotency. Retrying a non-idempotent load can duplicate data.
+```
+
+### Common mistake
+
+Retrying data quality failures blindly.
+
+Mentor correction:
+
+```text
+Do not retry bad data forever. Schema and data quality failures should fail fast and alert owners.
+```
+
+---
+
+## 17. Retry Configuration
+
+A production task should consider:
+
+- number of retries
+- retry delay
+- exponential backoff
+- timeout
+- alert after final failure
+- idempotent rerun behavior
+
+### Strong answer
+
+```text
+I would configure limited retries with backoff for transient failures and alert after retries are exhausted. The task must be safe to rerun.
+```
+
+---
+
+## 18. Idempotency in Orchestration
+
+Idempotency means rerunning the task produces the same final result.
+
+This is critical in Airflow-style systems because failed tasks are commonly retried or manually rerun.
+
+### Examples
+
+Non-idempotent task:
+
+```text
+Append same records every retry.
+```
+
+Idempotent task:
+
+```text
+Overwrite the target partition or merge by stable key.
+```
+
+### Strong answer
+
+```text
+Every task that writes data should be idempotent. If a task fails halfway and is retried, it should not duplicate data or leave corrupted output.
+```
+
+### Strategies
+
+- overwrite partition
+- merge/upsert by key
+- staging table then swap
+- delete target range then insert
+- processed-file tracking
+- deterministic output path
+- transaction-safe writes
+- checkpoint commit only after success
+
+---
+
+## 19. Task Granularity
+
+Task granularity means how small or large each task should be.
+
+### Too large
+
+One task does everything.
+
+Problems:
+
+- hard to debug
+- hard to retry partial failure
+- long logs
+- unclear ownership
+- no task-level visibility
+
+### Too small
+
+Hundreds of tiny tasks.
+
+Problems:
+
+- orchestration overhead
+- slow scheduling
+- noisy UI
+- hard maintenance
+- too many dependencies
+
+### Strong answer
+
+```text
+I would keep tasks at meaningful operational boundaries: extract, validate, load staging, transform, quality check, and publish. Too-large tasks are hard to debug, but too many tiny tasks create orchestration overhead.
+```
+
+---
+
+## 20. Sensors
+
+Sensors wait for external conditions.
+
+Examples:
+
+- file arrived
+- upstream table refreshed
+- API ready
+- external DAG complete
+- partition exists
+- message received
+
+### Strong answer
+
+```text
+Sensors are useful when a pipeline depends on external data arrival. For example, a file sensor can wait for a vendor file before starting ingestion.
+```
+
+### Risks
+
+- long-running sensors occupying workers
+- poor timeout configuration
+- hidden upstream dependency
+- no alert when condition never arrives
+- excessive polling
+
+### Strong design
+
+```text
+Use sensors with timeout, clear failure behavior, and alerts. For long waits, prefer efficient sensor modes or event-driven alternatives when available.
+```
+
+---
+
+## 21. Operators / Task Types
+
+Airflow-style systems use operators or task definitions to perform work.
+
+Common categories:
+
+- Python task
+- Bash/shell task
+- SQL task
+- Spark job trigger
+- cloud job trigger
+- dbt job trigger
+- sensor
+- transfer task
+- notification task
+- custom operator
+
+### Interview-safe answer
+
+```text
+Operators define what a task does. The choice depends on the work: SQL transformations can run through SQL operators, Python logic through Python tasks, and heavy distributed processing through Spark or cloud job operators.
+```
+
+### Warning
+
+Do not memorize operator names as the main answer.
+
+The interviewer cares more about why the task exists and how it is reliable.
+
+---
+
+## 22. XCom / Inter-Task Communication
+
+Airflow has mechanisms for passing small pieces of data between tasks.
+
+Use for:
+
+- small metadata
+- file path
+- row count
+- status flag
+- partition date
+- job ID
+
+Do not use for:
+
+- large datasets
+- full DataFrames
+- huge JSON payloads
+- heavy data transfer
+
+### Strong answer
+
+```text
+Inter-task communication should be used for small metadata, not large data. Large datasets should be passed through storage systems like object storage, warehouse tables, or files.
+```
+
+### Red flag
+
+Candidate tries to pass large data between tasks in orchestration metadata.
+
+---
+
+## 23. Variables, Connections, and Secrets
+
+Orchestration systems often store:
+
+- connection configuration
+- environment variables
+- secrets references
+- runtime parameters
+
+### Strong answer
+
+```text
+Credentials should not be hardcoded in DAG code. Connections and secrets should be managed securely, and tasks should use least-privilege service accounts.
+```
+
+### Common mistakes
+
+- hardcoded passwords
+- credentials in Git
+- production secrets in dev
+- overly broad permissions
+- no rotation process
+
+---
+
+## 24. Parameters
+
+Parameters allow reusable workflows.
+
+Examples:
+
+- process_date
+- source_name
+- target_table
+- backfill_start_date
+- backfill_end_date
+- environment
+- load_type
+
+### Strong answer
+
+```text
+Parameterized DAGs make backfills and reruns safer. Instead of hardcoding dates, the pipeline should accept a logical processing date or date range.
+```
+
+---
+
+## 25. Backfills
+
+Backfill means running a pipeline for historical data intervals.
+
+Reasons:
+
+- missed runs
+- transformation bug
+- new logic
+- late data
+- new table created
+- source correction
+- dashboard rebuild
+
+### Strong answer
+
+```text
+Backfills are safe only when tasks are parameterized and idempotent. I should be able to rerun a historical partition without duplicating or corrupting data.
+```
+
+### Common backfill risks
+
+- hardcoded current date
+- non-idempotent appends
+- no raw data retention
+- downstream tables not refreshed
+- too much compute/cost
+- overlapping manual runs
+- no validation after backfill
+- no communication to consumers
+
+---
+
+## 26. Catchup
+
+Catchup means running all missed scheduled intervals between the last run and current time.
+
+### Example
+
+If a daily DAG was paused for 10 days, catchup may create 10 historical runs.
+
+### Strong answer
+
+```text
+Catchup can be useful when every historical interval must be processed, but it can also create a huge backlog. The setting should match business needs and pipeline capacity.
+```
+
+### Common mistake
+
+Leaving catchup behavior unclear.
+
+---
+
+## 27. Manual Runs
+
+Manual runs are triggered by users or operations teams.
+
+Use cases:
+
+- rerun failed date
+- test new pipeline
+- emergency reprocessing
+- manual backfill
+- run ad hoc load
+
+### Strong answer
+
+```text
+Manual runs should still use the same idempotency and validation rules as scheduled runs. A manual rerun should not bypass quality checks.
+```
+
+---
+
+## 28. Branching
+
+Branching chooses different downstream paths.
+
+Examples:
+
+- if file exists, load it; otherwise skip
+- if quality check fails, quarantine
+- if full load, run full path; if incremental, run merge path
+- if weekend, skip external API load
+- if table is empty, run bootstrap load
+
+### Strong answer
+
+```text
+Branching is useful when workflow paths depend on conditions, but it should be kept understandable. Too much branching can make DAGs hard to reason about.
+```
+
+---
+
+## 29. Dynamic Task Generation
+
+Dynamic task generation creates tasks based on a list of items.
+
+Examples:
+
+- one task per source table
+- one task per file
+- one task per region
+- one task per partition
+- one task per customer tenant
+
+### Benefits
+
+- less repetitive code
+- scalable workflow generation
+- consistent task patterns
+
+### Risks
+
+- too many tasks
+- unstable task IDs
+- hard debugging
+- high scheduler overhead
+- dynamic structure changing unexpectedly
+
+### Strong answer
+
+```text
+Dynamic tasks are useful for repeated patterns like processing many tables, but I would control task count and keep task IDs stable for observability.
+```
+
+---
+
+## 30. Task Groups
+
+Task groups organize related tasks.
+
+Examples:
+
+```text
+ingestion group
+validation group
+transformation group
+quality group
+publish group
+```
+
+### Strong answer
+
+```text
+Task grouping improves readability when a DAG has many tasks. It does not replace good task design or clear dependencies.
+```
+
+---
+
+## 31. Pools and Concurrency
+
+Pools and concurrency settings control how many tasks run at once.
+
+Why it matters:
+
+- avoid overloading source systems
+- avoid too many warehouse queries
+- limit API calls
+- control compute usage
+- prevent resource contention
+
+### Strong answer
+
+```text
+I would use concurrency controls or pools to prevent the pipeline from overwhelming source databases, APIs, or warehouse compute.
+```
+
+### Common mistake
+
+Running all tasks in parallel without considering source/target capacity.
+
+---
+
+## 32. Parallelism
+
+Parallelism improves speed but increases load.
+
+Good parallelism:
+
+- independent tables
+- independent partitions
+- independent regions
+- independent files
+
+Bad parallelism:
+
+- too many concurrent queries
+- API rate limit exceeded
+- source database overloaded
+- warehouse cost spike
+- dependency race conditions
+
+### Strong answer
+
+```text
+Parallelism should be used for independent work, but it must respect source limits, warehouse capacity, and cost.
+```
+
+---
+
+## 33. Task Timeouts
+
+A timeout prevents tasks from running forever.
+
+Use timeouts for:
+
+- API calls
+- sensors
+- long-running SQL
+- Spark jobs
+- file waits
+- external system calls
+
+### Strong answer
+
+```text
+I would set task timeouts so stuck jobs fail visibly instead of blocking the DAG indefinitely.
+```
+
+---
+
+## 34. SLA and Freshness
+
+SLA means expected service level.
+
+For data workflows, this often means:
+
+- table refreshed by a certain time
+- dashboard ready by a certain time
+- streaming lag below threshold
+- file processed within N minutes
+- quality checks completed before publish
+
+### Strong answer
+
+```text
+A DAG schedule tells when the workflow starts. SLA or freshness monitoring tells whether the business output was ready on time.
+```
+
+---
+
+## 35. Alerts
+
+Alerts notify owners when something needs attention.
+
+Alert triggers:
+
+- task failure
+- DAG failure
+- SLA miss
+- missing file
+- schema change
+- row count anomaly
+- duplicate spike
+- freshness violation
+- cost spike
+- retry exhaustion
+
+### Strong answer
+
+```text
+Alerts should be actionable. A good alert tells what failed, which dataset is affected, severity, owner, and next steps.
+```
+
+### Bad alert
+
+```text
+Task failed.
+```
+
+### Better alert
+
+```text
+Daily sales load failed for 2025-01-01 at staging validation. Required column customer_id missing. Dashboard SLA at risk. Owner: Sales Data Team.
+```
+
+---
+
+## 36. Logs
+
+Logs help debug task failures.
+
+Good logs include:
+
+- run ID
+- task ID
+- processing date
+- source path/table
+- row counts
+- validation results
+- error message
+- query/job ID
+- retry attempt
+- duration
+
+### Strong answer
+
+```text
+Logs should be detailed enough to debug failures without guessing. I would log source, target, row counts, run ID, and validation failures.
+```
+
+### Common mistake
+
+Logging too little or logging sensitive data.
+
+---
+
+## 37. Run Metadata
+
+Run metadata helps operations and auditability.
+
+Track:
+
+- DAG run ID
+- task status
+- start time
+- end time
+- duration
+- processed partition
+- row counts
+- source file names
+- watermark values
+- quality check results
+- failure reason
+- retry count
+
+### Strong answer
+
+```text
+Run metadata helps identify what was processed, when it was processed, and whether the output is trustworthy.
+```
+
+---
+
+## 38. Orchestration Metadata Tables
+
+Useful custom metadata tables:
+
+```text
+pipeline_run_log
+processed_files
+watermark_state
+data_quality_results
+backfill_history
+source_extract_audit
+table_refresh_status
+pipeline_incidents
+```
+
+### Strong answer
+
+```text
+For critical pipelines, I would maintain metadata tables for watermarks, processed files, run history, and quality checks. This supports debugging and backfills.
+```
+
+---
+
+## 39. Failure Types
+
+Failures can be grouped into:
+
+1. Source failures
+2. Ingestion failures
+3. Transformation failures
+4. Data quality failures
+5. Infrastructure failures
+6. Permission failures
+7. Downstream failures
+8. Orchestration failures
+
+Each type should be handled differently.
+
+---
+
+## 40. Source Failures
+
+Examples:
+
+- source database unavailable
+- API downtime
+- vendor file missing
+- source schema changed
+- source data delayed
+- credentials expired
+
+### Strong answer
+
+```text
+For source failures, I would retry transient issues, alert for missing data or schema changes, and avoid publishing stale or incomplete downstream data as if it were fresh.
+```
+
+---
+
+## 41. Ingestion Failures
+
+Examples:
+
+- file corrupt
+- API page failed
+- partial extraction
+- duplicate file
+- rate limit exceeded
+- connection timeout
+
+### Strong answer
+
+```text
+Ingestion should be atomic where possible. If only part of the source was extracted, I would not advance the watermark or publish incomplete data.
+```
+
+---
+
+## 42. Transformation Failures
+
+Examples:
+
+- SQL error
+- Spark job failure
+- invalid casting
+- join explosion
+- memory error
+- unexpected nulls
+- missing dependency table
+
+### Strong answer
+
+```text
+Transformation failures should stop downstream publishing. I would preserve staging data for debugging and rerun after fixing logic.
+```
+
+---
+
+## 43. Data Quality Failures
+
+Examples:
+
+- duplicate primary keys
+- null required fields
+- row count drop
+- referential integrity failure
+- freshness violation
+- revenue mismatch
+- schema mismatch
+
+### Strong answer
+
+```text
+Critical data quality failures should block publish. A job that succeeds technically but produces bad data is still a failed pipeline.
+```
+
+---
+
+## 44. Infrastructure Failures
+
+Examples:
+
+- worker failure
+- scheduler issue
+- network outage
+- cloud service outage
+- cluster unavailable
+- disk/memory issue
+
+### Strong answer
+
+```text
+Infrastructure failures may be transient, so retries can help. But the pipeline must still be idempotent because reruns may occur after partial execution.
+```
+
+---
+
+## 45. Permission Failures
+
+Examples:
+
+- expired credential
+- revoked service account access
+- missing table permission
+- secret rotation issue
+- invalid connection
+
+### Strong answer
+
+```text
+Permission failures usually need owner action, not infinite retries. Alerts should clearly show which service account or connection failed.
+```
+
+---
+
+## 46. Downstream Failures
+
+Examples:
+
+- BI table not refreshed
+- dependent DAG failed
+- dashboard query failing
+- ML feature table missing
+- consumer table schema changed
+
+### Strong answer
+
+```text
+Orchestration should account for downstream dependencies and alert if a failure puts consumer-facing outputs at risk.
+```
+
+---
+
+## 47. Failure Handling Strategy
+
+A strong workflow defines:
+
+```text
+What can fail:
+How it is detected:
+Whether to retry:
+Whether to quarantine:
+Whether to block publishing:
+Who gets alerted:
+How to rerun:
+How to validate recovery:
+```
+
+### Interview-ready answer
+
+```text
+I would classify failures as transient, data-related, or logic-related. Transient failures can retry with backoff. Data quality and schema failures should stop the pipeline and alert owners. Recovery should use idempotent reruns and validation before publishing.
+```
+
+---
+
+## 48. Orchestration and Data Quality
+
+Airflow-style orchestration should include quality gates.
+
+Example workflow:
+
+```text
+extract
+  ↓
+raw_load
+  ↓
+schema_check
+  ↓
+staging_load
+  ↓
+dedupe
+  ↓
+business_transform
+  ↓
+quality_check
+  ↓
+publish
+```
+
+### Strong answer
+
+```text
+I would add quality checks before publishing curated tables. If critical checks fail, the publish task should not run.
+```
+
+---
+
+## 49. Quality Gate
+
+A quality gate blocks downstream tasks if data is bad.
+
+Examples:
+
+- row count below threshold
+- primary key duplicates
+- required column missing
+- revenue mismatch
+- freshness violation
+- schema mismatch
+
+### Strong answer
+
+```text
+A quality gate protects consumers by preventing bad data from reaching curated tables or dashboards.
+```
+
+---
+
+## 50. Publish Step
+
+The publish step makes data available to consumers.
+
+Publishing should happen after:
+
+- transformations complete
+- quality checks pass
+- metadata is updated
+- output is consistent
+- downstream dependencies are safe
+
+### Strong answer
+
+```text
+I would separate transformation from publish. Data should only be promoted to consumer-facing tables after validation passes.
+```
+
+---
+
+## 51. Staging Then Swap
+
+A safe pattern:
+
+```text
+1. Write output to staging table/path.
+2. Run quality checks.
+3. If checks pass, swap/rename/merge into final table.
+4. If checks fail, keep final table unchanged.
+```
+
+### Strong answer
+
+```text
+Staging then publish reduces the risk of exposing partial or bad data to users.
+```
+
+---
+
+## 52. Watermarks in Orchestration
+
+Orchestration often manages or coordinates watermarks.
+
+A safe watermark update pattern:
+
+```text
+1. Read previous watermark.
+2. Extract source changes.
+3. Load staging.
+4. Validate.
+5. Merge target.
+6. Commit new watermark only after success.
+```
+
+### Strong answer
+
+```text
+The watermark should advance only after the target load and validation succeed. Otherwise, a failed run can skip data permanently.
+```
+
+---
+
+## 53. Processed File Tracking
+
+For file-based pipelines, track processed files.
+
+Metadata:
+
+- source file path
+- file name
+- checksum
+- size
+- arrival time
+- processed time
+- status
+- row count
+- run ID
+
+### Strong answer
+
+```text
+Processed-file tracking prevents duplicate processing and helps audit which files were loaded.
+```
+
+---
+
+## 54. Airflow and SQL Pipelines
+
+Airflow can orchestrate SQL transformations.
+
+Common pattern:
+
+```text
+extract/source load
+  ↓
+staging SQL
+  ↓
+fact/dimension SQL
+  ↓
+quality SQL
+  ↓
+publish
+```
+
+### Strong answer
+
+```text
+For SQL-heavy warehouse pipelines, I would let Airflow coordinate SQL tasks, but keep transformation SQL modular and tested.
+```
+
+### Common mistake
+
+Putting huge unreadable SQL strings directly inside DAG code.
+
+Better:
+
+```text
+Store SQL in separate version-controlled files or transformation framework.
+```
+
+---
+
+## 55. Airflow and dbt-Style Transformations
+
+Airflow can trigger dbt-style transformation jobs.
+
+Strong explanation:
+
+```text
+Airflow can orchestrate dbt or SQL transformation jobs, while dbt handles model dependencies and tests. Airflow manages scheduling, external dependencies, and cross-system workflow coordination.
+```
+
+### Interview caution
+
+Do not overclaim that Airflow replaces transformation testing.
+
+---
+
+## 56. Airflow and Spark Jobs
+
+Airflow can trigger Spark jobs.
+
+Pattern:
+
+```text
+sensor/check input
+  ↓
+submit Spark job
+  ↓
+monitor Spark job
+  ↓
+validate output
+  ↓
+publish
+```
+
+### Strong answer
+
+```text
+Airflow should submit and monitor Spark jobs rather than doing large distributed processing inside the Airflow worker.
+```
+
+### Common mistake
+
+Processing huge datasets inside a Python task running on the orchestrator.
+
+---
+
+## 57. Airflow and API Ingestion
+
+Pattern:
+
+```text
+get cursor/watermark
+  ↓
+call API pages
+  ↓
+write raw responses
+  ↓
+normalize to staging
+  ↓
+validate
+  ↓
+merge target
+  ↓
+commit cursor
+```
+
+### Strong answer
+
+```text
+For API ingestion, orchestration should handle pagination, retries, rate limits, raw response storage, normalization, and cursor commit only after success.
+```
+
+---
+
+## 58. Airflow and File Ingestion
+
+Pattern:
+
+```text
+wait for file
+  ↓
+validate file
+  ↓
+copy to raw
+  ↓
+load staging
+  ↓
+deduplicate
+  ↓
+transform
+  ↓
+quality check
+  ↓
+publish
+  ↓
+archive
+```
+
+### Strong answer
+
+```text
+For file ingestion, I would use file arrival checks, schema validation, processed-file tracking, and quarantine bad files instead of blindly loading them.
+```
+
+---
+
+## 59. Airflow and CDC Pipelines
+
+Airflow may orchestrate batch parts of CDC pipelines, even if CDC capture is continuous.
+
+Pattern:
+
+```text
+CDC capture system writes change logs
+  ↓
+Airflow validates batch/window
+  ↓
+apply changes to staging/target
+  ↓
+quality checks
+  ↓
+publish/report lag
+```
+
+### Strong answer
+
+```text
+Airflow may not capture CDC itself, but it can orchestrate applying CDC batches, monitoring lag, validating merges, and refreshing downstream marts.
+```
+
+---
+
+## 60. Orchestration for Streaming Pipelines
+
+Streaming pipelines are often always-on, but orchestration can still help with:
+
+- deployment jobs
+- compaction jobs
+- daily aggregates
+- quality checks
+- backfills
+- replay jobs
+- monitoring checks
+- downstream refreshes
+
+### Strong answer
+
+```text
+Even if streaming processing is continuous, orchestration can manage batch maintenance tasks, quality checks, compaction, replay, and downstream aggregate refreshes.
+```
+
+---
+
+## 61. Backfill Design in Airflow-Style Workflows
+
+A strong backfill design includes:
+
+```text
+Parameterizable date range:
+Idempotent writes:
+Partition-level processing:
+Concurrency limits:
+Quality checks:
+Cost awareness:
+Downstream refresh:
+Clear logs:
+Owner notification:
+```
+
+### Strong answer
+
+```text
+For backfills, I would process historical partitions using the same code path as scheduled runs when possible. This reduces logic drift and makes validation consistent.
+```
+
+### Common mistake
+
+Creating separate ad hoc backfill scripts with different logic.
+
+---
+
+## 62. Historical Reruns
+
+Historical reruns must avoid:
+
+- using current date accidentally
+- current dimension values when historical values are needed
+- overwriting wrong partitions
+- triggering downstream alerts incorrectly
+- overloading systems
+- duplicating data
+
+### Strong answer
+
+```text
+Historical reruns should use the logical processing date, not today’s date, and should write only the intended partitions.
+```
+
+---
+
+## 63. Operational Runbook
+
+Every production DAG should have a runbook.
+
+A runbook should document:
+
+```text
+DAG purpose:
+Owner:
+Schedule:
+SLA:
+Sources:
+Targets:
+Dependencies:
+Retry policy:
+Common failures:
+How to rerun:
+How to backfill:
+Quality checks:
+Alert contacts:
+Known limitations:
+```
+
+### Strong answer
+
+```text
+A runbook helps on-call engineers understand what failed, what data is affected, and how to recover safely.
+```
+
+---
+
+## 64. DAG Documentation
+
+DAG code or docs should explain:
+
+- what the DAG does
+- what data interval it processes
+- source tables/files
+- target tables
+- schedule
+- owner
+- SLA
+- dependencies
+- backfill notes
+
+### Interview answer
+
+```text
+Good DAG documentation improves operations because data pipelines often fail outside the original developer’s working hours.
+```
+
+---
+
+## 65. Naming Conventions
+
+Good naming improves maintainability.
+
+Examples:
+
+```text
+extract_orders
+validate_orders_schema
+load_orders_staging
+build_fact_sales
+check_fact_sales_quality
+publish_sales_mart
+```
+
+Bad names:
+
+```text
+task1
+run_job
+python_task
+process
+final
+```
+
+### Strong answer
+
+```text
+Task names should clearly describe the unit of work so failures are easy to understand from the UI and logs.
+```
+
+---
+
+## 66. Environment Separation
+
+Use separate environments:
+
+- dev
+- test
+- staging
+- prod
+
+### Strong answer
+
+```text
+DAGs should be tested in non-production environments before production. Dev and prod should use separate connections, credentials, datasets, and schedules.
+```
+
+### Common mistakes
+
+- dev DAG writes to prod table
+- prod secrets used in dev
+- test data mixed with production
+- no deployment approval
+
+---
+
+## 67. CI/CD for DAGs
+
+DAG deployment should be controlled.
+
+Good practices:
+
+- version control
+- code review
+- linting
+- unit tests
+- DAG import validation
+- SQL validation
+- environment promotion
+- deployment approvals
+- rollback path
+- monitoring after deploy
+
+### Strong answer
+
+```text
+Airflow DAGs are code, so they should go through version control, review, tests, and controlled deployment like other production code.
+```
+
+---
+
+## 68. Testing DAGs
+
+Testing can include:
+
+- DAG parses successfully
+- no cycles
+- task IDs stable
+- dependencies correct
+- parameters valid
+- SQL files exist
+- connection names valid
+- transformation tests pass
+- idempotency tested
+- backfill tested on sample range
+
+### Strong answer
+
+```text
+Testing orchestration means checking not only code syntax but also dependencies, parameters, idempotency, and failure behavior.
+```
+
+---
+
+## 69. Security in Orchestration
+
+Security considerations:
+
+- least privilege connections
+- secrets management
+- no hardcoded credentials
+- environment-specific service accounts
+- audit logs
+- restricted UI access
+- PII not logged
+- secure connections
+- permission boundaries
+
+### Strong answer
+
+```text
+Orchestration systems often have access to many data systems, so credentials and permissions must be tightly controlled. Logs should not expose PII or secrets.
+```
+
+---
+
+## 70. Cost Awareness in Orchestration
+
+Orchestration can create cost problems.
+
+Cost risks:
+
+- too many concurrent warehouse queries
+- huge backfills
+- retry storms
+- unnecessary full refreshes
+- always-on compute triggered unnecessarily
+- streaming maintenance overuse
+- inefficient schedules
+- duplicate runs
+- no timeout
+
+### Strong answer
+
+```text
+I would control orchestration cost by limiting concurrency, avoiding unnecessary full refreshes, scheduling heavy jobs carefully, and monitoring retry storms and backfills.
+```
+
+---
+
+## 71. Retry Storms
+
+A retry storm happens when many failed tasks retry repeatedly and overload systems.
+
+### Prevention
+
+- limited retries
+- exponential backoff
+- circuit-breaker thinking
+- alert early
+- pause downstream if source unavailable
+- avoid retrying permanent failures
+
+### Strong answer
+
+```text
+If an upstream system is down, uncontrolled retries can worsen the incident. I would use backoff and alerting rather than hammering the source.
+```
+
+---
+
+## 72. Deadlocks and Waiting Forever
+
+Workflows can get stuck due to:
+
+- sensor waiting forever
+- external dependency never arrives
+- task pool starvation
+- cyclic dependency
+- concurrency limit too low
+- missing upstream run
+
+### Strong answer
+
+```text
+Sensors and external waits should have timeouts and clear failure behavior. A pipeline should fail visibly rather than wait forever.
+```
+
+---
+
+## 73. Orchestration Anti-Patterns
+
+### Anti-pattern 1: One huge task
+
+Problem:
+
+```text
+Hard to debug and rerun.
+```
+
+Fix:
+
+```text
+Split into meaningful operational steps.
+```
+
+### Anti-pattern 2: Hardcoded dates
+
+Problem:
+
+```text
+Backfills and reruns break.
+```
+
+Fix:
+
+```text
+Use logical date / parameters.
+```
+
+### Anti-pattern 3: Non-idempotent writes
+
+Problem:
+
+```text
+Retries duplicate data.
+```
+
+Fix:
+
+```text
+Use merge, partition overwrite, or staging then swap.
+```
+
+### Anti-pattern 4: No quality gates
+
+Problem:
+
+```text
+Bad data reaches consumers.
+```
+
+Fix:
+
+```text
+Block publish if critical checks fail.
+```
+
+### Anti-pattern 5: Airflow as compute engine
+
+Problem:
+
+```text
+Workers overloaded with heavy processing.
+```
+
+Fix:
+
+```text
+Run heavy compute in appropriate processing systems.
+```
+
+### Anti-pattern 6: No alert ownership
+
+Problem:
+
+```text
+Failures are ignored.
+```
+
+Fix:
+
+```text
+Alerts should include owner and action.
+```
+
+---
+
+## 74. Interview Questions: Basic
+
+1. What is orchestration?
+2. What is Airflow used for?
+3. What is a DAG?
+4. Why must a DAG be acyclic?
+5. What is a task?
+6. What is a dependency?
+7. What is a schedule?
+8. What is a retry?
+9. What is a sensor?
+10. What is a backfill?
+11. What is catchup?
+12. What is idempotency in Airflow?
+13. What is a task instance?
+14. What is a DAG run?
+15. Why should tasks be idempotent?
+
+---
+
+## 75. Interview Questions: Medium
+
+1. How would you design an Airflow DAG for a daily batch pipeline?
+2. How do you handle missing input files?
+3. How do you retry transient failures safely?
+4. How do you prevent duplicate loads on retry?
+5. How do you design a backfill-safe DAG?
+6. How do you handle late-arriving data?
+7. How do you add data quality checks in a DAG?
+8. How do you alert on pipeline failure?
+9. How do you monitor freshness?
+10. How do you avoid hardcoded dates?
+11. How do you manage credentials?
+12. How do you limit source system load?
+13. How do you handle schema changes?
+14. How do you decide task granularity?
+15. How do you test DAGs?
+
+---
+
+## 76. Interview Questions: Advanced
+
+1. Design an orchestration strategy for 500 source tables.
+2. Design backfill for 2 years of historical data.
+3. Design a workflow with CDC, batch marts, and streaming aggregates.
+4. How do you prevent retry storms?
+5. How do you handle cross-DAG dependencies?
+6. How do you orchestrate a data quality framework?
+7. How do you handle partial pipeline failures?
+8. How do you design multi-tenant orchestration?
+9. How do you migrate legacy cron jobs to Airflow?
+10. How do you operate Airflow in production?
+11. How do you handle environment promotion?
+12. How do you secure orchestration credentials?
+13. How do you design DAGs for cost control?
+14. How do you manage SLA and freshness monitoring?
+15. How do you debug a stuck DAG?
+
+---
+
+## 77. Scenario: Daily Sales Pipeline DAG
+
+### Prompt
+
+```text
+Design an Airflow DAG for a daily sales analytics pipeline.
+```
+
+### Strong answer outline
+
+1. Clarify SLA: dashboard ready by 8 AM.
+2. Wait/check source availability.
+3. Extract orders, order_items, customers, products.
+4. Land raw data.
+5. Validate schemas and row counts.
+6. Load staging tables.
+7. Run transformations to facts/dimensions.
+8. Run data quality checks.
+9. Publish marts if checks pass.
+10. Send success/failure alert.
+11. Track run metadata.
+12. Make tasks idempotent.
+13. Support backfill by process date.
+14. Use retries for transient failures only.
+15. Avoid hardcoded today.
+
+### Example DAG flow
+
+```text
+check_source_ready
+  ↓
+extract_orders
+  ↓
+validate_raw_orders
+  ↓
+load_orders_staging
+  ↓
+build_fact_sales
+  ↓
+run_quality_checks
+  ↓
+publish_sales_mart
+  ↓
+notify_success
+```
+
+### Follow-ups
+
+1. What if orders extract succeeds but staging load fails?
+2. How do you rerun yesterday?
+3. How do you backfill last month?
+4. How do you avoid duplicate records?
+5. How do you detect stale dashboard data?
+
+---
+
+## 78. Scenario: Vendor File Ingestion DAG
+
+### Prompt
+
+```text
+A vendor sends a daily CSV file. Design the Airflow workflow.
+```
+
+### Strong answer outline
+
+1. Sensor waits for file with timeout.
+2. Validate file name and schema.
+3. Check duplicate file using manifest/checksum.
+4. Copy file to raw archive.
+5. Load staging.
+6. Validate row counts and required fields.
+7. Transform to target.
+8. Run quality checks.
+9. Publish output.
+10. Archive or mark processed.
+11. Alert if file missing or invalid.
+
+### Failure handling
+
+- missing file: alert after timeout
+- corrupt file: quarantine and alert
+- duplicate file: skip or compare checksum
+- schema mismatch: fail and alert
+- partial load: do not publish
+
+### Follow-ups
+
+1. What if file arrives late?
+2. What if vendor resends corrected file?
+3. What if schema changes?
+4. How do you avoid loading same file twice?
+5. How do you backfill old files?
+
+---
+
+## 79. Scenario: API Ingestion DAG
+
+### Prompt
+
+```text
+Design an Airflow DAG that syncs customer data from a third-party API every hour.
+```
+
+### Strong answer outline
+
+1. Read last successful cursor/watermark.
+2. Call API with pagination.
+3. Respect rate limits.
+4. Retry transient failures with backoff.
+5. Store raw API responses.
+6. Normalize JSON.
+7. Validate schema.
+8. Merge customer table.
+9. Commit new cursor only after success.
+10. Monitor freshness and API error rate.
+11. Alert on authentication/rate-limit/schema failures.
+
+### Follow-ups
+
+1. What if page 4 fails?
+2. What if API returns partial data?
+3. What if cursor advances too early?
+4. What if API schema changes?
+5. How do you handle deletes?
+
+---
+
+## 80. Scenario: Backfill DAG
+
+### Prompt
+
+```text
+You need to backfill 180 days of sales data. How would you orchestrate it?
+```
+
+### Strong answer
+
+```text
+I would parameterize the DAG by date or date range, process partitions idempotently, limit concurrency to control warehouse/source load, validate each partition, track backfill status, and refresh downstream marts after affected partitions are rebuilt.
+```
+
+### Important points
+
+- do not use hardcoded current date
+- process by partition
+- limit concurrency
+- avoid duplicate writes
+- monitor cost
+- validate output
+- record backfill metadata
+- communicate dashboard impact
+
+### Follow-ups
+
+1. How many partitions run in parallel?
+2. What if one date fails?
+3. Do you continue or stop?
+4. How do you verify the backfill?
+5. How do you prevent cost spike?
+
+---
+
+## 81. Scenario: CDC Orchestration
+
+### Prompt
+
+```text
+A CDC system lands change events continuously. How would Airflow be used?
+```
+
+### Strong answer
+
+```text
+Airflow may orchestrate downstream batch application of CDC changes, quality checks, lag monitoring, warehouse merges, and mart refreshes. CDC capture itself may be handled by a separate streaming or database log system.
+```
+
+### DAG flow
+
+```text
+check_cdc_lag
+  ↓
+load_cdc_window_to_staging
+  ↓
+apply_merges
+  ↓
+validate_target
+  ↓
+refresh_downstream_marts
+  ↓
+notify
+```
+
+### Follow-ups
+
+1. How do you handle deletes?
+2. How do you handle out-of-order changes?
+3. How do you track offsets?
+4. How do you replay CDC window?
+5. How do you detect lag?
+
+---
+
+## 82. Scenario: Data Quality DAG
+
+### Prompt
+
+```text
+Design a data quality workflow for warehouse tables.
+```
+
+### Strong answer outline
+
+1. Identify critical tables.
+2. Define checks per table.
+3. Run checks after transformations.
+4. Store results in metadata table.
+5. Block publish on critical failures.
+6. Alert owners.
+7. Track trends over time.
+8. Create freshness dashboard.
+9. Support reruns after fixes.
+
+### Checks
+
+- row count
+- nulls
+- duplicates
+- accepted values
+- referential integrity
+- freshness
+- schema
+- reconciliation
+- anomaly detection
+
+---
+
+## 83. Scenario: Migrating Cron Jobs to Airflow
+
+### Prompt
+
+```text
+You have many legacy cron jobs. How would you migrate them to Airflow?
+```
+
+### Strong answer
+
+1. Inventory jobs, schedules, dependencies.
+2. Identify sources and targets.
+3. Group related jobs into DAGs.
+4. Replace time-based assumptions with dependencies.
+5. Add retries and alerts.
+6. Add idempotency.
+7. Add data quality checks.
+8. Test in non-prod.
+9. Run parallel with cron.
+10. Cut over gradually.
+11. Document runbooks.
+12. Decommission old jobs.
+
+### Weak answer
+
+```text
+Just create DAGs for each cron job.
+```
+
+Too shallow.
+
+---
+
+## 84. Weak vs Strong Answers
+
+### Question: What is Airflow?
+
+Weak:
+
+```text
+Airflow schedules jobs.
+```
+
+Strong:
+
+```text
+Airflow orchestrates workflows as DAGs. It manages task dependencies, schedules, retries, monitoring, logs, backfills, and alerts. In data pipelines, it coordinates extraction, validation, transformation, quality checks, and publishing.
+```
+
+---
+
+### Question: What is a DAG?
+
+Weak:
+
+```text
+A DAG is a pipeline.
+```
+
+Strong:
+
+```text
+A DAG is a directed acyclic graph of tasks. Directed means task order is defined, and acyclic means there are no circular dependencies. This allows the orchestrator to determine a valid execution order.
+```
+
+---
+
+### Question: How do retries work?
+
+Weak:
+
+```text
+If task fails, Airflow retries.
+```
+
+Strong:
+
+```text
+Retries rerun failed tasks, usually for transient errors. Retried tasks must be idempotent, otherwise retrying a partially completed load can duplicate or corrupt data.
+```
+
+---
+
+### Question: What is a backfill?
+
+Weak:
+
+```text
+Running old dates.
+```
+
+Strong:
+
+```text
+A backfill reruns a workflow for historical data intervals. It requires parameterized dates, idempotent writes, validation, controlled concurrency, and downstream refresh awareness.
+```
+
+---
+
+### Question: How do you design a production DAG?
+
+Weak:
+
+```text
+Create tasks and schedule them.
+```
+
+Strong:
+
+```text
+I would define clear task boundaries, dependencies, schedule, retries, timeouts, quality gates, alerts, idempotent writes, parameterized dates, metadata logging, and backfill support. I would also avoid heavy processing inside the orchestrator itself.
+```
+
+---
+
+## 85. Common Interview Red Flags
+
+Flag these strongly:
+
+1. Says Airflow only schedules jobs.
+2. Cannot explain DAG.
+3. Cannot explain acyclic.
+4. Does not mention dependencies.
+5. Does not mention retries.
+6. Does not mention idempotency.
+7. Does not mention backfills.
+8. Hardcodes current date.
+9. No data quality checks.
+10. No alerting.
+11. No freshness/SLA monitoring.
+12. No failure handling.
+13. Uses one giant task.
+14. Uses too many tiny tasks.
+15. Passes large data through orchestration metadata.
+16. Runs heavy processing inside Airflow workers.
+17. No timeout on sensors.
+18. No processed-file tracking.
+19. No watermark safety.
+20. No security for credentials.
+21. No environment separation.
+22. No cost or concurrency control.
+23. No runbook.
+24. No logs/metadata.
+25. No owner for failures.
+
+---
+
+## 86. Review Checklist
+
+When reviewing an orchestration answer, check:
+
+```text
+DAG purpose explained:
+Tasks identified:
+Dependencies clear:
+Schedule linked to SLA:
+Logical date/partition date handled:
+Retries explained:
+Idempotency explained:
+Backfill support included:
+Catchup behavior considered:
+Sensors/external dependencies handled:
+Timeouts included:
+Quality gates included:
+Failure handling included:
+Alerts included:
+Logs/metadata included:
+Concurrency/pools considered:
+Security/secrets considered:
+Cost considered:
+Heavy compute kept outside orchestrator:
+Runbook/documentation mentioned:
+Communication structured:
+```
+
+If idempotency, backfills, quality checks, and alerts are missing, the answer is not interview-ready.
+
+---
+
+## 87. Scoring Rubric
+
+### Score 0
+
+No useful understanding.
+
+Cannot explain:
+
+- DAG
+- task
+- dependency
+- schedule
+
+### Score 1
+
+Knows Airflow as scheduler only.
+
+Weak in:
+
+- retries
+- backfills
+- idempotency
+- alerts
+- data quality
+
+### Score 2
+
+Can explain basic DAGs but misses production concerns.
+
+Can describe:
+
+- tasks
+- dependencies
+- schedule
+
+Weak in:
+
+- failure handling
+- quality gates
+- backfills
+- metadata
+- security
+
+### Score 3
+
+Developing.
+
+Can explain:
+
+- DAG
+- tasks
+- dependencies
+- schedule
+- retries
+- basic backfill
+
+Needs improvement:
+
+- idempotency
+- sensors
+- SLA/freshness
+- concurrency
+- production runbooks
+
+### Score 4
+
+Interview-ready.
+
+Can explain:
+
+- DAG design
+- task granularity
+- retries
+- idempotency
+- backfills
+- catchup
+- sensors
+- alerts
+- quality checks
+- monitoring
+- logs
+- run metadata
+- security
+- cost/concurrency trade-offs
+
+### Score 5
+
+Strong.
+
+Can handle:
+
+- complex production orchestration
+- hundreds of tables
+- cross-DAG dependencies
+- backfill strategy
+- incident recovery
+- migration from cron
+- quality frameworks
+- multi-environment deployment
+- cost and concurrency tuning
+- senior-level trade-offs
+
+---
+
+## 88. Minimum Passing Standard
+
+Candidate must be able to explain:
+
+1. What orchestration is.
+2. What Airflow is used for.
+3. What a DAG is.
+4. Why DAGs must be acyclic.
+5. What tasks and dependencies are.
+6. What a DAG run/task instance is.
+7. How schedules relate to data intervals.
+8. Why hardcoded dates are bad.
+9. How retries work.
+10. Why idempotency matters.
+11. What sensors are.
+12. What backfills are.
+13. What catchup means.
+14. How to add data quality gates.
+15. How to alert and monitor.
+16. How to handle failures.
+17. How to secure credentials.
+18. Why Airflow should not do heavy processing itself.
+
+---
+
+## 89. Strong Candidate Standard
+
+A strong candidate can also explain:
+
+1. Backfill-safe DAG design.
+2. Partitioned historical reruns.
+3. Dynamic task generation.
+4. Concurrency and pools.
+5. Retry storms.
+6. Cross-DAG dependencies.
+7. CDC orchestration.
+8. Data quality framework orchestration.
+9. Run metadata tables.
+10. Environment separation.
+11. CI/CD for DAGs.
+12. Migration from cron.
+13. Cost-aware orchestration.
+14. Production incident recovery.
+15. Runbook-driven operations.
+
+---
+
+## 90. 7-Day Orchestration Repair Plan
+
+### Day 1: DAG fundamentals
+
+Topics:
+
+- DAG
+- tasks
+- dependencies
+- acyclic workflows
+- DAG run
+- task instance
+
+Drill:
+
+```text
+Explain a DAG using an ETL pipeline example.
+```
+
+Exit:
+
+```text
+Candidate can explain why cycles are invalid.
+```
+
+---
+
+### Day 2: Scheduling and logical dates
+
+Topics:
+
+- schedule
+- data interval
+- logical processing date
+- timezone
+- SLA vs schedule
+
+Drill:
+
+```text
+Explain why hardcoding today breaks backfills.
+```
+
+Exit:
+
+```text
+Candidate can design date-parameterized tasks.
+```
+
+---
+
+### Day 3: Retries and idempotency
+
+Topics:
+
+- retries
+- transient vs permanent failures
+- idempotent writes
+- partition overwrite
+- merge/upsert
+
+Drill:
+
+```text
+A load task fails after inserting half the rows. How do you safely rerun it?
+```
+
+Exit:
+
+```text
+Candidate can explain idempotent recovery.
+```
+
+---
+
+### Day 4: Sensors and external dependencies
+
+Topics:
+
+- file sensors
+- table sensors
+- timeouts
+- missing data
+- late files
+- external DAGs
+
+Drill:
+
+```text
+Design a vendor file ingestion DAG with timeout and alerts.
+```
+
+Exit:
+
+```text
+Candidate can avoid infinite waiting.
+```
+
+---
+
+### Day 5: Backfills and catchup
+
+Topics:
+
+- backfill
+- catchup
+- partitioned reruns
+- concurrency limits
+- historical validation
+
+Drill:
+
+```text
+Backfill 90 days of sales data without duplicates or cost spike.
+```
+
+Exit:
+
+```text
+Candidate can design controlled backfill.
+```
+
+---
+
+### Day 6: Quality, alerts, metadata
+
+Topics:
+
+- quality gates
+- freshness
+- row counts
+- run metadata
+- alert content
+- runbook
+
+Drill:
+
+```text
+Design data quality gates for fact_sales before publish.
+```
+
+Exit:
+
+```text
+Candidate can block bad data from publishing.
+```
+
+---
+
+### Day 7: Mock orchestration interview
+
+Prompt:
+
+```text
+Design an Airflow DAG for an end-to-end e-commerce sales pipeline with incremental loads, validation, retries, idempotency, alerts, and backfills.
+```
+
+Exit:
+
+```text
+Candidate scores at least 4/5 on the orchestration rubric.
+```
+
+---
+
+## 91. 10-Minute Mock Interview
+
+### Prompt
+
+```text
+Design an Airflow DAG for a daily orders pipeline. Orders are extracted from an OLTP database, loaded into a warehouse, transformed into a fact table, and consumed by a dashboard that must be fresh by 8 AM.
+```
+
+### Candidate should clarify
+
+1. What time does source data become available?
+2. What is the dashboard SLA?
+3. Is loading full or incremental?
+4. Can orders update or delete?
+5. What is the expected volume?
+6. What quality checks are required?
+7. What happens if the source is late?
+
+### Expected answer
+
+Should include:
+
+- DAG schedule before SLA
+- tasks for extract, validate, staging, transform, quality, publish
+- logical process date
+- retries for transient failures
+- idempotent writes
+- watermark update after success
+- data quality gates
+- alerts
+- freshness monitoring
+- backfill support
+- source/warehouse concurrency consideration
+- no hardcoded current date
+
+### Follow-ups
+
+1. What if extract succeeds but load fails?
+2. What if task retries duplicate rows?
+3. What if the dashboard table is stale?
+4. What if source schema changes?
+5. How do you backfill last month?
+6. What should the alert contain?
+7. How do you avoid overloading the source database?
+8. How do you test this DAG?
+
+---
+
+## 92. 30-Minute Mock Interview
+
+### Prompt
+
+```text
+A company has 200 source tables from multiple systems. Each table must be ingested daily, validated, loaded to staging, transformed into warehouse tables, and monitored. Design an orchestration strategy.
+```
+
+### Expected strong answer
+
+Should include:
+
+- source inventory
+- metadata-driven DAG design
+- grouping by source/domain
+- dynamic tasks or generated workflows
+- concurrency limits
+- source-specific schedules
+- table-level watermarks
+- processed-file or extract tracking
+- validation framework
+- error isolation
+- retries
+- idempotent loads
+- backfill controls
+- metadata table
+- alert routing by owner
+- environment separation
+- cost/concurrency trade-offs
+
+### Strong follow-up handling
+
+Candidate should discuss:
+
+- not creating one unmanageable DAG
+- not running all tables in parallel blindly
+- prioritizing critical tables
+- dependency mapping
+- failure isolation
+- table-level reruns
+- metadata-driven configuration
+
+---
+
+## 93. Answer Template
+
+Use this for orchestration interview answers.
+
+```text
+I will first clarify the workflow requirements.
+
+Business goal:
+[what the pipeline supports]
+
+Sources:
+[source systems/files/APIs/tables]
+
+Targets:
+[warehouse/lake/mart/dashboard]
+
+Schedule and SLA:
+[when it runs and when output must be ready]
+
+Data interval:
+[what partition/date each run processes]
+
+DAG structure:
+[tasks and dependencies]
+
+Task design:
+[granularity and responsibility]
+
+Retries:
+[what retries and why]
+
+Idempotency:
+[how reruns avoid duplicates]
+
+External dependencies:
+[sensors/file/table checks/timeouts]
+
+Data quality:
+[checks and quality gates]
+
+Monitoring:
+[job health, data freshness, quality metrics]
+
+Alerts:
+[who, when, what details]
+
+Backfill:
+[date parameters, partition reruns, validation]
+
+Concurrency/cost:
+[pools, limits, source protection]
+
+Security:
+[connections, secrets, least privilege]
+
+Failure handling:
+[transient vs permanent failures]
+
+Summary:
+[final design]
+```
+
+---
+
+## 94. Mentor Behavior Rules
+
+When using this guide, Data Engineering Sensei should:
+
+1. Never accept “Airflow schedules jobs” as a complete answer.
+2. Ask what the DAG processes and why.
+3. Ask for task boundaries.
+4. Ask how dependencies are defined.
+5. Ask how retries avoid duplicates.
+6. Ask how dates are parameterized.
+7. Ask how backfills work.
+8. Ask how missing files are handled.
+9. Ask how data quality gates block bad data.
+10. Ask how freshness is monitored.
+11. Ask what alerts contain.
+12. Ask how credentials are secured.
+13. Ask how concurrency and cost are controlled.
+14. Penalize hardcoded dates.
+15. Penalize one giant task.
+16. Penalize heavy processing inside the orchestrator.
+17. Score strictly.
+18. Give repair drills for missing areas.
+
+Strict correction:
+
+```text
+This orchestration answer is not interview-ready. You mentioned scheduling, but ignored idempotency, backfills, data quality gates, alerts, and failure handling.
+```
+
+---
+
+## 95. Exit Test
+
+Candidate must answer:
+
+```text
+Design an Airflow-style orchestration workflow for an e-commerce data platform. The workflow ingests orders from a database, receives daily product files from a vendor, processes customer updates from an API, builds warehouse facts and dimensions, runs data quality checks, publishes dashboard marts, supports backfills, and alerts owners on failure.
+```
+
+Passing answer must include:
+
+- DAG structure
+- task boundaries
+- dependencies
+- schedules and SLAs
+- logical dates
+- sensors for vendor files
+- API pagination/rate-limit awareness
+- database incremental load/watermark
+- staging and transformation tasks
+- quality gates before publish
+- idempotent writes
+- retries with backoff
+- alerts
+- logs and metadata
+- backfill strategy
+- concurrency/cost control
+- secrets/security
+- failure handling
+- clear summary
+
+If the candidate misses idempotency, data quality gates, and backfills, the answer fails.
+
+---
+
+## 96. Final Summary
+
+Orchestration is not just scheduling.
+
+A strong Data Engineering candidate understands that orchestration is the operational control layer for pipelines.
+
+The strongest answers explain:
+
+- DAGs and dependencies
+- schedules and logical dates
+- retries and idempotency
+- sensors and external dependencies
+- data quality gates
+- monitoring and alerts
+- metadata and logs
+- backfills and catchup
+- concurrency and cost
+- security and runbooks
+- failure recovery
+
+The weakest answers stop at:
+
+```text
+Airflow schedules jobs.
+```
+
+That is not enough for serious Data Engineering interviews.
+
+Data Engineering Sensei should train candidates to design orchestration that survives real pipeline failures.

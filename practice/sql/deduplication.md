@@ -1,0 +1,6795 @@
+# SQL Deduplication Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/sql/deduplication.md
+```
+
+This guide teaches and drills **SQL deduplication for Data Engineering interviews**.
+
+This is not a generic SQL syntax note. It is an interview-focused guide for candidates who need to detect, explain, fix, and prevent duplicates in raw data, staging tables, fact tables, dimension tables, event streams, incremental loads, APIs, CDC feeds, warehouse transformations, and interview business SQL cases.
+
+Deduplication is high-ROI for Data Engineering interviews because interviewers often test whether you can:
+
+- identify duplicate rows
+- identify duplicate business keys
+- distinguish exact duplicates from logical duplicates
+- keep first record
+- keep latest record
+- keep highest-priority record
+- deduplicate event streams
+- deduplicate transactions
+- deduplicate user profiles
+- deduplicate staging data before MERGE
+- handle duplicate dimension rows
+- prevent join row explosion
+- build idempotent pipelines
+- reconcile source and target tables
+- validate uniqueness constraints
+- explain why duplicates happen
+- explain when duplicates should fail the pipeline
+- explain when duplicates should be quarantined
+- explain when duplicates can be safely collapsed
+
+Use this guide with:
+
+- `docs/sql-interview-guide.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/etl-elt-pipelines-guide.md`
+- `docs/data-warehouse-guide.md`
+- `docs/data-modeling-guide.md`
+- `docs/error-handling-playbook.md`
+- `docs/faang-interview-standards.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/sql-drill-mode.md`
+- `modes/interview-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `practice/sql/business-sql-cases.md`
+- `practice/sql/ctes-subqueries.md`
+- `practice/python/pandas-basics.md`
+- `practice/python/testing-logging-errors.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering interview standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at deduplication problems in Data Engineering interviews.
+
+The candidate should learn to answer:
+
+```text
+What is a duplicate?
+What is an exact duplicate?
+What is a logical duplicate?
+What is a duplicate business key?
+What key should I use for deduplication?
+How do I detect duplicates?
+How do I count duplicates?
+How do I keep only one row per key?
+How do I choose which row to keep?
+How do I keep latest record per key?
+How do I deduplicate before joining?
+How do I deduplicate before MERGE?
+How do I deduplicate event streams?
+How do I deduplicate transaction records?
+How do I deduplicate user profile snapshots?
+How do I handle ties?
+How do I validate that output is unique?
+How do I explain duplicate root causes?
+How do I prevent duplicates in pipelines?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+define the dedupe key
+define the keep rule
+use GROUP BY HAVING to find duplicates
+use ROW_NUMBER for deterministic dedupe
+use RANK when all tied winners must be kept
+use COUNT(*) vs COUNT(DISTINCT ...) correctly
+handle NULL keys intentionally
+handle same timestamp ties
+deduplicate before one-to-many joins when required
+deduplicate staging data before MERGE
+explain idempotency and retries
+validate post-dedup uniqueness
+explain when duplicates should fail instead of being silently removed
+```
+
+
+## 2. Why Deduplication Matters for Data Engineers
+
+Duplicates can silently corrupt business metrics.
+
+Common duplicate impact:
+
+```text
+revenue double counted
+DAU inflated
+conversion rate distorted
+payment success rate wrong
+AOV wrong
+inventory counts wrong
+latest profile snapshot unstable
+MERGE fails due to duplicate source keys
+joins multiply rows
+dashboard numbers differ from finance reports
+idempotent reruns create duplicate records
+source-target reconciliation fails
+data-quality tests fail
+```
+
+Duplicates happen because of:
+
+```text
+API retries
+message redelivery
+orchestrator retries
+CDC repeated events
+late arriving updates
+append-only ingestion
+missing primary keys
+bad upstream source
+manual reloads
+backfills
+schema drift
+event producer bugs
+batch job restarted after partial write
+non-idempotent pipeline design
+many-to-many joins
+dimension tables with multiple active rows
+```
+
+Weak answer:
+
+```text
+Use DISTINCT.
+```
+
+Strong answer:
+
+```text
+First I define the business key and duplicate type. Then I detect duplicates with GROUP BY HAVING, choose a deterministic keep rule using ROW_NUMBER, deduplicate in a CTE, validate uniqueness after dedupe, and decide whether duplicates should be removed, quarantined, or fail the pipeline based on business risk.
+```
+
+Interview line:
+
+```text
+Deduplication is not just removing rows. It requires a key, a keep rule, a validation step, and a business decision.
+```
+
+
+## 3. Core Mental Model
+
+Deduplication has four decisions:
+
+```text
+1. Duplicate definition:
+   What makes rows duplicates?
+
+2. Dedupe key:
+   Which columns define uniqueness?
+
+3. Keep rule:
+   Which row survives?
+
+4. Handling strategy:
+   Remove, quarantine, fail, or report?
+```
+
+Core flow:
+
+```text
+detect duplicates
+understand duplicate type
+choose business key
+rank rows within key
+keep desired row
+validate uniqueness
+report duplicate count
+prevent future duplicates
+```
+
+Core SQL pattern:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM source_table
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Core interview line:
+
+```text
+The safest deduplication answer starts with defining the key and the deterministic keep rule.
+```
+
+
+## 4. Deduplication Vocabulary
+
+Important terms:
+
+```text
+Exact duplicate:
+Rows are identical across all selected columns.
+
+Logical duplicate:
+Rows represent the same business entity/event but differ in metadata or other fields.
+
+Business key:
+Column or set of columns that uniquely identifies a business entity or event.
+
+Natural key:
+Business-derived unique identifier, such as transaction_id or order_id.
+
+Surrogate key:
+System-generated key, such as warehouse row ID.
+
+Primary key:
+Column or set of columns intended to uniquely identify rows.
+
+Composite key:
+Uniqueness defined by multiple columns.
+
+Keep rule:
+Rule that decides which duplicate row survives.
+
+Tie-breaker:
+Additional ordering column used when primary ordering is tied.
+
+Idempotency:
+Safe rerun behavior without producing duplicate/corrupt output.
+
+Quarantine:
+Separate suspicious duplicate records for review.
+
+Dead-letter:
+Store invalid/problematic records with reasons.
+
+Join explosion:
+Rows multiply because join keys are not unique.
+
+Staging table:
+Intermediate table where raw/source rows land before final merge.
+
+MERGE:
+Upsert operation that updates/inserts target rows from source rows.
+
+Late-arriving record:
+Record that arrives after newer records are already processed.
+
+CDC:
+Change Data Capture; source emits inserts/updates/deletes over time.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for every deduplication problem:
+
+```text
+1. Restate the duplicate problem.
+2. Clarify duplicate definition:
+   - exact duplicate
+   - duplicate business key
+   - duplicate event
+   - duplicate latest snapshot
+3. Identify dedupe key.
+4. Identify keep rule:
+   - latest timestamp
+   - earliest timestamp
+   - highest version
+   - highest priority status
+   - successful record over failed record
+   - non-null fields preferred
+   - deterministic tie-breaker
+5. Detect duplicates using GROUP BY HAVING.
+6. Rank rows using ROW_NUMBER/RANK.
+7. Keep desired rows.
+8. Validate output uniqueness.
+9. Decide handling:
+   - remove
+   - report
+   - quarantine
+   - fail pipeline
+10. Explain production prevention.
+```
+
+Short version:
+
+```text
+Key:
+Duplicate type:
+Keep rule:
+Detection:
+Dedupe SQL:
+Validation:
+Prevention:
+```
+
+Strict rule:
+
+```text
+No deduplication answer is strong if the candidate says only `SELECT DISTINCT` without defining the key and keep rule.
+```
+
+
+## 6. Scoring Rubric
+
+Score each deduplication answer from 0 to 5.
+
+### Score 0
+
+No meaningful SQL or duplicate reasoning.
+
+### Score 1
+
+Only says use DISTINCT.
+
+### Score 2
+
+Can find duplicates but cannot safely choose row to keep.
+
+### Score 3
+
+Uses ROW_NUMBER but weak on key, tie-breaker, NULL handling, or validation.
+
+### Score 4
+
+Interview-ready. Defines duplicate key, keep rule, SQL, validation, and business handling.
+
+### Score 5
+
+Strong. Handles exact/logical duplicates, tie-breaking, staging MERGE prep, join explosion, CDC/API duplicates, idempotency, quarantine/fail strategy, and production prevention.
+
+Do not give 4+ if:
+
+```text
+candidate does not define dedupe key
+candidate does not define keep rule
+candidate uses DISTINCT blindly
+candidate ignores NULL keys
+candidate does not handle timestamp ties
+candidate does not validate output uniqueness
+candidate deduplicates after metric calculation instead of before
+candidate does not consider duplicates before MERGE
+candidate cannot explain join row explosion
+candidate cannot explain whether duplicates should fail or be removed
+candidate cannot explain how duplicates happened
+```
+
+
+## 7. Duplicate Types
+
+### Exact duplicates
+
+Rows match on all selected columns.
+
+Example:
+
+```text
+same event_id
+same user_id
+same event_name
+same event_time
+same ingested_at
+```
+
+Detection:
+
+```sql
+SELECT
+  col1,
+  col2,
+  col3,
+  COUNT(*) AS row_count
+FROM table_name
+GROUP BY col1, col2, col3
+HAVING COUNT(*) > 1;
+```
+
+### Logical duplicates
+
+Rows represent same entity/event but differ in metadata.
+
+Example:
+
+```text
+same transaction_id
+different ingested_at
+different load_file
+same amount
+```
+
+Detection:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count
+FROM transactions
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+### Duplicate active dimension rows
+
+More than one current row for same entity.
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS current_rows
+FROM user_profile_history
+WHERE is_current = true
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Exact duplicates can sometimes be collapsed with DISTINCT, but logical duplicates require a business key and keep rule.
+```
+
+
+## 8. SELECT DISTINCT Is Not Enough
+
+`DISTINCT` removes exact duplicate selected rows.
+
+Example:
+
+```sql
+SELECT DISTINCT
+  event_id,
+  user_id,
+  event_name,
+  event_time
+FROM events;
+```
+
+Problem:
+
+```text
+If duplicate event_id rows have different ingested_at, DISTINCT on all columns will keep both.
+If you select fewer columns, DISTINCT may hide differences.
+```
+
+Bad dedupe:
+
+```sql
+SELECT DISTINCT *
+FROM transactions;
+```
+
+Why weak:
+
+```text
+No key definition.
+No keep rule.
+No tie-breaker.
+No duplicate report.
+No validation.
+```
+
+When DISTINCT is acceptable:
+
+```text
+interviewer asks for unique values
+exact duplicate removal is explicitly enough
+dedupe key equals all selected columns
+no row-level keep rule needed
+```
+
+Interview line:
+
+```text
+DISTINCT is for exact duplicates or unique value lists; business deduplication usually needs ROW_NUMBER over a key.
+```
+
+
+## 9. GROUP BY HAVING for Duplicate Detection
+
+Find duplicate keys:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count
+FROM transactions
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+Find duplicate composite keys:
+
+```sql
+SELECT
+  user_id,
+  event_name,
+  event_time,
+  COUNT(*) AS row_count
+FROM events
+GROUP BY
+  user_id,
+  event_name,
+  event_time
+HAVING COUNT(*) > 1;
+```
+
+Find duplicates and first/last seen:
+
+```sql
+SELECT
+  event_id,
+  COUNT(*) AS row_count,
+  MIN(ingested_at) AS first_seen,
+  MAX(ingested_at) AS last_seen
+FROM events
+GROUP BY event_id
+HAVING COUNT(*) > 1
+ORDER BY row_count DESC, event_id;
+```
+
+Interview line:
+
+```text
+I usually start deduplication by measuring duplicate keys before removing anything.
+```
+
+
+## 10. Counting Duplicate Rows vs Duplicate Keys
+
+Total duplicate keys:
+
+```sql
+SELECT COUNT(*) AS duplicate_keys
+FROM (
+  SELECT transaction_id
+  FROM transactions
+  GROUP BY transaction_id
+  HAVING COUNT(*) > 1
+) d;
+```
+
+Total extra duplicate rows:
+
+```sql
+WITH key_counts AS (
+  SELECT
+    transaction_id,
+    COUNT(*) AS row_count
+  FROM transactions
+  GROUP BY transaction_id
+)
+SELECT
+  SUM(row_count - 1) AS extra_duplicate_rows
+FROM key_counts
+WHERE row_count > 1;
+```
+
+Difference:
+
+```text
+duplicate_keys = number of keys with duplicates
+extra_duplicate_rows = number of rows that must be removed to get one row per key
+```
+
+Example:
+
+```text
+transaction_id A has 3 rows
+transaction_id B has 2 rows
+
+duplicate_keys = 2
+extra_duplicate_rows = (3 - 1) + (2 - 1) = 3
+```
+
+Interview line:
+
+```text
+Duplicate key count and duplicate extra row count answer different questions.
+```
+
+
+## 11. ROW_NUMBER Deduplication Pattern
+
+Most common dedupe pattern:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM source_table
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Meaning:
+
+```text
+Partition by duplicate key.
+Order rows by keep preference.
+rn = 1 is the row to keep.
+```
+
+Example:
+
+```sql
+WITH ranked_transactions AS (
+  SELECT
+    transaction_id,
+    user_id,
+    amount,
+    status,
+    updated_at,
+    ingested_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM transactions
+)
+SELECT
+  transaction_id,
+  user_id,
+  amount,
+  status,
+  updated_at,
+  ingested_at
+FROM ranked_transactions
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+ROW_NUMBER is the standard SQL pattern for keeping exactly one row per duplicate key.
+```
+
+
+## 12. RANK vs ROW_NUMBER vs DENSE_RANK
+
+### ROW_NUMBER
+
+Returns unique sequence within partition.
+
+```text
+1, 2, 3
+```
+
+Use when:
+
+```text
+you must keep exactly one row per key
+```
+
+### RANK
+
+Tied rows get same rank, next rank skips.
+
+```text
+1, 1, 3
+```
+
+Use when:
+
+```text
+you need all tied winners
+```
+
+### DENSE_RANK
+
+Tied rows get same rank, next rank does not skip.
+
+```text
+1, 1, 2
+```
+
+Use when:
+
+```text
+you need grouped rank levels without gaps
+```
+
+Example all latest tied rows:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    RANK() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC
+    ) AS rnk
+  FROM user_profiles
+)
+SELECT *
+FROM ranked
+WHERE rnk = 1;
+```
+
+Interview line:
+
+```text
+Use ROW_NUMBER for exactly one survivor, RANK when all tied latest rows should be visible.
+```
+
+
+## 13. Deterministic Tie-Breakers
+
+Bad:
+
+```sql
+ROW_NUMBER() OVER (
+  PARTITION BY event_id
+  ORDER BY ingested_at DESC
+) AS rn
+```
+
+Problem:
+
+```text
+If two rows have same ingested_at, the chosen row may be nondeterministic.
+```
+
+Better:
+
+```sql
+ROW_NUMBER() OVER (
+  PARTITION BY event_id
+  ORDER BY ingested_at DESC, event_time DESC, load_file DESC, row_number_in_file DESC
+) AS rn
+```
+
+Common tie-breakers:
+
+```text
+updated_at
+ingested_at
+version_number
+source_sequence_number
+load_file
+row_number_in_file
+event_id
+surrogate_id
+status priority
+non-null field count
+```
+
+Interview line:
+
+```text
+A production dedupe rule should be deterministic, so I add tie-breakers after the primary timestamp/version.
+```
+
+
+## 14. NULL Key Handling
+
+Duplicate keys can be NULL.
+
+Example:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count
+FROM transactions
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+This groups all NULL transaction_id rows together in many databases.
+
+Important question:
+
+```text
+Should NULL transaction_id rows be deduplicated together or treated as invalid?
+```
+
+Usually for required business keys:
+
+```sql
+WITH valid_key_rows AS (
+  SELECT *
+  FROM transactions
+  WHERE transaction_id IS NOT NULL
+),
+invalid_key_rows AS (
+  SELECT *
+  FROM transactions
+  WHERE transaction_id IS NULL
+)
+SELECT *
+FROM valid_key_rows;
+```
+
+Better production handling:
+
+```text
+Rows with NULL required keys should be invalid/dead-lettered, not deduplicated as if they are the same entity.
+```
+
+Interview line:
+
+```text
+If the dedupe key is required, NULL keys should usually be treated as invalid records, not collapsed together.
+```
+
+
+## 15. Exact Duplicate Removal
+
+Problem:
+
+```text
+Remove rows that are exact duplicates across selected business columns.
+```
+
+SQL:
+
+```sql
+SELECT DISTINCT
+  event_id,
+  user_id,
+  event_name,
+  event_time
+FROM events;
+```
+
+Alternative with GROUP BY:
+
+```sql
+SELECT
+  event_id,
+  user_id,
+  event_name,
+  event_time
+FROM events
+GROUP BY
+  event_id,
+  user_id,
+  event_name,
+  event_time;
+```
+
+If metadata differs:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY event_id, user_id, event_name, event_time
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM events
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+For exact duplicates, DISTINCT can be enough, but if metadata differs or a survivor row matters, use ROW_NUMBER.
+```
+
+
+## 16. Logical Duplicate Removal
+
+Problem:
+
+```text
+Rows have same transaction_id but different ingested_at/load metadata.
+Keep latest ingested row.
+```
+
+SQL:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM transactions
+  WHERE transaction_id IS NOT NULL
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Duplicate report:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count,
+  MIN(ingested_at) AS first_seen,
+  MAX(ingested_at) AS last_seen
+FROM transactions
+WHERE transaction_id IS NOT NULL
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Logical duplicates are deduped by business key, not by entire row equality.
+```
+
+
+## 17. Keep Latest Record Per Key
+
+Problem:
+
+```text
+Keep latest user profile per user.
+```
+
+SQL:
+
+```sql
+WITH ranked_profiles AS (
+  SELECT
+    user_id,
+    country,
+    plan,
+    updated_at,
+    ingested_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM user_profiles
+  WHERE user_id IS NOT NULL
+)
+SELECT
+  user_id,
+  country,
+  plan,
+  updated_at,
+  ingested_at
+FROM ranked_profiles
+WHERE rn = 1;
+```
+
+Validation:
+
+```sql
+WITH deduped AS (
+  SELECT
+    user_id
+  FROM ranked_profiles
+  WHERE rn = 1
+)
+SELECT
+  user_id,
+  COUNT(*) AS row_count
+FROM deduped
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Expected:
+
+```text
+no rows returned
+```
+
+Interview line:
+
+```text
+Latest-record dedupe should order by business update time and then ingestion/time sequence as tie-breaker.
+```
+
+
+## 18. Keep Earliest Record Per Key
+
+Problem:
+
+```text
+Keep first event per user.
+```
+
+SQL:
+
+```sql
+WITH ranked_events AS (
+  SELECT
+    user_id,
+    event_id,
+    event_name,
+    event_time,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY event_time ASC, event_id ASC
+    ) AS rn
+  FROM events
+  WHERE user_id IS NOT NULL
+)
+SELECT
+  user_id,
+  event_id AS first_event_id,
+  event_name AS first_event_name,
+  event_time AS first_event_time
+FROM ranked_events
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+First-record dedupe is the same ROW_NUMBER pattern with ascending order.
+```
+
+
+## 19. Keep Highest Priority Record
+
+Problem:
+
+```text
+For duplicate payments, keep successful payment over failed payment, then latest payment_time.
+```
+
+SQL:
+
+```sql
+WITH ranked_payments AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY payment_id
+      ORDER BY
+        CASE
+          WHEN payment_status = 'SUCCESS' THEN 1
+          WHEN payment_status = 'PENDING' THEN 2
+          WHEN payment_status = 'FAILED' THEN 3
+          ELSE 4
+        END ASC,
+        payment_time DESC,
+        ingested_at DESC
+    ) AS rn
+  FROM payments
+)
+SELECT *
+FROM ranked_payments
+WHERE rn = 1;
+```
+
+Explanation:
+
+```text
+Lower priority number wins.
+SUCCESS is preferred over PENDING/FAILED.
+Latest timestamp breaks ties.
+```
+
+Interview line:
+
+```text
+Keep rules can be business-priority based, not only timestamp based.
+```
+
+
+## 20. Keep Row With Most Complete Data
+
+Problem:
+
+```text
+Duplicate customer profile rows exist. Keep row with most non-null important fields.
+```
+
+SQL:
+
+```sql
+WITH scored_profiles AS (
+  SELECT
+    *,
+    (
+      CASE WHEN email IS NOT NULL THEN 1 ELSE 0 END +
+      CASE WHEN phone IS NOT NULL THEN 1 ELSE 0 END +
+      CASE WHEN country IS NOT NULL THEN 1 ELSE 0 END +
+      CASE WHEN plan IS NOT NULL THEN 1 ELSE 0 END
+    ) AS completeness_score
+  FROM customer_profiles
+),
+ranked_profiles AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY customer_id
+      ORDER BY completeness_score DESC, updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM scored_profiles
+)
+SELECT *
+FROM ranked_profiles
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+When quality differs between duplicates, a completeness score can be part of the keep rule.
+```
+
+
+## 21. Deduplicate Before MERGE
+
+Problem:
+
+```text
+MERGE fails because source staging has multiple rows for the same business_key.
+```
+
+Bad source:
+
+```text
+source_staging has 3 rows for order_id = 100
+target has one row per order_id
+MERGE is ambiguous
+```
+
+Fix:
+
+```sql
+WITH ranked_source AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM source_staging
+),
+deduped_source AS (
+  SELECT
+    order_id,
+    user_id,
+    order_status,
+    total_amount,
+    updated_at
+  FROM ranked_source
+  WHERE rn = 1
+)
+SELECT *
+FROM deduped_source;
+```
+
+Generic MERGE preparation:
+
+```sql
+MERGE INTO target_orders t
+USING deduped_source s
+ON t.order_id = s.order_id
+WHEN MATCHED THEN UPDATE SET ...
+WHEN NOT MATCHED THEN INSERT ...;
+```
+
+Interview line:
+
+```text
+Before MERGE, the source should be deduplicated to one row per target business key.
+```
+
+
+## 22. Deduplicate Event Streams
+
+Problem:
+
+```text
+Event stream may deliver same event_id multiple times because of retries.
+Keep one row per event_id.
+```
+
+SQL:
+
+```sql
+WITH ranked_events AS (
+  SELECT
+    event_id,
+    user_id,
+    event_name,
+    event_time,
+    payload,
+    ingested_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY event_id
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM raw_events
+  WHERE event_id IS NOT NULL
+)
+SELECT
+  event_id,
+  user_id,
+  event_name,
+  event_time,
+  payload,
+  ingested_at
+FROM ranked_events
+WHERE rn = 1;
+```
+
+Invalid rows:
+
+```sql
+SELECT *
+FROM raw_events
+WHERE event_id IS NULL;
+```
+
+Interview line:
+
+```text
+Event dedupe usually uses event_id as idempotency key; missing event_id should be treated as data quality issue.
+```
+
+
+## 23. Deduplicate API Ingestion
+
+Problem:
+
+```text
+API pagination or retries cause the same record to be ingested multiple times.
+Keep latest API updated_at per id.
+```
+
+SQL:
+
+```sql
+WITH ranked_api_records AS (
+  SELECT
+    id,
+    updated_at,
+    ingested_at,
+    payload,
+    page_number,
+    ROW_NUMBER() OVER (
+      PARTITION BY id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM api_raw_records
+  WHERE id IS NOT NULL
+)
+SELECT
+  id,
+  updated_at,
+  ingested_at,
+  payload
+FROM ranked_api_records
+WHERE rn = 1;
+```
+
+Audit duplicate pages:
+
+```sql
+SELECT
+  id,
+  COUNT(*) AS row_count,
+  COUNT(DISTINCT page_number) AS pages_seen
+FROM api_raw_records
+GROUP BY id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+For API ingestion, dedupe by API record id and keep latest source updated_at, not just latest ingestion time.
+```
+
+
+## 24. Deduplicate CDC Records
+
+Problem:
+
+```text
+CDC table contains multiple changes per primary key.
+Build current state.
+```
+
+Table:
+
+```sql
+cdc_orders(
+  order_id,
+  operation,
+  order_status,
+  total_amount,
+  source_updated_at,
+  cdc_sequence,
+  ingested_at
+)
+```
+
+SQL:
+
+```sql
+WITH ranked_cdc AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY source_updated_at DESC, cdc_sequence DESC, ingested_at DESC
+    ) AS rn
+  FROM cdc_orders
+),
+latest_cdc AS (
+  SELECT *
+  FROM ranked_cdc
+  WHERE rn = 1
+)
+SELECT
+  order_id,
+  order_status,
+  total_amount,
+  source_updated_at
+FROM latest_cdc
+WHERE operation <> 'DELETE';
+```
+
+Important:
+
+```text
+If latest CDC operation is DELETE, the current state should exclude the row or mark it deleted.
+```
+
+Interview line:
+
+```text
+CDC dedupe should use source update sequence/order, not only warehouse ingestion time.
+```
+
+
+## 25. Deduplicate Slowly Changing Dimension Current Rows
+
+Problem:
+
+```text
+SCD table has multiple current rows per user.
+Detect and repair.
+```
+
+Detection:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS current_rows
+FROM user_profile_history
+WHERE is_current = true
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Repair candidate:
+
+```sql
+WITH current_rows AS (
+  SELECT *
+  FROM user_profile_history
+  WHERE is_current = true
+),
+ranked_current AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY effective_from DESC, updated_at DESC
+    ) AS rn
+  FROM current_rows
+)
+SELECT *
+FROM ranked_current
+WHERE rn = 1;
+```
+
+Caution:
+
+```text
+For SCD, blindly deduping may hide history interval corruption.
+Need to validate overlapping effective dates too.
+```
+
+Interview line:
+
+```text
+Multiple current rows in SCD are a data quality issue; dedupe can produce a snapshot, but root cause should be fixed.
+```
+
+
+## 26. Detect Overlapping SCD Intervals
+
+Problem:
+
+```text
+Find users with overlapping effective intervals.
+```
+
+SQL:
+
+```sql
+WITH intervals AS (
+  SELECT
+    user_id,
+    effective_from,
+    COALESCE(effective_to, TIMESTAMP '9999-12-31') AS effective_to
+  FROM user_profile_history
+),
+overlaps AS (
+  SELECT
+    a.user_id,
+    a.effective_from AS a_from,
+    a.effective_to AS a_to,
+    b.effective_from AS b_from,
+    b.effective_to AS b_to
+  FROM intervals a
+  JOIN intervals b
+    ON a.user_id = b.user_id
+   AND a.effective_from < b.effective_to
+   AND b.effective_from < a.effective_to
+   AND a.effective_from < b.effective_from
+)
+SELECT *
+FROM overlaps;
+```
+
+Meaning:
+
+```text
+Intervals overlap if each starts before the other ends.
+```
+
+Interview line:
+
+```text
+SCD dedupe is not enough if the real issue is overlapping effective intervals.
+```
+
+
+## 27. Deduplicate Before Join to Prevent Row Explosion
+
+Problem:
+
+```text
+orders joined to users creates more rows than orders because users table has duplicate user_id rows.
+```
+
+Detect dimension duplicates:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS row_count
+FROM users
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Deduplicate dimension first:
+
+```sql
+WITH ranked_users AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM users
+),
+deduped_users AS (
+  SELECT *
+  FROM ranked_users
+  WHERE rn = 1
+)
+SELECT
+  o.order_id,
+  o.user_id,
+  u.country
+FROM orders o
+LEFT JOIN deduped_users u
+  ON o.user_id = u.user_id;
+```
+
+Validate row count:
+
+```sql
+SELECT COUNT(*) FROM orders;
+SELECT COUNT(*) FROM joined_output;
+```
+
+Interview line:
+
+```text
+If the dimension side is expected to be one row per key, I validate and deduplicate it before joining.
+```
+
+
+## 28. Deduplicate After UNION ALL
+
+Problem:
+
+```text
+Multiple source files contain overlapping records.
+```
+
+SQL:
+
+```sql
+WITH combined AS (
+  SELECT 'file_a' AS source_file, *
+  FROM source_file_a
+  UNION ALL
+  SELECT 'file_b' AS source_file, *
+  FROM source_file_b
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY updated_at DESC, source_file DESC
+    ) AS rn
+  FROM combined
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Why UNION ALL first:
+
+```text
+UNION may remove exact duplicates but can hide source overlap.
+UNION ALL preserves evidence and lets you apply business dedupe.
+```
+
+Interview line:
+
+```text
+For source overlap, I prefer UNION ALL plus explicit dedupe so duplicate behavior is controlled and auditable.
+```
+
+
+## 29. UNION vs UNION ALL
+
+### UNION
+
+```sql
+SELECT id FROM a
+UNION
+SELECT id FROM b;
+```
+
+Behavior:
+
+```text
+removes exact duplicate selected rows
+usually requires sort/hash distinct
+can be more expensive
+can hide source duplicates
+```
+
+### UNION ALL
+
+```sql
+SELECT id FROM a
+UNION ALL
+SELECT id FROM b;
+```
+
+Behavior:
+
+```text
+keeps all rows
+faster generally
+preserves duplicates for audit
+requires explicit dedupe later if needed
+```
+
+Interview line:
+
+```text
+I use UNION ALL for pipeline staging when I need auditability, then dedupe explicitly by business key.
+```
+
+
+## 30. Deduplicate Transaction Records
+
+Problem:
+
+```text
+Transaction table has duplicate transaction_id due to retry ingestion.
+Keep latest successful state.
+```
+
+SQL:
+
+```sql
+WITH ranked_transactions AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY
+        CASE WHEN status = 'SUCCESS' THEN 1 ELSE 2 END,
+        updated_at DESC,
+        ingested_at DESC
+    ) AS rn
+  FROM transactions
+  WHERE transaction_id IS NOT NULL
+)
+SELECT
+  transaction_id,
+  user_id,
+  amount,
+  status,
+  updated_at
+FROM ranked_transactions
+WHERE rn = 1;
+```
+
+Duplicate report:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count,
+  COUNT(DISTINCT status) AS status_count,
+  MIN(updated_at) AS min_updated_at,
+  MAX(updated_at) AS max_updated_at
+FROM transactions
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+For transactions, keep rule must be business-safe because choosing failed over successful can corrupt financial metrics.
+```
+
+
+## 31. Deduplicate Orders
+
+Problem:
+
+```text
+Orders table has multiple rows per order_id from status updates.
+Build latest order state.
+```
+
+SQL:
+
+```sql
+WITH ranked_orders AS (
+  SELECT
+    order_id,
+    user_id,
+    order_status,
+    total_amount,
+    updated_at,
+    ingested_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM raw_orders
+  WHERE order_id IS NOT NULL
+)
+SELECT
+  order_id,
+  user_id,
+  order_status,
+  total_amount,
+  updated_at
+FROM ranked_orders
+WHERE rn = 1;
+```
+
+If rows are status history:
+
+```text
+Do not destroy history table.
+Build a latest snapshot as separate output.
+```
+
+Interview line:
+
+```text
+Deduping status update rows depends on whether the table is intended as current snapshot or history.
+```
+
+
+## 32. Deduplicate Payments With Attempts
+
+Problem:
+
+```text
+Payment attempts are multiple by design. Do not dedupe attempts into one row unless metric is order-level.
+```
+
+Attempt-level success rate:
+
+```sql
+SELECT
+  COUNT(*) AS attempts,
+  SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS successful_attempts
+FROM payment_attempts;
+```
+
+Order-level payment success:
+
+```sql
+WITH order_flags AS (
+  SELECT
+    order_id,
+    MAX(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS has_success
+  FROM payment_attempts
+  GROUP BY order_id
+)
+SELECT
+  COUNT(*) AS orders_with_attempts,
+  SUM(has_success) AS successful_orders
+FROM order_flags;
+```
+
+Interview line:
+
+```text
+Not all repeated rows are duplicates. Payment attempts are valid repeated records if the grain is attempt-level.
+```
+
+
+## 33. Deduplicate User Records by Email
+
+Problem:
+
+```text
+Find duplicate users by normalized email.
+```
+
+SQL:
+
+```sql
+WITH normalized_users AS (
+  SELECT
+    user_id,
+    LOWER(TRIM(email)) AS normalized_email,
+    created_at,
+    updated_at
+  FROM users
+  WHERE email IS NOT NULL
+),
+email_counts AS (
+  SELECT
+    normalized_email,
+    COUNT(DISTINCT user_id) AS user_count
+  FROM normalized_users
+  GROUP BY normalized_email
+  HAVING COUNT(DISTINCT user_id) > 1
+)
+SELECT
+  n.*
+FROM normalized_users n
+JOIN email_counts e
+  ON n.normalized_email = e.normalized_email
+ORDER BY n.normalized_email, n.created_at;
+```
+
+Possible survivor rule:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY LOWER(TRIM(email))
+      ORDER BY updated_at DESC, created_at ASC, user_id
+    ) AS rn
+  FROM users
+  WHERE email IS NOT NULL
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Caution:
+
+```text
+Same email may represent account merge problem, not safe automatic deletion.
+```
+
+Interview line:
+
+```text
+Duplicate users by email may need business resolution, not blind deletion.
+```
+
+
+## 34. Deduplicate Sessions
+
+Problem:
+
+```text
+Sessions table has repeated session_id records.
+Keep latest session metadata.
+```
+
+SQL:
+
+```sql
+WITH ranked_sessions AS (
+  SELECT
+    session_id,
+    user_id,
+    started_at,
+    ended_at,
+    device_type,
+    updated_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY session_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM sessions
+  WHERE session_id IS NOT NULL
+)
+SELECT *
+FROM ranked_sessions
+WHERE rn = 1;
+```
+
+Validation:
+
+```sql
+SELECT
+  session_id,
+  COUNT(*) AS row_count
+FROM sessions
+GROUP BY session_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Session dedupe usually uses session_id, but session events themselves should remain event-grain.
+```
+
+
+## 35. Deduplicate Product Catalog
+
+Problem:
+
+```text
+Product catalog has multiple rows per product_id from vendor updates.
+Keep latest active product record.
+```
+
+SQL:
+
+```sql
+WITH ranked_products AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY product_id
+      ORDER BY
+        CASE WHEN is_active = true THEN 1 ELSE 2 END,
+        updated_at DESC,
+        ingested_at DESC
+    ) AS rn
+  FROM product_catalog
+  WHERE product_id IS NOT NULL
+)
+SELECT *
+FROM ranked_products
+WHERE rn = 1;
+```
+
+Caution:
+
+```text
+If inactive is the latest true source state, preferring active could be wrong.
+Clarify business rule.
+```
+
+Interview line:
+
+```text
+Priority-based keep rules must match business semantics; latest inactive may be the correct current state.
+```
+
+
+## 36. Deduplicate Inventory Snapshots
+
+Problem:
+
+```text
+Inventory snapshot should have one row per product_id per snapshot_date.
+```
+
+Detect duplicates:
+
+```sql
+SELECT
+  product_id,
+  snapshot_date,
+  COUNT(*) AS row_count
+FROM inventory_snapshot
+GROUP BY product_id, snapshot_date
+HAVING COUNT(*) > 1;
+```
+
+Keep latest ingested snapshot:
+
+```sql
+WITH ranked_snapshots AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY product_id, snapshot_date
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM inventory_snapshot
+)
+SELECT *
+FROM ranked_snapshots
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Snapshot table uniqueness is usually entity plus snapshot date.
+```
+
+
+## 37. Deduplicate Daily Metric Tables
+
+Problem:
+
+```text
+Daily KPI table should have one row per metric_date and metric_name.
+```
+
+Detect duplicates:
+
+```sql
+SELECT
+  metric_date,
+  metric_name,
+  COUNT(*) AS row_count
+FROM daily_metrics
+GROUP BY metric_date, metric_name
+HAVING COUNT(*) > 1;
+```
+
+Repair candidate:
+
+```sql
+WITH ranked_metrics AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY metric_date, metric_name
+      ORDER BY run_completed_at DESC, run_id DESC
+    ) AS rn
+  FROM daily_metrics
+)
+SELECT *
+FROM ranked_metrics
+WHERE rn = 1;
+```
+
+Better prevention:
+
+```text
+Use partition overwrite or MERGE by metric_date, metric_name instead of append-only reruns.
+```
+
+Interview line:
+
+```text
+Metric tables need unique grain enforcement; reruns should overwrite or merge, not blindly append.
+```
+
+
+## 38. Deduplicate Clickstream Events Without Event ID
+
+Problem:
+
+```text
+Events do not have reliable event_id.
+Need approximate duplicate key.
+```
+
+Possible key:
+
+```text
+user_id, session_id, event_name, event_time, page_url
+```
+
+SQL:
+
+```sql
+WITH ranked_events AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id, session_id, event_name, event_time, page_url
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM clickstream_events
+  WHERE user_id IS NOT NULL
+    AND event_time IS NOT NULL
+)
+SELECT *
+FROM ranked_events
+WHERE rn = 1;
+```
+
+Caution:
+
+```text
+Approximate dedupe can incorrectly collapse legitimate repeated actions.
+Need business confirmation.
+```
+
+Interview line:
+
+```text
+Without a stable event_id, dedupe becomes probabilistic and riskier; I would document and validate the composite key.
+```
+
+
+## 39. Deduplicate With Time Window
+
+Problem:
+
+```text
+Collapse duplicate clicks if same user clicks same button within 2 seconds.
+```
+
+This is more advanced and dialect-dependent.
+
+Conceptual approach:
+
+```text
+1. Sort events by user/button/time.
+2. Compare current event_time to previous event_time.
+3. Mark events as duplicate if within threshold.
+```
+
+SQL:
+
+```sql
+WITH ordered_clicks AS (
+  SELECT
+    *,
+    LAG(event_time) OVER (
+      PARTITION BY user_id, button_id
+      ORDER BY event_time
+    ) AS previous_event_time
+  FROM click_events
+),
+flagged AS (
+  SELECT
+    *,
+    CASE
+      WHEN previous_event_time IS NOT NULL
+       AND event_time < previous_event_time + INTERVAL '2 seconds'
+      THEN 1 ELSE 0
+    END AS is_near_duplicate
+  FROM ordered_clicks
+)
+SELECT *
+FROM flagged
+WHERE is_near_duplicate = 0;
+```
+
+Caution:
+
+```text
+This removes only simple adjacent near-duplicates.
+More complex burst dedupe may require sessionization/gaps-and-islands logic.
+```
+
+Interview line:
+
+```text
+Time-window dedupe needs careful definition because repeated actions may be legitimate.
+```
+
+
+## 40. Deduplicate With Hash Keys
+
+Problem:
+
+```text
+Create a hash key from business columns to detect duplicates.
+```
+
+Generic idea:
+
+```sql
+SELECT
+  *,
+  MD5(CONCAT(user_id, '|', event_name, '|', CAST(event_time AS VARCHAR))) AS dedupe_hash
+FROM events;
+```
+
+Dialect note:
+
+```text
+Hash and cast functions differ by database.
+Need safe handling for NULLs and delimiters.
+```
+
+Safer concept:
+
+```text
+Normalize fields.
+Coalesce NULLs to explicit markers.
+Use stable serialization.
+Hash the serialized business fields.
+```
+
+Use case:
+
+```text
+wide records
+composite duplicate keys
+data-quality checks
+source-target comparison
+```
+
+Caution:
+
+```text
+Hash collisions are rare but possible.
+Hash is only as good as selected columns.
+```
+
+Interview line:
+
+```text
+Hash keys are useful for comparing wide records, but the selected fields still define the duplicate logic.
+```
+
+
+## 41. Dedupe Validation: Output Uniqueness
+
+After dedupe, validate one row per key.
+
+Example:
+
+```sql
+WITH deduped AS (
+  SELECT *
+  FROM final_deduped_transactions
+)
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count
+FROM deduped
+GROUP BY transaction_id
+HAVING COUNT(*) > 1;
+```
+
+Expected:
+
+```text
+no rows returned
+```
+
+Validate counts:
+
+```sql
+WITH original_count AS (
+  SELECT COUNT(*) AS rows_before
+  FROM transactions
+),
+deduped_count AS (
+  SELECT COUNT(*) AS rows_after
+  FROM deduped_transactions
+),
+duplicate_extra_rows AS (
+  SELECT SUM(row_count - 1) AS expected_removed_rows
+  FROM (
+    SELECT transaction_id, COUNT(*) AS row_count
+    FROM transactions
+    GROUP BY transaction_id
+    HAVING COUNT(*) > 1
+  ) d
+)
+SELECT *
+FROM original_count, deduped_count, duplicate_extra_rows;
+```
+
+Interview line:
+
+```text
+A dedupe query is not complete until uniqueness of the output key is validated.
+```
+
+
+## 42. Dedupe Validation: Business Metrics Before and After
+
+Sometimes dedupe changes metrics.
+
+Example:
+
+```sql
+WITH before_metric AS (
+  SELECT
+    SUM(amount) AS revenue_before,
+    COUNT(*) AS rows_before
+  FROM transactions
+),
+after_metric AS (
+  SELECT
+    SUM(amount) AS revenue_after,
+    COUNT(*) AS rows_after
+  FROM deduped_transactions
+)
+SELECT
+  revenue_before,
+  revenue_after,
+  revenue_before - revenue_after AS revenue_difference,
+  rows_before,
+  rows_after,
+  rows_before - rows_after AS rows_removed
+FROM before_metric, after_metric;
+```
+
+Use cases:
+
+```text
+measure impact of duplicate removal
+explain discrepancy
+audit cleanup
+communicate with business
+```
+
+Interview line:
+
+```text
+For important metrics like revenue, I compare before/after totals to quantify dedupe impact.
+```
+
+
+## 43. Dedupe Validation: Join Row Counts
+
+Before joining, validate right-side uniqueness.
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS row_count
+FROM users
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+After join, compare row counts.
+
+```sql
+WITH joined AS (
+  SELECT
+    o.order_id,
+    o.user_id,
+    u.country
+  FROM orders o
+  LEFT JOIN users u
+    ON o.user_id = u.user_id
+)
+SELECT
+  (SELECT COUNT(*) FROM orders) AS order_rows,
+  (SELECT COUNT(*) FROM joined) AS joined_rows;
+```
+
+If joined_rows > order_rows:
+
+```text
+right-side duplicates may be multiplying rows
+```
+
+Interview line:
+
+```text
+Row count before and after join is a quick way to detect join explosion.
+```
+
+
+## 44. When Not to Deduplicate
+
+Do not deduplicate blindly.
+
+Examples where repeated rows are valid:
+
+```text
+multiple payment attempts for same order
+multiple events from same user
+multiple order items in one order
+multiple status history rows
+multiple subscriptions over time
+multiple support ticket comments
+multiple inventory snapshots over dates
+multiple user sessions
+```
+
+Question to ask:
+
+```text
+Are these duplicates or valid repeated facts at a lower grain?
+```
+
+Example:
+
+```text
+payment_attempts has multiple rows per order_id by design.
+order_items has multiple rows per order_id by design.
+```
+
+Interview line:
+
+```text
+Repeated keys are not always duplicates; they may indicate a lower-grain fact table.
+```
+
+
+## 45. When Duplicates Should Fail the Pipeline
+
+Some duplicates should not be silently removed.
+
+Fail or alert when:
+
+```text
+primary key uniqueness is violated in final table
+financial transaction_id has conflicting amounts
+SCD has multiple current rows
+same business key has conflicting important attributes
+source sends impossible duplicates
+duplicate rate exceeds threshold
+dedupe key is NULL for required key
+MERGE source has duplicate keys
+dimension table duplicates cause join explosion
+```
+
+Quarantine when:
+
+```text
+duplicates need human/business review
+conflicting values cannot be automatically resolved
+source bug suspected
+financial or compliance impact exists
+```
+
+Silently dedupe only when:
+
+```text
+duplicate cause is known
+business approved keep rule exists
+audit is retained
+output validation passes
+```
+
+Interview line:
+
+```text
+For high-risk data like payments, conflicting duplicates should be quarantined or fail the job, not silently deduped.
+```
+
+
+## 46. Duplicate Conflict Detection
+
+Problem:
+
+```text
+Same transaction_id appears with different amount.
+```
+
+SQL:
+
+```sql
+SELECT
+  transaction_id,
+  COUNT(*) AS row_count,
+  COUNT(DISTINCT amount) AS distinct_amounts,
+  MIN(amount) AS min_amount,
+  MAX(amount) AS max_amount
+FROM transactions
+GROUP BY transaction_id
+HAVING COUNT(*) > 1
+   AND COUNT(DISTINCT amount) > 1;
+```
+
+Status conflict:
+
+```sql
+SELECT
+  order_id,
+  COUNT(DISTINCT order_status) AS distinct_statuses
+FROM orders
+GROUP BY order_id
+HAVING COUNT(DISTINCT order_status) > 1;
+```
+
+Caution:
+
+```text
+Status changes can be valid if table is history.
+They are suspicious if table is supposed to be current snapshot.
+```
+
+Interview line:
+
+```text
+Duplicate key with conflicting business values is more serious than exact duplicate rows.
+```
+
+
+## 47. Dedupe Thresholds
+
+Problem:
+
+```text
+Fail if duplicate rate exceeds acceptable threshold.
+```
+
+SQL:
+
+```sql
+WITH key_counts AS (
+  SELECT
+    transaction_id,
+    COUNT(*) AS row_count
+  FROM transactions
+  WHERE transaction_id IS NOT NULL
+  GROUP BY transaction_id
+),
+summary AS (
+  SELECT
+    SUM(row_count) AS total_rows,
+    SUM(CASE WHEN row_count > 1 THEN row_count - 1 ELSE 0 END) AS duplicate_extra_rows
+  FROM key_counts
+)
+SELECT
+  total_rows,
+  duplicate_extra_rows,
+  duplicate_extra_rows * 1.0 / NULLIF(total_rows, 0) AS duplicate_rate
+FROM summary;
+```
+
+Handling:
+
+```text
+If duplicate_rate > threshold, fail or alert.
+If below threshold and keep rule is safe, dedupe and continue.
+```
+
+Interview line:
+
+```text
+Duplicate thresholds help distinguish occasional retry duplicates from source breakage.
+```
+
+
+## 48. Dedupe Audit Table
+
+A production dedupe process should often retain audit information.
+
+Audit columns:
+
+```text
+run_id
+table_name
+dedupe_key
+duplicate_group_size
+kept_record_id
+discarded_record_ids
+keep_rule
+first_seen_at
+last_seen_at
+created_at
+```
+
+Example output:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn,
+    COUNT(*) OVER (
+      PARTITION BY transaction_id
+    ) AS duplicate_group_size
+  FROM transactions
+)
+SELECT
+  transaction_id AS dedupe_key,
+  duplicate_group_size,
+  MAX(CASE WHEN rn = 1 THEN record_id END) AS kept_record_id,
+  MIN(ingested_at) AS first_seen_at,
+  MAX(ingested_at) AS last_seen_at
+FROM ranked
+WHERE duplicate_group_size > 1
+GROUP BY transaction_id, duplicate_group_size;
+```
+
+Interview line:
+
+```text
+For production dedupe, I keep audit counts and survivor information so the cleanup is traceable.
+```
+
+
+## 49. Dedupe With COUNT Window
+
+Sometimes you need to keep deduped rows and also report duplicates.
+
+SQL:
+
+```sql
+WITH enriched AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY event_id
+      ORDER BY ingested_at DESC
+    ) AS rn,
+    COUNT(*) OVER (
+      PARTITION BY event_id
+    ) AS duplicate_group_size
+  FROM events
+)
+SELECT
+  *,
+  CASE WHEN duplicate_group_size > 1 THEN true ELSE false END AS had_duplicates
+FROM enriched
+WHERE rn = 1;
+```
+
+Use case:
+
+```text
+final deduped output plus duplicate flag
+```
+
+Interview line:
+
+```text
+COUNT(*) OVER partition can preserve duplicate metadata while still producing one survivor row.
+```
+
+
+## 50. Dedupe and Idempotency
+
+Idempotency means reruns are safe.
+
+Duplicate prevention patterns:
+
+```text
+use stable idempotency key
+MERGE by business key
+partition overwrite
+delete + insert fixed partition
+unique constraint on target key
+write to temp/staging first
+commit checkpoint after successful write
+dedupe staging before merge
+avoid append-only reruns for same data
+```
+
+Bad pattern:
+
+```text
+INSERT INTO final SELECT * FROM staging;
+```
+
+If the job reruns:
+
+```text
+same data gets inserted again
+```
+
+Better pattern:
+
+```text
+MERGE final using deduped staging by business key
+```
+
+or:
+
+```text
+overwrite target partition for processing date
+```
+
+Interview line:
+
+```text
+Deduplication and idempotency are connected; a rerunnable pipeline should not depend on manual duplicate cleanup.
+```
+
+
+## 51. Dedupe in Incremental Loads
+
+Problem:
+
+```text
+Incremental load captures records updated after watermark.
+Duplicates can occur across overlapping windows.
+```
+
+Common strategy:
+
+```text
+Use lookback window.
+Load to staging.
+Deduplicate staging plus target candidate keys.
+MERGE by business key.
+```
+
+SQL staging dedupe:
+
+```sql
+WITH incremental_source AS (
+  SELECT *
+  FROM source_orders
+  WHERE updated_at >= (
+    SELECT last_watermark - INTERVAL '1 day'
+    FROM pipeline_watermarks
+    WHERE pipeline_name = 'orders'
+  )
+),
+ranked_source AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM incremental_source
+)
+SELECT *
+FROM ranked_source
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Incremental pipelines often intentionally overlap windows, so dedupe by business key is required before merge.
+```
+
+
+## 52. Dedupe in Backfills
+
+Backfills can create duplicates if historical partitions are appended instead of replaced.
+
+Bad:
+
+```text
+Backfill Jan data by inserting into existing Jan final table without delete/overwrite.
+```
+
+Better options:
+
+```text
+partition overwrite for Jan
+delete Jan partition then insert
+MERGE by business key
+write backfill to separate table then swap
+```
+
+Validation:
+
+```sql
+SELECT
+  partition_date,
+  business_key,
+  COUNT(*) AS row_count
+FROM final_table
+WHERE partition_date >= DATE '2026-01-01'
+  AND partition_date <  DATE '2026-02-01'
+GROUP BY partition_date, business_key
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Backfills should be idempotent; rerunning a backfill should not append duplicate historical data.
+```
+
+
+## 53. Dedupe in dbt/ELT Style Models
+
+Common dbt/ELT logic:
+
+```text
+stg_* model:
+clean and type raw data
+
+int_* model:
+deduplicate and apply business rules
+
+dim/fct model:
+final unique grains
+```
+
+Example:
+
+```sql
+WITH source AS (
+  SELECT *
+  FROM raw.orders
+),
+renamed AS (
+  SELECT
+    order_id,
+    user_id,
+    order_status,
+    total_amount,
+    updated_at,
+    ingested_at
+  FROM source
+),
+deduped AS (
+  SELECT *
+  FROM (
+    SELECT
+      *,
+      ROW_NUMBER() OVER (
+        PARTITION BY order_id
+        ORDER BY updated_at DESC, ingested_at DESC
+      ) AS rn
+    FROM renamed
+  ) x
+  WHERE rn = 1
+)
+SELECT *
+FROM deduped;
+```
+
+Testing:
+
+```text
+unique test on order_id
+not_null test on order_id
+accepted_values test on status
+```
+
+Interview line:
+
+```text
+In ELT, dedupe is usually a staged transformation with uniqueness tests on the final grain.
+```
+
+
+## 54. SQL Dialect Notes
+
+Different databases have syntax differences.
+
+### PostgreSQL style
+
+```sql
+ROW_NUMBER() OVER (...)
+DATE '2026-01-01'
+INTERVAL '1 day'
+```
+
+### SQL Server style
+
+```sql
+ROW_NUMBER() OVER (...)
+CAST('2026-01-01' AS date)
+DATEADD(day, -1, last_watermark)
+SELECT TOP 10 ...
+```
+
+### BigQuery style
+
+```sql
+QUALIFY ROW_NUMBER() OVER (...) = 1
+DATE('2026-01-01')
+TIMESTAMP_SUB(last_watermark, INTERVAL 1 DAY)
+```
+
+### Snowflake style
+
+```sql
+QUALIFY ROW_NUMBER() OVER (...) = 1
+```
+
+Interview line:
+
+```text
+I will assume ANSI/PostgreSQL-style SQL unless a specific warehouse dialect is given, and I can translate syntax as needed.
+```
+
+
+## 55. QUALIFY for Deduplication
+
+Some warehouses support QUALIFY.
+
+Example:
+
+```sql
+SELECT
+  *
+FROM transactions
+QUALIFY ROW_NUMBER() OVER (
+  PARTITION BY transaction_id
+  ORDER BY updated_at DESC, ingested_at DESC
+) = 1;
+```
+
+Equivalent CTE:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY transaction_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM transactions
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Use CTE when:
+
+```text
+dialect does not support QUALIFY
+logic needs multiple stages
+interviewer prefers portable SQL
+```
+
+Interview line:
+
+```text
+QUALIFY is concise, but CTE-based dedupe is more portable across SQL dialects.
+```
+
+
+## 56. DELETE Duplicates Safely
+
+Interview queries usually ask for SELECT deduped output, not destructive DELETE.
+
+If asked to delete duplicates, be careful.
+
+Generic approach:
+
+```text
+1. Identify duplicate rows.
+2. Preview rows to delete.
+3. Backup or write audit table.
+4. Delete only rn > 1.
+5. Validate uniqueness.
+```
+
+Example pattern:
+
+```sql
+WITH ranked AS (
+  SELECT
+    primary_key,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY updated_at DESC
+    ) AS rn
+  FROM table_name
+)
+DELETE FROM table_name
+WHERE primary_key IN (
+  SELECT primary_key
+  FROM ranked
+  WHERE rn > 1
+);
+```
+
+Dialect note:
+
+```text
+DELETE with CTE syntax differs by database.
+Some databases require DELETE JOIN.
+```
+
+Interview line:
+
+```text
+I avoid destructive dedupe until I have previewed duplicates, audited survivors, and validated the keep rule.
+```
+
+
+## 57. Dedupe Problem: Duplicate Orders
+
+Problem:
+
+```text
+raw_orders has duplicate order_id rows.
+Keep latest updated_at; if tie, latest ingested_at.
+```
+
+Solution:
+
+```sql
+WITH ranked_orders AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM raw_orders
+  WHERE order_id IS NOT NULL
+)
+SELECT *
+FROM ranked_orders
+WHERE rn = 1;
+```
+
+Duplicate report:
+
+```sql
+SELECT
+  order_id,
+  COUNT(*) AS row_count
+FROM raw_orders
+WHERE order_id IS NOT NULL
+GROUP BY order_id
+HAVING COUNT(*) > 1;
+```
+
+Expected explanation:
+
+```text
+order_id is the business key
+latest updated_at is the keep rule
+ingested_at is tie-breaker
+NULL order_id should be invalid
+```
+
+
+## 58. Dedupe Problem: Duplicate Payments With Conflict
+
+Problem:
+
+```text
+payment_id duplicates exist. Some duplicates have different amounts.
+Find conflicting duplicates.
+```
+
+Solution:
+
+```sql
+SELECT
+  payment_id,
+  COUNT(*) AS row_count,
+  COUNT(DISTINCT amount) AS distinct_amounts,
+  MIN(amount) AS min_amount,
+  MAX(amount) AS max_amount
+FROM payments
+GROUP BY payment_id
+HAVING COUNT(*) > 1
+   AND COUNT(DISTINCT amount) > 1;
+```
+
+Follow-up:
+
+```text
+Do not automatically dedupe conflicting payments.
+Quarantine or fail because financial data differs.
+```
+
+Interview line:
+
+```text
+Conflicting financial duplicates should be treated as data-quality incidents.
+```
+
+
+## 59. Dedupe Problem: Duplicate Events by Composite Key
+
+Problem:
+
+```text
+No event_id. Deduplicate by user_id, event_name, event_time, session_id.
+```
+
+Solution:
+
+```sql
+WITH ranked_events AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id, session_id, event_name, event_time
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM events
+  WHERE user_id IS NOT NULL
+    AND event_time IS NOT NULL
+)
+SELECT *
+FROM ranked_events
+WHERE rn = 1;
+```
+
+Caution:
+
+```text
+Composite dedupe key can collapse valid repeated events if timestamp granularity is coarse.
+```
+
+Interview line:
+
+```text
+Composite-key dedupe requires business validation because it may not be a true unique event identifier.
+```
+
+
+## 60. Dedupe Problem: Latest Status Per Entity
+
+Problem:
+
+```text
+order_status_history has multiple rows per order.
+Return latest status per order.
+```
+
+Solution:
+
+```sql
+WITH ranked_status AS (
+  SELECT
+    order_id,
+    status,
+    status_time,
+    status_event_id,
+    ROW_NUMBER() OVER (
+      PARTITION BY order_id
+      ORDER BY status_time DESC, status_event_id DESC
+    ) AS rn
+  FROM order_status_history
+)
+SELECT
+  order_id,
+  status AS latest_status,
+  status_time AS latest_status_time
+FROM ranked_status
+WHERE rn = 1;
+```
+
+Important:
+
+```text
+This is not deleting history.
+It creates a current snapshot view.
+```
+
+Interview line:
+
+```text
+History tables should usually be preserved; dedupe query can produce latest snapshot separately.
+```
+
+
+## 61. Dedupe Problem: Customer Dimension Duplicates
+
+Problem:
+
+```text
+users table has more than one row per user_id.
+Join to orders should not multiply order rows.
+```
+
+Solution:
+
+```sql
+WITH ranked_users AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM users
+),
+deduped_users AS (
+  SELECT *
+  FROM ranked_users
+  WHERE rn = 1
+)
+SELECT
+  o.order_id,
+  o.user_id,
+  u.country,
+  u.plan
+FROM orders o
+LEFT JOIN deduped_users u
+  ON o.user_id = u.user_id;
+```
+
+Validation:
+
+```sql
+SELECT COUNT(*) FROM orders;
+SELECT COUNT(*) FROM joined_output;
+```
+
+Interview line:
+
+```text
+Deduplicating dimension keys before joining prevents fact row multiplication.
+```
+
+
+## 62. Dedupe Problem: Duplicate Daily Metrics
+
+Problem:
+
+```text
+daily_metrics has multiple rows for the same metric_date and metric_name from reruns.
+Keep latest run.
+```
+
+Solution:
+
+```sql
+WITH ranked_metrics AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY metric_date, metric_name
+      ORDER BY run_completed_at DESC, run_id DESC
+    ) AS rn
+  FROM daily_metrics
+)
+SELECT *
+FROM ranked_metrics
+WHERE rn = 1;
+```
+
+Prevention:
+
+```text
+Use partition overwrite or MERGE by metric_date, metric_name.
+```
+
+Interview line:
+
+```text
+Rerun-created duplicates should be prevented through idempotent writes, not only cleaned later.
+```
+
+
+## 63. Dedupe Problem: Duplicate Product Rows With Ties
+
+Problem:
+
+```text
+Products can have duplicate product_id rows with same updated_at.
+Find tied latest rows.
+```
+
+SQL:
+
+```sql
+WITH ranked_products AS (
+  SELECT
+    *,
+    RANK() OVER (
+      PARTITION BY product_id
+      ORDER BY updated_at DESC
+    ) AS rnk
+  FROM products
+)
+SELECT *
+FROM ranked_products
+WHERE rnk = 1;
+```
+
+If more than one latest row:
+
+```text
+Need additional tie-breaker or quarantine.
+```
+
+Detect tied latest count:
+
+```sql
+WITH latest_ties AS (
+  SELECT *
+  FROM ranked_products
+  WHERE rnk = 1
+)
+SELECT
+  product_id,
+  COUNT(*) AS latest_tied_rows
+FROM latest_ties
+GROUP BY product_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+RANK helps expose tied latest rows instead of hiding them with arbitrary ROW_NUMBER.
+```
+
+
+## 64. Dedupe Problem: Source Overlap
+
+Problem:
+
+```text
+Two source systems send overlapping customer records.
+Prefer CRM over website, then latest updated_at.
+```
+
+Solution:
+
+```sql
+WITH combined AS (
+  SELECT
+    'CRM' AS source_system,
+    customer_id,
+    email,
+    phone,
+    updated_at,
+    ingested_at
+  FROM crm_customers
+
+  UNION ALL
+
+  SELECT
+    'WEBSITE' AS source_system,
+    customer_id,
+    email,
+    phone,
+    updated_at,
+    ingested_at
+  FROM website_customers
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY customer_id
+      ORDER BY
+        CASE WHEN source_system = 'CRM' THEN 1 ELSE 2 END,
+        updated_at DESC,
+        ingested_at DESC
+    ) AS rn
+  FROM combined
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+When multiple sources overlap, the keep rule may include source priority plus recency.
+```
+
+
+## 65. Dedupe Problem: First Valid Record
+
+Problem:
+
+```text
+Keep earliest valid record per user, where valid means status = 'ACTIVE'.
+```
+
+Solution:
+
+```sql
+WITH valid_records AS (
+  SELECT *
+  FROM user_status_events
+  WHERE status = 'ACTIVE'
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY status_time ASC, event_id ASC
+    ) AS rn
+  FROM valid_records
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Filter to eligible rows before ranking if the keep rule applies only to valid records.
+```
+
+
+## 66. Dedupe Problem: Keep Latest Non-Deleted Record
+
+Problem:
+
+```text
+CDC stream includes deletes. Build current non-deleted records.
+```
+
+Solution:
+
+```sql
+WITH ranked_cdc AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY id
+      ORDER BY source_updated_at DESC, sequence_number DESC
+    ) AS rn
+  FROM cdc_table
+),
+latest AS (
+  SELECT *
+  FROM ranked_cdc
+  WHERE rn = 1
+)
+SELECT *
+FROM latest
+WHERE operation <> 'DELETE';
+```
+
+Wrong approach:
+
+```text
+Filter out DELETE before ranking.
+```
+
+Why wrong:
+
+```text
+If latest operation is DELETE, filtering it before ranking can resurrect an old row.
+```
+
+Interview line:
+
+```text
+For CDC current state, rank all operations first, then exclude rows whose latest operation is DELETE.
+```
+
+
+## 67. Dedupe Problem: Multiple Current Flags
+
+Problem:
+
+```text
+A user profile SCD table has multiple is_current = true rows.
+Pick candidate current row and report bad keys.
+```
+
+Bad keys:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS current_rows
+FROM user_profile_history
+WHERE is_current = true
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Candidate current:
+
+```sql
+WITH current_rows AS (
+  SELECT *
+  FROM user_profile_history
+  WHERE is_current = true
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY effective_from DESC, updated_at DESC
+    ) AS rn
+  FROM current_rows
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+This produces a usable snapshot, but the multiple-current-row issue should still be reported and fixed upstream.
+```
+
+
+## 68. Dedupe Problem: Top Record Per Group Is Not Deduplication
+
+Problem:
+
+```text
+Find highest order amount per customer.
+```
+
+This looks like dedupe but is a ranking problem.
+
+SQL:
+
+```sql
+WITH ranked_orders AS (
+  SELECT
+    user_id,
+    order_id,
+    total_amount,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY total_amount DESC, order_id
+    ) AS rn
+  FROM orders
+)
+SELECT *
+FROM ranked_orders
+WHERE rn = 1;
+```
+
+Difference:
+
+```text
+This does not mean duplicate orders existed.
+It selects representative/top row per group.
+```
+
+Interview line:
+
+```text
+ROW_NUMBER is used for dedupe and top-N, but the business meaning is different.
+```
+
+
+## 69. Dedupe Problem: Duplicates Caused by Bad Join
+
+Problem:
+
+```text
+Final query shows duplicate orders after joining users.
+```
+
+Debug:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS user_rows
+FROM users
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+Find affected orders:
+
+```sql
+SELECT
+  o.order_id,
+  COUNT(*) AS joined_rows
+FROM orders o
+LEFT JOIN users u
+  ON o.user_id = u.user_id
+GROUP BY o.order_id
+HAVING COUNT(*) > 1;
+```
+
+Fix:
+
+```text
+Deduplicate users to one row per user_id before join, or join to correct current user dimension.
+```
+
+Interview line:
+
+```text
+Sometimes duplicates are not in the fact table; they are introduced by joining to a non-unique dimension.
+```
+
+
+## 70. Dedupe Problem: Duplicate Source Files
+
+Problem:
+
+```text
+Same file was loaded twice.
+```
+
+Detect duplicate file loads:
+
+```sql
+SELECT
+  source_file,
+  COUNT(*) AS rows_loaded,
+  COUNT(DISTINCT load_id) AS load_count
+FROM raw_table
+GROUP BY source_file
+HAVING COUNT(DISTINCT load_id) > 1;
+```
+
+Detect duplicated records by source row key:
+
+```sql
+SELECT
+  source_file,
+  source_row_number,
+  COUNT(*) AS row_count
+FROM raw_table
+GROUP BY source_file, source_row_number
+HAVING COUNT(*) > 1;
+```
+
+Prevention:
+
+```text
+file manifest table
+unique file checksum
+do not process same file twice
+idempotent load_id
+```
+
+Interview line:
+
+```text
+File ingestion dedupe often needs file-level manifest tracking, not only row-level dedupe.
+```
+
+
+## 71. Dedupe Problem: Duplicates From Retry After Partial Failure
+
+Problem:
+
+```text
+A job appended half the output, failed, then reran and appended all output again.
+```
+
+Detection:
+
+```sql
+SELECT
+  business_key,
+  COUNT(*) AS row_count,
+  COUNT(DISTINCT run_id) AS run_count
+FROM final_table
+GROUP BY business_key
+HAVING COUNT(*) > 1;
+```
+
+Fix:
+
+```text
+dedupe final table by business key and latest successful run
+```
+
+SQL:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY run_completed_at DESC, run_id DESC
+    ) AS rn
+  FROM final_table
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Prevention:
+
+```text
+write temp output
+commit atomically
+MERGE instead of append
+checkpoint after successful write
+```
+
+Interview line:
+
+```text
+Duplicates from retries indicate non-idempotent writes; the real fix is safer write design.
+```
+
+
+## 72. Dedupe Performance Principles
+
+Performance tips:
+
+```text
+filter date partitions early
+select only needed columns
+dedupe staging subset, not whole history when possible
+partition ROW_NUMBER by the dedupe key
+order by indexed/clustering columns when available
+avoid unnecessary DISTINCT on wide rows
+aggregate duplicate reports before detailed inspection
+use incremental dedupe plus MERGE for large tables
+consider materialized staging for repeated heavy dedupe
+validate with approximate counts if acceptable
+```
+
+Common expensive operations:
+
+```text
+COUNT DISTINCT on huge tables
+DISTINCT *
+ROW_NUMBER over huge unfiltered table
+self-joins for duplicate detection
+wide hash computations
+```
+
+Interview line:
+
+```text
+For large datasets, I filter to the relevant partition/window before deduping and validate the execution plan.
+```
+
+
+## 73. Dedupe Storage and Modeling Prevention
+
+Prevent duplicates through design:
+
+```text
+primary key or unique constraint where supported
+unique tests in transformation framework
+MERGE/upsert by business key
+partition overwrite
+file manifest
+idempotency key
+source sequence number
+current flag validation
+one row per grain contract
+audit columns
+dedupe staging layer
+data-quality checks
+```
+
+Modeling rules:
+
+```text
+fact_order should be one row per order_id
+fact_order_item should be one row per order_id/product_id/item_id
+dim_user_current should be one row per user_id
+snapshot table should be one row per entity/date
+event table should be one row per event_id
+```
+
+Interview line:
+
+```text
+The best deduplication is prevention through clear table grain and uniqueness checks.
+```
+
+
+## 74. Data Quality Tests for Dedupe
+
+Common tests:
+
+```sql
+-- unique order_id
+SELECT order_id, COUNT(*)
+FROM fact_orders
+GROUP BY order_id
+HAVING COUNT(*) > 1;
+```
+
+```sql
+-- not null order_id
+SELECT COUNT(*)
+FROM fact_orders
+WHERE order_id IS NULL;
+```
+
+```sql
+-- one current user profile row
+SELECT user_id, COUNT(*)
+FROM dim_user_profile
+WHERE is_current = true
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+```
+
+```sql
+-- no duplicate metric grain
+SELECT metric_date, metric_name, COUNT(*)
+FROM daily_metrics
+GROUP BY metric_date, metric_name
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Dedupe logic should be paired with uniqueness and not-null tests on the final table grain.
+```
+
+
+## 75. Common Deduplication Mistakes
+
+Common mistakes:
+
+```text
+using DISTINCT blindly
+not defining dedupe key
+not defining keep rule
+using ingestion time when source updated time is needed
+filtering deletes before ranking CDC records
+ignoring same timestamp ties
+deduping valid repeated facts
+deduping after aggregation when duplicates already inflated metrics
+deduping after a bad join instead of fixing dimension duplicates
+not validating output uniqueness
+not checking NULL keys
+not reporting duplicate counts
+silently dropping conflicting financial rows
+using UNION instead of UNION ALL plus explicit dedupe
+assuming duplicates are harmless
+not making pipeline idempotent
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. You used DISTINCT, but the duplicate definition is transaction_id and the rows have different updated_at values. You need ROW_NUMBER with a keep rule.
+```
+
+
+## 76. Deduplication Decision Tree
+
+Use this decision tree:
+
+```text
+Are rows exact duplicates across all required output columns?
+  Yes:
+    DISTINCT may be acceptable.
+  No:
+    Continue.
+
+Is there a stable business key?
+  Yes:
+    Use business key for partition.
+  No:
+    Use composite key only after business validation.
+
+Are repeated rows valid by table grain?
+  Yes:
+    Do not dedupe.
+  No:
+    Continue.
+
+Is there a clear keep rule?
+  Yes:
+    ROW_NUMBER with deterministic ORDER BY.
+  No:
+    Report/quarantine/fail.
+
+Are important values conflicting?
+  Yes:
+    Quarantine or fail for high-risk data.
+  No:
+    Dedupe and audit.
+
+Can duplicates affect joins/metrics?
+  Yes:
+    Deduplicate before join/aggregation.
+
+After dedupe, is output key unique?
+  No:
+    Keep rule is incomplete.
+  Yes:
+    Continue.
+```
+
+Interview line:
+
+```text
+I decide whether to dedupe only after confirming duplicates are invalid for the intended table grain.
+```
+
+
+## 77. Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Same event_id appears multiple times.
+2. Same order_id appears with different updated_at.
+3. Users table has duplicate user_id before joining orders.
+4. Payment attempts have multiple rows per order.
+5. Need current row from CDC stream with deletes.
+6. Need first completed order per user.
+7. Need products never sold.
+8. Need repeated source file detection.
+9. Need latest row per metric_date, metric_name.
+10. Need duplicate transaction_id with different amounts.
+11. Need dedupe overlapping source systems by source priority.
+12. Need exact duplicate removal.
+13. Need detect duplicate keys only.
+14. Need count extra duplicate rows.
+15. Need preserve all tied latest rows.
+16. Need remove duplicates before MERGE.
+17. Need find multiple current SCD rows.
+18. Need detect join explosion.
+19. Need dedupe by approximate composite key.
+20. Need prevent rerun duplicates.
+```
+
+Expected classification:
+
+```text
+1. event_id ROW_NUMBER dedupe
+2. order_id latest updated_at dedupe
+3. dimension dedupe before join
+4. not duplicates if attempt-grain metric
+5. rank all CDC ops then filter delete
+6. ROW_NUMBER ascending first row
+7. anti-join/NOT EXISTS, not dedupe
+8. file manifest/load_id duplicate check
+9. ROW_NUMBER by metric grain latest run
+10. conflict detection/quarantine
+11. source priority keep rule
+12. DISTINCT or ROW_NUMBER if metadata matters
+13. GROUP BY HAVING COUNT > 1
+14. SUM(row_count - 1)
+15. RANK = 1
+16. staging ROW_NUMBER before MERGE
+17. GROUP BY current rows HAVING COUNT > 1
+18. row count before/after join + right key duplicates
+19. composite key dedupe with caution
+20. idempotent writes/MERGE/partition overwrite
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed deduplication mocks.
+```
+
+
+## 78. High-ROI Deduplication Topics
+
+Practice these first.
+
+| Topic | Candidate Must Explain |
+|---|---|
+| exact duplicates | DISTINCT vs GROUP BY |
+| logical duplicates | business key |
+| duplicate detection | GROUP BY HAVING |
+| duplicate counts | duplicate keys vs extra rows |
+| ROW_NUMBER | one survivor |
+| RANK | all tied winners |
+| tie-breakers | deterministic survivor |
+| NULL keys | invalid vs group together |
+| latest record | updated_at + ingested_at |
+| source priority | business keep rule |
+| conflict detection | distinct important values |
+| MERGE prep | one source row per key |
+| event dedupe | event_id/idempotency key |
+| CDC dedupe | source sequence + delete handling |
+| join explosion | duplicate dimension keys |
+| idempotency | rerun-safe writes |
+| validation | post-dedupe uniqueness |
+| quarantine | high-risk conflicting duplicates |
+
+
+## 79. 7-Day Deduplication Plan
+
+### Day 1: Duplicate detection
+
+Problems:
+
+```text
+exact duplicates
+duplicate keys
+duplicate composite keys
+duplicate extra row count
+duplicate conflict report
+```
+
+Focus:
+
+```text
+GROUP BY
+HAVING
+COUNT
+COUNT DISTINCT
+```
+
+### Day 2: ROW_NUMBER dedupe
+
+Problems:
+
+```text
+latest order per order_id
+latest transaction per transaction_id
+latest user profile per user_id
+earliest event per user
+top row per group
+```
+
+Focus:
+
+```text
+ROW_NUMBER
+partition
+order by
+tie-breakers
+```
+
+### Day 3: Business keep rules
+
+Problems:
+
+```text
+prefer success over failure
+prefer CRM over website
+prefer most complete profile
+preserve tied latest rows
+quarantine conflicting payments
+```
+
+Focus:
+
+```text
+CASE priority
+RANK
+conflict handling
+```
+
+### Day 4: Data Engineering dedupe
+
+Problems:
+
+```text
+event stream dedupe
+API ingestion dedupe
+CDC current state
+staging dedupe before MERGE
+incremental load overlap
+```
+
+Focus:
+
+```text
+idempotency
+watermarks
+source sequence
+MERGE safety
+```
+
+### Day 5: Join and model duplicates
+
+Problems:
+
+```text
+duplicate dimension before join
+join explosion detection
+SCD multiple current rows
+overlapping intervals
+snapshot duplicate grain
+```
+
+Focus:
+
+```text
+table grain
+join cardinality
+SCD
+snapshots
+```
+
+### Day 6: Validation and prevention
+
+Problems:
+
+```text
+post-dedupe uniqueness
+before/after metric impact
+dedupe audit table
+duplicate threshold
+file manifest duplicates
+```
+
+Focus:
+
+```text
+data quality
+audit
+prevention
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run deduplication mock.
+Review mistakes.
+Repair weakest dedupe topic.
+Update progress.
+```
+
+
+## 80. 30-Day Deduplication Plan
+
+### Week 1: Detection and basics
+
+Focus:
+
+```text
+duplicate types
+GROUP BY HAVING
+exact vs logical duplicates
+COUNT vs COUNT DISTINCT
+duplicate reports
+```
+
+Exit:
+
+```text
+Candidate can detect and quantify duplicates.
+```
+
+### Week 2: Survivor selection
+
+Focus:
+
+```text
+ROW_NUMBER
+RANK
+tie-breakers
+latest/earliest
+priority rules
+completeness scoring
+NULL handling
+```
+
+Exit:
+
+```text
+Candidate can safely choose survivor rows.
+```
+
+### Week 3: Data Engineering scenarios
+
+Focus:
+
+```text
+event dedupe
+API dedupe
+CDC dedupe
+MERGE source dedupe
+incremental overlap
+file load duplicates
+idempotency
+```
+
+Exit:
+
+```text
+Candidate can connect dedupe to pipeline reliability.
+```
+
+### Week 4: Advanced validation and prevention
+
+Focus:
+
+```text
+join explosion
+SCD duplicates
+overlapping intervals
+audit tables
+thresholds
+quarantine strategy
+performance
+mock interviews
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 81. Mock Set 1: Duplicate Detection
+
+Problems:
+
+```text
+1. Find duplicate transaction_id keys.
+2. Count extra duplicate rows.
+3. Find exact duplicate event rows.
+4. Find transaction_id duplicates with conflicting amounts.
+5. Report first_seen and last_seen for duplicate keys.
+```
+
+Expected skills:
+
+```text
+GROUP BY
+HAVING
+COUNT
+COUNT DISTINCT
+MIN/MAX
+conflict detection
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate distinguishes duplicate keys from extra duplicate rows.
+```
+
+
+## 82. Mock Set 2: Survivor Dedupe
+
+Problems:
+
+```text
+1. Keep latest order per order_id.
+2. Keep earliest event per user.
+3. Prefer successful payment over failed.
+4. Keep most complete customer profile.
+5. Preserve all tied latest product records.
+```
+
+Expected skills:
+
+```text
+ROW_NUMBER
+RANK
+CASE priority
+tie-breakers
+completeness score
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate defines deterministic keep rule.
+```
+
+
+## 83. Mock Set 3: Data Engineering Dedupe
+
+Problems:
+
+```text
+1. Deduplicate event stream by event_id.
+2. Deduplicate API records by id and updated_at.
+3. Build current state from CDC including deletes.
+4. Deduplicate staging before MERGE.
+5. Handle incremental overlap with lookback window.
+```
+
+Expected skills:
+
+```text
+idempotency key
+source updated_at
+CDC sequence
+MERGE safety
+watermark overlap
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate connects dedupe to pipeline idempotency.
+```
+
+
+## 84. Mock Set 4: Validation and Prevention
+
+Problems:
+
+```text
+1. Detect join explosion from duplicate dimension keys.
+2. Detect multiple current SCD rows.
+3. Detect overlapping SCD intervals.
+4. Build dedupe audit summary.
+5. Design prevention strategy for rerun duplicates.
+```
+
+Expected skills:
+
+```text
+join cardinality
+SCD validation
+interval overlap
+audit reporting
+idempotent writes
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate validates and prevents duplicates, not only removes them.
+```
+
+
+## 85. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Simple duplicate detection
+
+```text
+10-15 minutes
+```
+
+### Dedupe survivor query
+
+```text
+20-30 minutes
+```
+
+### Production dedupe scenario
+
+```text
+35-45 minutes
+```
+
+Per drill:
+
+```text
+Minute 0-3:
+Clarify duplicate definition and table grain.
+
+Minute 3-6:
+Choose key and keep rule.
+
+Minute 6-20:
+Write detection and dedupe SQL.
+
+Minute 20-30:
+Add validation and edge cases.
+
+Minute 30-45:
+Explain production handling, audit, idempotency, and prevention.
+```
+
+If candidate says only DISTINCT:
+
+```text
+Stop and ask for key, keep rule, and validation.
+```
+
+
+## 86. Review Checklist
+
+Review deduplication answers using:
+
+```text
+1. Did candidate define duplicate type?
+2. Did candidate identify table grain?
+3. Did candidate identify dedupe key?
+4. Did candidate identify keep rule?
+5. Did candidate handle NULL keys?
+6. Did candidate detect duplicates before removing?
+7. Did candidate use GROUP BY HAVING correctly?
+8. Did candidate choose ROW_NUMBER/RANK correctly?
+9. Did candidate include deterministic tie-breakers?
+10. Did candidate handle conflicting business values?
+11. Did candidate avoid deduping valid repeated facts?
+12. Did candidate dedupe before MERGE when needed?
+13. Did candidate dedupe before join when dimension has duplicates?
+14. Did candidate handle CDC deletes correctly?
+15. Did candidate validate output uniqueness?
+16. Did candidate quantify rows removed?
+17. Did candidate explain quarantine/fail cases?
+18. Did candidate explain idempotency?
+19. Did candidate explain prevention?
+20. Did candidate communicate business risk?
+```
+
+Verdict examples:
+
+```text
+Only DISTINCT; not interview-ready.
+Good detection but no keep rule.
+Good ROW_NUMBER but no tie-breaker.
+Good dedupe but no validation.
+Good SQL but dedupes valid repeated attempts incorrectly.
+Interview-ready.
+Strong.
+```
+
+
+## 87. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Uses DISTINCT blindly | Exact vs logical duplicate drills |
+| No dedupe key | Business key identification drills |
+| No keep rule | Survivor rule drills |
+| No tie-breaker | Deterministic ORDER BY drills |
+| NULL key ignored | NULL handling drills |
+| Cannot detect duplicates | GROUP BY HAVING drills |
+| Cannot count extra rows | duplicate count drills |
+| ROW_NUMBER confusion | ranking drills |
+| RANK confusion | tied winner drills |
+| Dedupes valid facts | table grain drills |
+| MERGE failure confusion | staging dedupe drills |
+| CDC delete bug | rank-before-filter drills |
+| Join explosion missed | cardinality validation drills |
+| No output validation | uniqueness test drills |
+| No idempotency | rerun prevention drills |
+| No quarantine strategy | conflict handling drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 88. Communication Scripts
+
+### Duplicate definition script
+
+```text
+Before deduping, I need to define whether these are exact duplicates or logical duplicates based on a business key.
+```
+
+### Key script
+
+```text
+The dedupe key here is transaction_id because one transaction should appear once in the final table.
+```
+
+### Keep rule script
+
+```text
+I will keep the row with latest source updated_at, then latest ingested_at as a deterministic tie-breaker.
+```
+
+### Detection script
+
+```text
+I will first measure duplicates using GROUP BY key HAVING COUNT(*) > 1 before removing anything.
+```
+
+### ROW_NUMBER script
+
+```text
+I use ROW_NUMBER partitioned by the dedupe key so I can keep exactly one survivor per key.
+```
+
+### Conflict script
+
+```text
+If duplicate transaction IDs have different amounts, I would quarantine or fail rather than silently choose one.
+```
+
+### Join script
+
+```text
+If a dimension table is not unique on the join key, I deduplicate or fix it before joining to prevent row multiplication.
+```
+
+### Idempotency script
+
+```text
+Duplicates from reruns should be prevented with MERGE, partition overwrite, or unique keys, not cleaned manually every time.
+```
+
+
+## 89. Candidate Self-Review Questions
+
+After every deduplication problem, candidate should answer:
+
+```text
+1. What is the table grain?
+2. Are repeated rows actually invalid duplicates?
+3. What is the duplicate key?
+4. Is the key nullable?
+5. What is the keep rule?
+6. Is the keep rule deterministic?
+7. What tie-breakers are needed?
+8. Are conflicting values possible?
+9. Should conflicts be quarantined?
+10. Should duplicates fail the pipeline?
+11. Is DISTINCT sufficient or unsafe?
+12. Should I use ROW_NUMBER or RANK?
+13. Should I dedupe before join?
+14. Should I dedupe before MERGE?
+15. Does CDC delete handling matter?
+16. How many duplicate keys exist?
+17. How many extra rows will be removed?
+18. How do I validate output uniqueness?
+19. How do I prevent future duplicates?
+20. How does this affect business metrics?
+```
+
+If candidate cannot answer these:
+
+```text
+The deduplication solution is not interview-ready.
+```
+
+
+## 90. Maintenance Drills
+
+After completing deduplication, maintain skill with:
+
+```text
+1 duplicate detection drill per week
+1 ROW_NUMBER dedupe drill per week
+1 conflict/quarantine drill every 2 weeks
+1 MERGE/CDC/event dedupe drill every 2 weeks
+1 join explosion validation drill every 2 weeks
+1 full dedupe mock every month
+```
+
+Maintenance rotation:
+
+```text
+Week 1: GROUP BY HAVING + extra row counts
+Week 2: latest row + priority keep rule
+Week 3: CDC/API/event stream dedupe
+Week 4: join explosion + SCD + idempotency
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed topic.
+```
+
+
+## 91. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# SQL Deduplication Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Topic | Score | Time | Mistake | Next Action
+
+## Topic Scores
+
+Duplicate type:
+Table grain:
+Business key:
+Exact duplicates:
+Logical duplicates:
+GROUP BY HAVING:
+Duplicate key count:
+Extra row count:
+Conflict detection:
+ROW_NUMBER:
+RANK:
+Tie-breakers:
+NULL key handling:
+Latest record:
+Earliest record:
+Priority keep rule:
+Completeness score:
+Event dedupe:
+API dedupe:
+CDC dedupe:
+MERGE prep:
+Join explosion:
+SCD current rows:
+SCD interval overlap:
+Metric table duplicates:
+Idempotency:
+Validation:
+Audit:
+Performance:
+Communication:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 92. Final Exit Test
+
+Candidate passes SQL deduplication when they can solve/explain:
+
+```text
+1. Exact duplicate detection.
+2. Logical duplicate detection.
+3. Duplicate key count.
+4. Extra duplicate row count.
+5. Duplicate conflict report.
+6. SELECT DISTINCT limitations.
+7. ROW_NUMBER dedupe.
+8. RANK for tied winners.
+9. Deterministic tie-breakers.
+10. NULL key handling.
+11. Latest record per key.
+12. Earliest record per key.
+13. Priority-based keep rule.
+14. Completeness-score keep rule.
+15. Event stream dedupe.
+16. API ingestion dedupe.
+17. CDC current state dedupe.
+18. CDC delete handling.
+19. Staging dedupe before MERGE.
+20. Incremental overlap dedupe.
+21. Backfill duplicate prevention.
+22. Duplicate dimension before join.
+23. Join explosion detection.
+24. Multiple current SCD rows.
+25. Overlapping SCD intervals.
+26. Daily metric table duplicates.
+27. Source overlap with priority.
+28. Duplicate file load detection.
+29. Dedupe audit summary.
+30. Post-dedupe uniqueness validation.
+31. Before/after metric impact.
+32. Duplicate threshold.
+33. Quarantine/fail strategy.
+34. Idempotency prevention.
+35. Performance considerations.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No blind DISTINCT.
+No missing key.
+No missing keep rule.
+No nondeterministic survivor.
+No ignored NULL keys.
+No missing validation.
+Can connect dedupe to Data Engineering pipeline reliability.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles conflicts, CDC, MERGE, SCD, join explosion, idempotency, audit, and prevention clearly under pressure.
+```
+
+
+## 93. Final Summary
+
+SQL deduplication is a core Data Engineering interview skill.
+
+It maps directly to:
+
+```text
+raw event ingestion
+API ingestion
+CDC processing
+staging table cleanup
+MERGE/upsert preparation
+warehouse model reliability
+data quality checks
+source-target reconciliation
+join correctness
+metric accuracy
+backfill safety
+rerun idempotency
+SCD validation
+snapshot correctness
+```
+
+The candidate must master:
+
+```text
+duplicate definitions
+table grain
+business keys
+exact duplicates
+logical duplicates
+GROUP BY HAVING
+COUNT DISTINCT
+ROW_NUMBER
+RANK
+tie-breakers
+NULL handling
+latest/earliest row logic
+priority keep rules
+conflict detection
+quarantine strategy
+event/API/CDC dedupe
+MERGE source dedupe
+join explosion prevention
+SCD duplicate checks
+output validation
+audit reporting
+idempotency
+performance
+```
+
+The mentor must be strict:
+
+```text
+Only says DISTINCT → not interview-ready.
+No dedupe key → not interview-ready.
+No keep rule → not interview-ready.
+No tie-breaker → not interview-ready.
+No validation → not interview-ready.
+Silently drops conflicting financial duplicates → not interview-ready.
+Dedupes valid repeated facts → not interview-ready.
+```
+
+The goal is not to remove rows quickly.
+
+The goal is to deduplicate safely, explainably, auditably, and in a way that protects business metrics and pipeline correctness.
+
+
+## 94. Problem Card Appendix
+
+### Card 1: Exact Duplicate Rows
+
+Topic:
+
+```text
+DISTINCT/GROUP BY
+```
+
+Core idea:
+
+```text
+Remove rows equal across selected columns.
+```
+
+Data Engineering connection:
+
+```text
+Raw cleanup.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Duplicate Business Keys
+
+Topic:
+
+```text
+GROUP BY HAVING
+```
+
+Core idea:
+
+```text
+Find keys with more than one row.
+```
+
+Data Engineering connection:
+
+```text
+Data quality.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Extra Duplicate Rows
+
+Topic:
+
+```text
+SUM(count - 1)
+```
+
+Core idea:
+
+```text
+Count rows to remove.
+```
+
+Data Engineering connection:
+
+```text
+Audit reporting.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Latest Record
+
+Topic:
+
+```text
+ROW_NUMBER DESC
+```
+
+Core idea:
+
+```text
+Keep most recent row per key.
+```
+
+Data Engineering connection:
+
+```text
+Snapshots.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Earliest Record
+
+Topic:
+
+```text
+ROW_NUMBER ASC
+```
+
+Core idea:
+
+```text
+Keep first row per key.
+```
+
+Data Engineering connection:
+
+```text
+First event/order.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Tied Latest Records
+
+Topic:
+
+```text
+RANK
+```
+
+Core idea:
+
+```text
+Expose all rows tied for latest.
+```
+
+Data Engineering connection:
+
+```text
+Conflict review.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Priority Keep Rule
+
+Topic:
+
+```text
+CASE order by
+```
+
+Core idea:
+
+```text
+Prefer SUCCESS/CRM/high priority.
+```
+
+Data Engineering connection:
+
+```text
+Business logic.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Completeness Rule
+
+Topic:
+
+```text
+score fields
+```
+
+Core idea:
+
+```text
+Keep row with most non-null fields.
+```
+
+Data Engineering connection:
+
+```text
+Profile quality.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Event Deduplication
+
+Topic:
+
+```text
+event_id
+```
+
+Core idea:
+
+```text
+Handle message redelivery.
+```
+
+Data Engineering connection:
+
+```text
+Streaming.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: API Deduplication
+
+Topic:
+
+```text
+id + updated_at
+```
+
+Core idea:
+
+```text
+Handle retries/pages.
+```
+
+Data Engineering connection:
+
+```text
+API ingestion.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: CDC Current State
+
+Topic:
+
+```text
+sequence + delete
+```
+
+Core idea:
+
+```text
+Build current table.
+```
+
+Data Engineering connection:
+
+```text
+CDC pipeline.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: MERGE Source Prep
+
+Topic:
+
+```text
+source key
+```
+
+Core idea:
+
+```text
+One source row per target key.
+```
+
+Data Engineering connection:
+
+```text
+Warehouse load.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Join Explosion
+
+Topic:
+
+```text
+dedupe dimension
+```
+
+Core idea:
+
+```text
+Prevent multiplied fact rows.
+```
+
+Data Engineering connection:
+
+```text
+Model correctness.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: SCD Current Rows
+
+Topic:
+
+```text
+is_current validation
+```
+
+Core idea:
+
+```text
+Detect multiple current rows.
+```
+
+Data Engineering connection:
+
+```text
+Dimensions.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Interval Overlap
+
+Topic:
+
+```text
+self join
+```
+
+Core idea:
+
+```text
+Detect overlapping SCD ranges.
+```
+
+Data Engineering connection:
+
+```text
+As-of joins.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Metric Table Reruns
+
+Topic:
+
+```text
+metric grain
+```
+
+Core idea:
+
+```text
+Keep latest run output.
+```
+
+Data Engineering connection:
+
+```text
+Dashboard tables.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: File Load Duplicate
+
+Topic:
+
+```text
+source_file/load_id
+```
+
+Core idea:
+
+```text
+Detect repeated loads.
+```
+
+Data Engineering connection:
+
+```text
+File ingestion.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 18: Conflict Detection
+
+Topic:
+
+```text
+COUNT DISTINCT values
+```
+
+Core idea:
+
+```text
+Find business value conflicts.
+```
+
+Data Engineering connection:
+
+```text
+Incident handling.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 19: Audit Summary
+
+Topic:
+
+```text
+COUNT OVER
+```
+
+Core idea:
+
+```text
+Record duplicate group details.
+```
+
+Data Engineering connection:
+
+```text
+Traceability.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 20: Idempotent Prevention
+
+Topic:
+
+```text
+MERGE/overwrite
+```
+
+Core idea:
+
+```text
+Prevent duplicates from reruns.
+```
+
+Data Engineering connection:
+
+```text
+Reliability.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Duplicate definition.
+2. Dedupe key.
+3. Keep rule.
+4. SQL pattern.
+5. Edge case.
+6. Validation check.
+7. Prevention strategy.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 95. Data Engineering Scenario Appendix
+
+### Scenario 1: API Retry Duplicates
+
+Pattern:
+
+```text
+id + updated_at
+```
+
+Task:
+
+```text
+Same record fetched twice from API.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 2: Kafka/Event Redelivery
+
+Pattern:
+
+```text
+event_id
+```
+
+Task:
+
+```text
+Same event delivered multiple times.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 3: CDC Update Flood
+
+Pattern:
+
+```text
+sequence dedupe
+```
+
+Task:
+
+```text
+Multiple changes for one primary key.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 4: MERGE Ambiguous Source
+
+Pattern:
+
+```text
+staging dedupe
+```
+
+Task:
+
+```text
+MERGE source has duplicate keys.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 5: Dimension Join Explosion
+
+Pattern:
+
+```text
+dedupe dimension
+```
+
+Task:
+
+```text
+Fact rows multiply after join.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 6: Financial Conflict
+
+Pattern:
+
+```text
+quarantine
+```
+
+Task:
+
+```text
+Same transaction_id with different amount.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 7: Backfill Rerun
+
+Pattern:
+
+```text
+partition overwrite
+```
+
+Task:
+
+```text
+Historical load appended twice.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 8: Metric Table Duplicates
+
+Pattern:
+
+```text
+latest run
+```
+
+Task:
+
+```text
+Dashboard table has multiple rows per metric date.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 9: SCD Broken Current Flag
+
+Pattern:
+
+```text
+current row check
+```
+
+Task:
+
+```text
+Multiple current profile rows.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 10: Missing Event ID
+
+Pattern:
+
+```text
+composite key risk
+```
+
+Task:
+
+```text
+Need approximate dedupe key.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 11: Duplicate Source File
+
+Pattern:
+
+```text
+manifest
+```
+
+Task:
+
+```text
+Same file loaded twice.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 12: Customer Identity Duplicate
+
+Pattern:
+
+```text
+normalized email
+```
+
+Task:
+
+```text
+Potential duplicate accounts.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 13: Payment Attempts
+
+Pattern:
+
+```text
+valid repeated facts
+```
+
+Task:
+
+```text
+Multiple attempts are not duplicates.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 14: Status History
+
+Pattern:
+
+```text
+snapshot vs history
+```
+
+Task:
+
+```text
+Multiple status rows may be valid history.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 15: Incremental Lookback
+
+Pattern:
+
+```text
+overlap dedupe
+```
+
+Task:
+
+```text
+Lookback window reprocesses old records.
+```
+
+Minimum expected answer:
+
+```text
+1. Decide if repeated rows are invalid duplicates.
+2. Define dedupe key.
+3. Define keep rule.
+4. Write SQL or pseudocode.
+5. Validate output.
+6. Explain prevention/idempotency.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 96. Drill Appendix
+
+### Drill 1: Duplicate Key Drill
+
+Task:
+
+```text
+Find keys with COUNT(*) > 1.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Exact Duplicate Drill
+
+Task:
+
+```text
+Use DISTINCT only when exact duplicates are acceptable.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Extra Row Count Drill
+
+Task:
+
+```text
+Calculate SUM(row_count - 1).
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Conflict Drill
+
+Task:
+
+```text
+Find duplicate keys with different amounts/statuses.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: ROW_NUMBER Drill
+
+Task:
+
+```text
+Keep latest row per key.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Tie-Breaker Drill
+
+Task:
+
+```text
+Add deterministic ORDER BY columns.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: RANK Drill
+
+Task:
+
+```text
+Preserve all tied latest rows.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: NULL Key Drill
+
+Task:
+
+```text
+Separate invalid NULL-key rows.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Priority Drill
+
+Task:
+
+```text
+Use CASE priority in ORDER BY.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Completeness Drill
+
+Task:
+
+```text
+Score non-null fields and keep best row.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Event Drill
+
+Task:
+
+```text
+Deduplicate by event_id.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: CDC Drill
+
+Task:
+
+```text
+Rank all ops then filter deletes.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: MERGE Drill
+
+Task:
+
+```text
+Deduplicate staging before merge.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Join Drill
+
+Task:
+
+```text
+Detect and fix duplicate dimension joins.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: SCD Drill
+
+Task:
+
+```text
+Find multiple current rows and interval overlaps.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Metric Drill
+
+Task:
+
+```text
+Deduplicate daily metric reruns.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: File Drill
+
+Task:
+
+```text
+Detect duplicate source file loads.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Audit Drill
+
+Task:
+
+```text
+Build duplicate audit summary.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 19: Threshold Drill
+
+Task:
+
+```text
+Calculate duplicate rate and decide fail/continue.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 20: Idempotency Drill
+
+Task:
+
+```text
+Design rerun-safe write strategy.
+```
+
+Minimum passing answer:
+
+```text
+1. State duplicate type.
+2. State key.
+3. State keep rule or report rule.
+4. Write SQL.
+5. Explain validation and prevention.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 97. Quick Reference Cards
+
+### Quick Card 1: DISTINCT
+
+Summary:
+
+```text
+Exact selected-row duplicate removal only.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 2: GROUP BY HAVING
+
+Summary:
+
+```text
+Detect duplicate keys.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 3: ROW_NUMBER
+
+Summary:
+
+```text
+Keep exactly one row per key.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 4: RANK
+
+Summary:
+
+```text
+Keep or expose all tied winners.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 5: Business key
+
+Summary:
+
+```text
+Columns defining logical uniqueness.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 6: Tie-breaker
+
+Summary:
+
+```text
+Extra ORDER BY columns for deterministic survivor.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 7: NULL key
+
+Summary:
+
+```text
+Usually invalid if key is required.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 8: Conflict
+
+Summary:
+
+```text
+Duplicate key with different important values.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 9: MERGE prep
+
+Summary:
+
+```text
+Source must be one row per target key.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 10: Join explosion
+
+Summary:
+
+```text
+Join multiplies rows due to non-unique keys.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 11: CDC dedupe
+
+Summary:
+
+```text
+Use source sequence/update time; handle deletes after ranking.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 12: Idempotency
+
+Summary:
+
+```text
+Reruns do not create duplicates.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 13: Audit
+
+Summary:
+
+```text
+Track duplicate groups and survivor decisions.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+### Quick Card 14: Quarantine
+
+Summary:
+
+```text
+Hold risky/conflicting duplicates for review.
+```
+
+Interview check:
+
+```text
+Give one SQL example and one Data Engineering use case.
+```
+
+
+## 98. SQL Deduplication FAQ
+
+### FAQ 1: Is DISTINCT enough for deduplication?
+
+Answer:
+
+```text
+Only for exact duplicate selected rows. Logical dedupe needs key and keep rule.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 2: What is the safest dedupe pattern?
+
+Answer:
+
+```text
+ROW_NUMBER partitioned by business key with deterministic ORDER BY, then filter rn = 1.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 3: How do I detect duplicates?
+
+Answer:
+
+```text
+GROUP BY the dedupe key and HAVING COUNT(*) > 1.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 4: How do I count rows removed by dedupe?
+
+Answer:
+
+```text
+For each duplicate key, sum row_count - 1.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 5: What if duplicate keys have different amounts?
+
+Answer:
+
+```text
+For financial/high-risk data, quarantine or fail rather than silently choosing one.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 6: Should NULL keys be deduped?
+
+Answer:
+
+```text
+Usually no. If the key is required, NULL-key rows are invalid records.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 7: Why add tie-breakers?
+
+Answer:
+
+```text
+Without tie-breakers, ROW_NUMBER may choose nondeterministic survivor rows.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 8: Are repeated payment attempts duplicates?
+
+Answer:
+
+```text
+No, if the table grain is payment attempt. Collapse only for order-level metrics.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 9: How do duplicates cause join explosion?
+
+Answer:
+
+```text
+Joining facts to a dimension with duplicate keys multiplies fact rows.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```
+
+### FAQ 10: How do I prevent duplicates?
+
+Answer:
+
+```text
+Use idempotent writes, MERGE, partition overwrite, unique tests, file manifests, and clear table grain.
+```
+
+Candidate should also explain:
+
+```text
+1. Example SQL pattern.
+2. Edge case.
+3. Validation query.
+4. Production prevention.
+```

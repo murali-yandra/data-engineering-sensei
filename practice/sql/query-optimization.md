@@ -1,0 +1,7590 @@
+# SQL Query Optimization Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/sql/query-optimization.md
+```
+
+This guide teaches and drills **SQL query optimization for Data Engineering interviews**.
+
+This is not a database-administrator manual. It is an interview-focused guide for Data Engineers who need to reason about slow queries, large tables, warehouse cost, joins, partitions, indexes, execution plans, data skew, aggregation strategy, window function cost, CTE usage, and pipeline-friendly SQL.
+
+Query optimization is high-ROI because Data Engineering interviews often ask:
+
+- Why is this query slow?
+- How would you optimize this SQL?
+- What is wrong with this execution plan?
+- Why is the query scanning the whole table?
+- How do you reduce warehouse cost?
+- How do you optimize a join between a huge fact and a small dimension?
+- How do you avoid double counting while improving performance?
+- How do you optimize a daily incremental pipeline?
+- How do you use partition pruning?
+- How do you use clustering/sorting/indexing?
+- How do you reduce shuffle in distributed systems?
+- How do you handle data skew?
+- How do you optimize COUNT DISTINCT?
+- How do you optimize window functions?
+- How do you rewrite correlated subqueries?
+- How do you choose between CTE, temp table, materialized table, and view?
+- How do you debug a production query that suddenly became slow?
+
+Use this guide with:
+
+- `docs/sql-interview-guide.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/data-warehouse-guide.md`
+- `docs/etl-elt-pipelines-guide.md`
+- `docs/system-design-guide.md`
+- `docs/faang-interview-standards.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/sql-drill-mode.md`
+- `modes/interview-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `practice/sql/business-sql-cases.md`
+- `practice/sql/ctes-subqueries.md`
+- `practice/sql/deduplication.md`
+- `practice/sql/gaps-and-islands.md`
+- `practice/sql/joins.md`
+- `practice/python/pandas-basics.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering interview standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at SQL optimization questions in Data Engineering interviews.
+
+The candidate should learn to answer:
+
+```text
+How do I find why a query is slow?
+How do I read an execution plan at a high level?
+How do I reduce full table scans?
+How do I use partition pruning?
+How do I use indexes/clustering/sort keys?
+How do I reduce join cost?
+How do I reduce data shuffle?
+How do I optimize aggregations?
+How do I optimize COUNT DISTINCT?
+How do I optimize window functions?
+How do I optimize CTE-heavy queries?
+How do I optimize correlated subqueries?
+How do I avoid functions on join/filter columns?
+How do I avoid SELECT *?
+How do I improve incremental pipeline queries?
+How do I reduce warehouse cost?
+How do I handle skewed keys?
+How do I decide whether to pre-aggregate?
+How do I choose temp table vs CTE vs materialized view?
+How do I validate that an optimization did not change results?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+start with measurement, not guessing
+read basic execution plan signals
+identify full scans, bad joins, bad filters, bad cardinality, and skew
+push filters early
+select only needed columns
+use partition filters correctly
+avoid functions on indexed/partitioned columns
+aggregate before large joins when safe
+deduplicate dimensions before joins
+rewrite correlated subqueries
+handle COUNT DISTINCT trade-offs
+optimize window functions by reducing input size
+explain broadcast vs shuffle joins
+explain index/cluster/sort/partition differences at a high level
+validate correctness after optimization
+explain cost-performance trade-offs clearly
+```
+
+
+## 2. Why Query Optimization Matters for Data Engineers
+
+Data Engineers are responsible for pipelines that run repeatedly, often on large datasets.
+
+A query that is acceptable for a one-time analyst task can be unacceptable in production if it:
+
+```text
+scans too much data every day
+joins too many raw rows
+causes expensive shuffles
+blocks downstream pipelines
+times out
+spills memory
+creates unstable costs
+duplicates rows
+produces wrong metrics after optimization
+does not use partition pruning
+cannot scale as data grows
+```
+
+Optimization matters because it affects:
+
+```text
+pipeline SLA
+cloud warehouse cost
+dashboard freshness
+backfill speed
+data quality checks
+incident recovery
+production reliability
+team trust
+```
+
+Weak answer:
+
+```text
+Add an index.
+```
+
+Strong answer:
+
+```text
+I would first inspect the execution plan and runtime metrics. Then I would reduce scanned data with partition filters, select only required columns, check join cardinality, pre-aggregate to the needed grain, ensure the join keys are clean and typed, avoid functions on filter columns, and validate that the optimized query returns the same results.
+```
+
+Interview line:
+
+```text
+Optimization should be evidence-driven: measure, identify the bottleneck, change one thing, validate performance and correctness.
+```
+
+
+## 3. Core Mental Model
+
+A SQL query becomes slow mainly because it does too much work.
+
+Common forms of too much work:
+
+```text
+reading too many rows
+reading too many columns
+joining at too detailed a grain
+sorting too much data
+shuffling too much data
+aggregating too much data
+calculating windows over too many rows
+doing repeated scans
+using non-sargable filters
+missing partition pruning
+using wrong join type
+data skew creating hot partitions
+bad cardinality estimates
+```
+
+Optimization flow:
+
+```text
+1. Understand business requirement.
+2. Confirm expected output grain.
+3. Get baseline runtime and scan size.
+4. Inspect execution plan.
+5. Identify biggest cost:
+   - scan
+   - join
+   - sort
+   - aggregation
+   - window
+   - shuffle
+6. Apply targeted rewrite.
+7. Validate row counts and results.
+8. Compare runtime/cost.
+9. Document trade-off.
+```
+
+Core interview line:
+
+```text
+I optimize by reducing input size early, joining at the right grain, and validating that performance improvements do not change the business result.
+```
+
+
+## 4. Optimization Vocabulary
+
+Important terms:
+
+```text
+Execution plan:
+Database's plan for scanning, joining, filtering, sorting, and aggregating data.
+
+Scan:
+Reading data from a table or index.
+
+Full table scan:
+Reading the entire table.
+
+Index seek:
+Using an index to directly find matching rows.
+
+Partition pruning:
+Skipping partitions that do not match a filter.
+
+Clustering / sort key:
+Physical organization that helps data skipping and range queries.
+
+Predicate:
+A filter condition.
+
+Sargable predicate:
+A filter that can use an index/partition/metadata efficiently.
+
+Cardinality:
+Estimated or actual number of rows.
+
+Selectivity:
+How much a filter reduces rows.
+
+Join strategy:
+Physical method used to join tables.
+
+Broadcast join:
+Small table is copied to workers to join with large table.
+
+Shuffle join:
+Data is redistributed by join key across workers.
+
+Data skew:
+Some keys have far more rows than others.
+
+Spill:
+Intermediate data does not fit memory and spills to disk.
+
+Materialization:
+Physically storing intermediate query results.
+
+CTE:
+Named query block in a WITH clause.
+
+Temp table:
+Temporary physical table used during a session/job.
+
+Materialized view:
+Precomputed result that can be reused.
+
+Incremental processing:
+Processing only new/changed data rather than all history.
+
+Idempotency:
+Safe rerun without duplicate or corrupt output.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for every optimization question:
+
+```text
+1. Restate the query goal.
+2. Identify current output grain.
+3. Ask for baseline:
+   - runtime
+   - rows scanned
+   - bytes scanned
+   - rows output
+   - cost
+   - execution plan
+4. Identify likely bottleneck:
+   - scan
+   - join
+   - aggregation
+   - sort
+   - window
+   - shuffle
+   - skew
+5. Check correctness risks:
+   - duplicate rows
+   - wrong denominator
+   - NULL handling
+   - filtering logic
+6. Apply optimization:
+   - filter early
+   - select fewer columns
+   - use partition filter
+   - aggregate before join
+   - dedupe before join
+   - rewrite subquery
+   - use EXISTS
+   - materialize intermediate result
+   - index/cluster/sort key
+   - incrementalize
+7. Validate results:
+   - row count
+   - metric totals
+   - sample records
+   - before/after reconciliation
+8. Compare performance.
+9. Explain trade-offs.
+```
+
+Short version:
+
+```text
+Goal:
+Baseline:
+Bottleneck:
+Rewrite:
+Validation:
+Trade-off:
+```
+
+Strict rule:
+
+```text
+No optimization answer is strong if the candidate changes SQL without explaining how they know the query is slow or how they validate the result.
+```
+
+
+## 6. Scoring Rubric
+
+Score each query optimization answer from 0 to 5.
+
+### Score 0
+
+No meaningful optimization reasoning.
+
+### Score 1
+
+Gives generic advice such as "add index" without context.
+
+### Score 2
+
+Identifies simple issues but misses correctness, grain, or execution plan.
+
+### Score 3
+
+Reasonable optimization ideas but weak on validation, trade-offs, or DE-scale thinking.
+
+### Score 4
+
+Interview-ready. Measures, identifies bottleneck, rewrites safely, validates correctness, and explains trade-offs.
+
+### Score 5
+
+Strong. Handles scans, joins, partitions, indexes/clustering, aggregations, windows, CTE materialization, distributed joins, skew, incremental pipelines, cost, and production reliability.
+
+Do not give 4+ if:
+
+```text
+candidate does not ask for execution plan or runtime metrics
+candidate suggests index for every problem
+candidate ignores table grain
+candidate optimizes by changing result semantics
+candidate cannot explain partition pruning
+candidate cannot explain join explosion
+candidate cannot validate before/after results
+candidate ignores data skew
+candidate ignores warehouse-specific behavior
+candidate uses SELECT *
+candidate cannot explain why a rewrite is faster
+candidate cannot explain trade-offs
+```
+
+
+## 7. Optimization First Principles
+
+Core principles:
+
+```text
+Read less data.
+Move less data.
+Sort less data.
+Join fewer rows.
+Aggregate at the right grain.
+Filter earlier.
+Select fewer columns.
+Avoid repeated work.
+Use physical design.
+Use incremental processing.
+Validate correctness.
+```
+
+Common improvements:
+
+```text
+replace SELECT * with needed columns
+filter partition column directly
+avoid functions on filter column
+pre-aggregate before joining
+deduplicate before joining
+replace JOIN + DISTINCT with EXISTS
+replace correlated subquery with window or pre-aggregation
+filter before window functions
+materialize expensive reusable intermediate results
+use calendar/expected tables carefully
+use approximate distinct only when acceptable
+```
+
+Interview line:
+
+```text
+Most SQL optimization is about reducing the amount of data that flows into expensive operations.
+```
+
+
+## 8. Baseline Before Optimizing
+
+Before changing a query, capture baseline.
+
+Ask for:
+
+```text
+query runtime
+bytes scanned
+rows scanned
+rows output
+execution plan
+warehouse size/resource usage
+table sizes
+partition filters
+join row counts
+spill/shuffle information
+frequency of query
+SLA requirement
+cost constraints
+```
+
+Example baseline notes:
+
+```text
+Query runtime: 42 minutes
+Bytes scanned: 3.2 TB
+Output rows: 2 million
+Bottleneck: large shuffle join between orders and events
+Frequency: daily
+SLA: must finish in 10 minutes
+```
+
+Validation baseline:
+
+```sql
+SELECT COUNT(*) FROM original_result;
+SELECT SUM(metric_value) FROM original_result;
+```
+
+Interview line:
+
+```text
+I first capture runtime, scan size, and output checks so I can prove the optimization helped and did not change the result incorrectly.
+```
+
+
+## 9. Reading Execution Plans at Interview Level
+
+You do not need to be a DBA, but you should recognize key plan signals.
+
+Look for:
+
+```text
+full table scan
+large scan row count
+filter applied late
+join order
+join type
+estimated rows vs actual rows
+large sort
+large hash aggregate
+broadcast vs shuffle
+spills to disk
+missing partition pruning
+nested loop on huge table
+repeated subquery scans
+```
+
+Common red flags:
+
+```text
+table scan on huge table without date filter
+function on partition column
+join output much larger than inputs
+sort before reducing rows
+window function over raw events
+COUNT DISTINCT on raw massive data
+same CTE scanned many times
+bad cardinality estimates
+```
+
+Interview-safe plan explanation:
+
+```text
+I would look at the plan to see which stage reads the most data or takes the most time, then target that stage rather than guessing.
+```
+
+
+## 10. SELECT Only Needed Columns
+
+Bad:
+
+```sql
+SELECT *
+FROM events
+WHERE event_date >= DATE '2026-01-01';
+```
+
+Better:
+
+```sql
+SELECT
+  event_id,
+  user_id,
+  event_name,
+  event_time
+FROM events
+WHERE event_date >= DATE '2026-01-01';
+```
+
+Why it helps:
+
+```text
+less data read
+less network transfer
+less memory usage
+less shuffle volume
+less spill risk
+columnar warehouses can skip unused columns
+```
+
+Data Engineering rule:
+
+```text
+In production transformations, project only the columns needed by downstream logic.
+```
+
+Interview line:
+
+```text
+In columnar warehouses, selecting fewer columns can directly reduce scanned bytes and cost.
+```
+
+
+## 11. Filter Early
+
+Bad:
+
+```sql
+WITH joined AS (
+  SELECT *
+  FROM orders o
+  JOIN users u
+    ON o.user_id = u.user_id
+)
+SELECT *
+FROM joined
+WHERE order_date >= DATE '2026-01-01';
+```
+
+Better:
+
+```sql
+WITH filtered_orders AS (
+  SELECT
+    order_id,
+    user_id,
+    order_date,
+    total_amount
+  FROM orders
+  WHERE order_date >= DATE '2026-01-01'
+)
+SELECT
+  o.order_id,
+  o.user_id,
+  u.country,
+  o.total_amount
+FROM filtered_orders o
+JOIN users u
+  ON o.user_id = u.user_id;
+```
+
+Why it helps:
+
+```text
+fewer rows enter the join
+less memory
+less shuffle
+faster aggregation later
+```
+
+Caution:
+
+```text
+Filter movement must preserve logic.
+For LEFT JOINs, moving right-table filters between ON and WHERE can change results.
+```
+
+Interview line:
+
+```text
+Filtering early is powerful, but I verify it does not change join semantics or denominators.
+```
+
+
+## 12. Partition Pruning
+
+Partition pruning means the database skips partitions that cannot match the filter.
+
+Good partition filter:
+
+```sql
+SELECT
+  order_id,
+  total_amount
+FROM orders
+WHERE order_date >= DATE '2026-01-01'
+  AND order_date <  DATE '2026-02-01';
+```
+
+Bad partition filter:
+
+```sql
+SELECT
+  order_id,
+  total_amount
+FROM orders
+WHERE CAST(order_time AS DATE) = DATE '2026-01-01';
+```
+
+Why bad:
+
+```text
+If the table is partitioned by order_date, applying a function to order_time may prevent partition pruning.
+```
+
+Better:
+
+```sql
+SELECT
+  order_id,
+  total_amount
+FROM orders
+WHERE order_time >= TIMESTAMP '2026-01-01 00:00:00'
+  AND order_time <  TIMESTAMP '2026-01-02 00:00:00';
+```
+
+Or if partition column exists:
+
+```sql
+WHERE order_date = DATE '2026-01-01'
+```
+
+Interview line:
+
+```text
+For large partitioned tables, I filter directly on the partition column or use range predicates that allow pruning.
+```
+
+
+## 13. Avoid Functions on Filter Columns
+
+Bad:
+
+```sql
+SELECT *
+FROM orders
+WHERE DATE_TRUNC('month', order_time) = DATE '2026-01-01';
+```
+
+Better:
+
+```sql
+SELECT *
+FROM orders
+WHERE order_time >= TIMESTAMP '2026-01-01 00:00:00'
+  AND order_time <  TIMESTAMP '2026-02-01 00:00:00';
+```
+
+Bad:
+
+```sql
+SELECT *
+FROM users
+WHERE LOWER(email) = 'abc@example.com';
+```
+
+Better:
+
+```sql
+SELECT *
+FROM users
+WHERE normalized_email = 'abc@example.com';
+```
+
+Why it helps:
+
+```text
+functions on columns can prevent index usage, partition pruning, or data skipping
+```
+
+Interview line:
+
+```text
+I avoid wrapping filter/join columns in functions and instead use normalized/staged columns or range predicates.
+```
+
+
+## 14. Sargable Predicates
+
+A sargable predicate can use indexes, partitions, clustering, or metadata efficiently.
+
+Usually sargable:
+
+```sql
+WHERE order_date = DATE '2026-01-01'
+WHERE order_time >= TIMESTAMP '2026-01-01'
+  AND order_time <  TIMESTAMP '2026-02-01'
+WHERE user_id = 123
+WHERE status IN ('COMPLETED', 'REFUNDED')
+```
+
+Often not sargable:
+
+```sql
+WHERE CAST(order_time AS DATE) = DATE '2026-01-01'
+WHERE LOWER(email) = 'abc@example.com'
+WHERE amount + tax > 100
+WHERE COALESCE(country, 'UNKNOWN') = 'US'
+```
+
+Rewrite:
+
+```sql
+WHERE country = 'US'
+```
+
+and handle NULL separately if needed.
+
+Interview line:
+
+```text
+A good filter lets the engine narrow data before doing expensive work.
+```
+
+
+## 15. Avoid SELECT DISTINCT as a Fix
+
+Bad:
+
+```sql
+SELECT DISTINCT
+  u.user_id,
+  u.country,
+  o.order_id
+FROM users u
+JOIN orders o
+  ON u.user_id = o.user_id;
+```
+
+Problem:
+
+```text
+DISTINCT may hide join bugs.
+It can add expensive sort/hash distinct.
+It may not fix wrong metrics.
+```
+
+Better:
+
+```text
+Understand why duplicates exist.
+Check join cardinality.
+Deduplicate the correct table before join.
+Aggregate to correct grain.
+```
+
+Example:
+
+```sql
+WITH deduped_users AS (
+  SELECT *
+  FROM (
+    SELECT
+      *,
+      ROW_NUMBER() OVER (
+        PARTITION BY user_id
+        ORDER BY updated_at DESC
+      ) AS rn
+    FROM users
+  ) x
+  WHERE rn = 1
+)
+SELECT
+  o.order_id,
+  o.user_id,
+  u.country
+FROM orders o
+LEFT JOIN deduped_users u
+  ON o.user_id = u.user_id;
+```
+
+Interview line:
+
+```text
+DISTINCT is not an optimization strategy if it hides an incorrect join grain.
+```
+
+
+## 16. Aggregate Before Join
+
+Bad:
+
+```sql
+SELECT
+  u.country,
+  SUM(o.total_amount) AS revenue
+FROM orders o
+JOIN order_items oi
+  ON o.order_id = oi.order_id
+JOIN users u
+  ON o.user_id = u.user_id
+WHERE o.order_status = 'COMPLETED'
+GROUP BY u.country;
+```
+
+Problem:
+
+```text
+If orders.total_amount is order-level, joining order_items multiplies orders by item count.
+```
+
+Better:
+
+```sql
+WITH order_revenue AS (
+  SELECT
+    order_id,
+    user_id,
+    total_amount
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+)
+SELECT
+  u.country,
+  SUM(o.total_amount) AS revenue
+FROM order_revenue o
+JOIN users u
+  ON o.user_id = u.user_id
+GROUP BY u.country;
+```
+
+For two fact tables:
+
+```sql
+WITH order_metrics AS (
+  SELECT
+    user_id,
+    SUM(total_amount) AS revenue
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+  GROUP BY user_id
+),
+ticket_metrics AS (
+  SELECT
+    user_id,
+    COUNT(*) AS tickets
+  FROM tickets
+  GROUP BY user_id
+)
+SELECT
+  COALESCE(o.user_id, t.user_id) AS user_id,
+  o.revenue,
+  t.tickets
+FROM order_metrics o
+FULL OUTER JOIN ticket_metrics t
+  ON o.user_id = t.user_id;
+```
+
+Interview line:
+
+```text
+Pre-aggregation reduces join size and prevents double counting when joining multiple detailed tables.
+```
+
+
+## 17. Join Optimization
+
+Join cost depends on:
+
+```text
+input size
+join key cardinality
+join key distribution
+join strategy
+data movement
+right-side uniqueness
+filter pushdown
+selected columns
+```
+
+Optimization checklist:
+
+```text
+filter both sides before join
+select only join/output columns
+deduplicate dimensions
+aggregate facts to needed grain
+join on typed normalized keys
+avoid functions/casts in join condition
+use broadcast join for small dimensions when appropriate
+avoid many-to-many joins unless intentional
+validate row count after join
+handle skewed keys
+```
+
+Bad:
+
+```sql
+SELECT *
+FROM huge_events e
+JOIN huge_orders o
+  ON e.user_id = o.user_id;
+```
+
+Better:
+
+```sql
+WITH active_users AS (
+  SELECT DISTINCT user_id
+  FROM huge_events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+),
+user_orders AS (
+  SELECT
+    user_id,
+    COUNT(*) AS orders
+  FROM huge_orders
+  WHERE order_date >= DATE '2026-01-01'
+    AND order_date <  DATE '2026-02-01'
+  GROUP BY user_id
+)
+SELECT
+  a.user_id,
+  COALESCE(o.orders, 0) AS orders
+FROM active_users a
+LEFT JOIN user_orders o
+  ON a.user_id = o.user_id;
+```
+
+Interview line:
+
+```text
+For large joins, reduce each side to the required grain before joining.
+```
+
+
+## 18. EXISTS Instead of JOIN DISTINCT
+
+Bad:
+
+```sql
+SELECT DISTINCT
+  u.user_id
+FROM users u
+JOIN orders o
+  ON u.user_id = o.user_id
+WHERE o.order_status = 'COMPLETED';
+```
+
+Better:
+
+```sql
+SELECT
+  u.user_id
+FROM users u
+WHERE EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.user_id = u.user_id
+    AND o.order_status = 'COMPLETED'
+);
+```
+
+Why it helps:
+
+```text
+does not multiply users by order count
+does not require DISTINCT
+can stop after finding first match
+expresses semi-join intent
+```
+
+Use when:
+
+```text
+only existence matters
+no right-side attributes are needed
+```
+
+Interview line:
+
+```text
+EXISTS is often better than JOIN plus DISTINCT when the question is only about whether a match exists.
+```
+
+
+## 19. NOT EXISTS Instead of NOT IN
+
+Bad:
+
+```sql
+SELECT
+  user_id
+FROM users
+WHERE user_id NOT IN (
+  SELECT user_id
+  FROM orders
+);
+```
+
+Problem:
+
+```text
+NULLs in orders.user_id can make NOT IN return unexpected results.
+```
+
+Better:
+
+```sql
+SELECT
+  u.user_id
+FROM users u
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.user_id = u.user_id
+);
+```
+
+Why it helps:
+
+```text
+NULL-safe anti-join
+clearer intent
+avoids row multiplication
+```
+
+Interview line:
+
+```text
+For anti-joins, I prefer NOT EXISTS because it is safer with NULLs.
+```
+
+
+## 20. Correlated Subquery Rewrite
+
+Bad or potentially expensive:
+
+```sql
+SELECT
+  o.order_id,
+  o.user_id,
+  o.total_amount
+FROM orders o
+WHERE o.total_amount > (
+  SELECT AVG(o2.total_amount)
+  FROM orders o2
+  WHERE o2.user_id = o.user_id
+);
+```
+
+Rewrite with window:
+
+```sql
+WITH orders_with_avg AS (
+  SELECT
+    order_id,
+    user_id,
+    total_amount,
+    AVG(total_amount) OVER (
+      PARTITION BY user_id
+    ) AS user_avg_amount
+  FROM orders
+)
+SELECT *
+FROM orders_with_avg
+WHERE total_amount > user_avg_amount;
+```
+
+Rewrite with pre-aggregation:
+
+```sql
+WITH user_avg AS (
+  SELECT
+    user_id,
+    AVG(total_amount) AS user_avg_amount
+  FROM orders
+  GROUP BY user_id
+)
+SELECT
+  o.order_id,
+  o.user_id,
+  o.total_amount,
+  a.user_avg_amount
+FROM orders o
+JOIN user_avg a
+  ON o.user_id = a.user_id
+WHERE o.total_amount > a.user_avg_amount;
+```
+
+Interview line:
+
+```text
+Correlated subqueries can often be rewritten as a window function or pre-aggregated join for clarity and performance.
+```
+
+
+## 21. Window Function Optimization
+
+Window functions can be expensive because they often require sorting within partitions.
+
+Optimization checklist:
+
+```text
+filter rows before window
+select only needed columns
+partition by necessary keys only
+avoid very high-cardinality unnecessary partitions
+avoid ORDER BY if not needed
+deduplicate before window when possible
+pre-aggregate before window if window is over summary rows
+limit date range
+use QUALIFY where available for readability
+```
+
+Bad:
+
+```sql
+SELECT
+  *,
+  ROW_NUMBER() OVER (
+    PARTITION BY user_id
+    ORDER BY event_time DESC
+  ) AS rn
+FROM events;
+```
+
+Better:
+
+```sql
+WITH filtered_events AS (
+  SELECT
+    event_id,
+    user_id,
+    event_time
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY event_time DESC, event_id DESC
+    ) AS rn
+  FROM filtered_events
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Window functions are easier to optimize when the input is already filtered and reduced to the needed columns.
+```
+
+
+## 22. COUNT DISTINCT Optimization
+
+COUNT DISTINCT can be expensive at scale.
+
+Bad:
+
+```sql
+SELECT
+  event_date,
+  COUNT(DISTINCT user_id) AS dau
+FROM events
+GROUP BY event_date;
+```
+
+This may be necessary, but optimize inputs:
+
+```sql
+WITH user_days AS (
+  SELECT DISTINCT
+    event_date,
+    user_id
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+    AND user_id IS NOT NULL
+)
+SELECT
+  event_date,
+  COUNT(*) AS dau
+FROM user_days
+GROUP BY event_date;
+```
+
+Options:
+
+```text
+pre-aggregate user-day table
+incremental daily active user table
+approximate distinct when business accepts it
+bitmap/hll sketches depending on warehouse
+partition by date
+filter event types if appropriate
+```
+
+Caution:
+
+```text
+Approximate distinct is not acceptable for all business/finance metrics.
+```
+
+Interview line:
+
+```text
+For repeated DAU/MAU metrics, I would precompute user-day or use approved approximate distinct methods if exactness is not required.
+```
+
+
+## 23. ORDER BY and LIMIT
+
+Bad:
+
+```sql
+SELECT *
+FROM events
+ORDER BY event_time DESC
+LIMIT 100;
+```
+
+Potential issue:
+
+```text
+Sorts huge amount of data if no pruning or clustering helps.
+```
+
+Better:
+
+```sql
+SELECT
+  event_id,
+  user_id,
+  event_time
+FROM events
+WHERE event_date >= CURRENT_DATE - INTERVAL '7 days'
+ORDER BY event_time DESC
+LIMIT 100;
+```
+
+For top N per group:
+
+```sql
+WITH ranked AS (
+  SELECT
+    user_id,
+    event_id,
+    event_time,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY event_time DESC
+    ) AS rn
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+)
+SELECT *
+FROM ranked
+WHERE rn <= 3;
+```
+
+Interview line:
+
+```text
+ORDER BY can be expensive, so I reduce rows before sorting whenever possible.
+```
+
+
+## 24. CTE Optimization
+
+CTEs improve readability but do not always improve performance.
+
+Important points:
+
+```text
+some databases inline CTEs
+some materialize CTEs
+reusing a CTE multiple times can cause repeated work or materialization depending on engine
+CTEs are not automatically indexed
+CTEs do not guarantee performance improvement
+```
+
+Good CTE use:
+
+```text
+break complex logic into stages
+filter early
+pre-aggregate before join
+deduplicate before join
+make validation easier
+```
+
+When to consider temp/materialized table:
+
+```text
+same expensive intermediate reused many times
+intermediate is large but much smaller than raw source
+need stats/indexes on intermediate
+pipeline step needs checkpointing
+debugging/restartability needed
+```
+
+Interview line:
+
+```text
+I use CTEs for clarity, but for performance I check whether the engine inlines or materializes them and consider temp/materialized tables for expensive reused results.
+```
+
+
+## 25. Temp Table vs CTE vs Materialized View
+
+### CTE
+
+Use when:
+
+```text
+query readability
+single-use intermediate
+logic is not reused across jobs
+small/moderate intermediate
+```
+
+### Temp table
+
+Use when:
+
+```text
+same intermediate reused multiple times in one job
+need to inspect intermediate result
+need indexing/statistics in some databases
+pipeline step can benefit from checkpoint
+```
+
+### Materialized view/table
+
+Use when:
+
+```text
+same expensive result reused repeatedly
+dashboard or pipeline needs fast access
+data can be refreshed on schedule
+cost of storage is acceptable
+```
+
+Trade-offs:
+
+```text
+CTE: simple, no storage, may recompute
+Temp table: extra write, better reuse/debug
+Materialized view/table: fastest reuse, storage/refresh complexity
+```
+
+Interview line:
+
+```text
+I choose between CTE, temp table, and materialized table based on reuse, size, refresh frequency, and operational needs.
+```
+
+
+## 26. Indexing Basics for Interviews
+
+Indexes help row-store databases find rows without scanning everything.
+
+Useful for:
+
+```text
+high-selectivity filters
+join keys
+foreign keys
+order by with limit
+range queries
+unique constraints
+```
+
+Not always useful for:
+
+```text
+small tables
+low-selectivity columns
+queries returning large percentage of table
+write-heavy tables where index maintenance is costly
+columnar warehouses where partitioning/clustering matters more
+```
+
+Common indexes:
+
+```text
+primary key index
+foreign key index
+composite index
+covering index
+unique index
+```
+
+Example:
+
+```sql
+CREATE INDEX idx_orders_user_date
+ON orders(user_id, order_date);
+```
+
+Caution:
+
+```text
+Index syntax and value differ by database.
+In cloud warehouses, partitioning and clustering may matter more than traditional indexes.
+```
+
+Interview line:
+
+```text
+I do not blindly add indexes; I match indexes to filters, joins, and query patterns, and consider write overhead.
+```
+
+
+## 27. Composite Index Order
+
+Composite index order matters.
+
+Index:
+
+```sql
+CREATE INDEX idx_orders_user_date
+ON orders(user_id, order_date);
+```
+
+Good for:
+
+```sql
+WHERE user_id = 123
+```
+
+Good for:
+
+```sql
+WHERE user_id = 123
+  AND order_date >= DATE '2026-01-01'
+```
+
+May not help as much for:
+
+```sql
+WHERE order_date >= DATE '2026-01-01'
+```
+
+Rule of thumb:
+
+```text
+put equality columns first
+then range columns
+align with common query patterns
+```
+
+Example for daily pipeline:
+
+```sql
+CREATE INDEX idx_orders_date_status
+ON orders(order_date, order_status);
+```
+
+Interview line:
+
+```text
+Composite index order should match the most common filter pattern, usually equality columns before range columns.
+```
+
+
+## 28. Partitioning vs Clustering vs Indexing
+
+High-level distinction:
+
+```text
+Partitioning:
+Splits table into large sections, often by date.
+Best for pruning large ranges.
+
+Clustering/sort key:
+Physically organizes data within partitions/table to improve data skipping and joins.
+
+Indexing:
+Auxiliary structure to find rows quickly, common in row-store systems.
+```
+
+Examples:
+
+```text
+Partition orders by order_date.
+Cluster orders by user_id.
+Index transactional database orders(user_id, order_date).
+```
+
+Interview line:
+
+```text
+For large analytical tables, date partitioning plus clustering on common join/filter keys is often more useful than traditional indexing.
+```
+
+
+## 29. Data Skew
+
+Data skew happens when some keys have far more rows than others.
+
+Examples:
+
+```text
+user_id is NULL for millions of rows
+country = 'US' dominates table
+unknown product_id has huge volume
+one customer has millions of events
+```
+
+Symptoms:
+
+```text
+one worker/task runs much longer
+shuffle stage slow
+memory spill
+join stage bottleneck
+```
+
+Detection:
+
+```sql
+SELECT
+  join_key,
+  COUNT(*) AS row_count
+FROM fact_table
+GROUP BY join_key
+ORDER BY row_count DESC
+LIMIT 20;
+```
+
+Mitigation options:
+
+```text
+filter or separate skewed keys
+handle NULL/UNKNOWN separately
+salt skewed keys for distributed joins
+broadcast small table
+pre-aggregate skewed side
+split heavy keys into separate pipeline
+```
+
+Interview line:
+
+```text
+If a distributed join is slow despite filters, I check for skewed join keys causing uneven work.
+```
+
+
+## 30. Handling NULL or UNKNOWN Skew
+
+Bad join risk:
+
+```text
+Millions of rows have user_id IS NULL or user_id = 'UNKNOWN'.
+Joining on this key can create skew or bad matches.
+```
+
+Better:
+
+```sql
+WITH valid_events AS (
+  SELECT *
+  FROM events
+  WHERE user_id IS NOT NULL
+),
+invalid_events AS (
+  SELECT *
+  FROM events
+  WHERE user_id IS NULL
+)
+SELECT *
+FROM valid_events e
+JOIN users u
+  ON e.user_id = u.user_id;
+```
+
+For metrics:
+
+```text
+report UNKNOWN separately
+do not join all NULL keys together
+```
+
+Interview line:
+
+```text
+I handle NULL or UNKNOWN keys separately because they can cause both correctness issues and data skew.
+```
+
+
+## 31. Incremental Query Optimization
+
+Bad daily pipeline:
+
+```sql
+CREATE TABLE mart.orders_daily AS
+SELECT *
+FROM raw_orders;
+```
+
+Problem:
+
+```text
+reprocesses all history every run
+slow and expensive as data grows
+```
+
+Better incremental pattern:
+
+```sql
+WITH incremental_orders AS (
+  SELECT *
+  FROM raw_orders
+  WHERE updated_at > (
+    SELECT last_successful_watermark
+    FROM pipeline_watermarks
+    WHERE pipeline_name = 'orders_daily'
+  )
+),
+deduped AS (
+  SELECT *
+  FROM (
+    SELECT
+      *,
+      ROW_NUMBER() OVER (
+        PARTITION BY order_id
+        ORDER BY updated_at DESC, ingested_at DESC
+      ) AS rn
+    FROM incremental_orders
+  ) x
+  WHERE rn = 1
+)
+SELECT *
+FROM deduped;
+```
+
+Then MERGE into target by `order_id`.
+
+Interview line:
+
+```text
+For recurring pipelines, the biggest optimization is often incremental processing instead of full historical recomputation.
+```
+
+
+## 32. Partition Overwrite Optimization
+
+For daily partitioned output, overwrite only affected partitions.
+
+Example:
+
+```text
+Daily job computes data for 2026-01-15.
+Do not rewrite the whole table.
+Overwrite only partition_date = 2026-01-15.
+```
+
+Pattern:
+
+```sql
+DELETE FROM mart.daily_metrics
+WHERE metric_date = DATE '2026-01-15';
+
+INSERT INTO mart.daily_metrics
+SELECT ...
+WHERE metric_date = DATE '2026-01-15';
+```
+
+Or warehouse-specific partition overwrite.
+
+Benefits:
+
+```text
+less compute
+idempotent reruns
+lower cost
+faster backfills
+reduced lock/contention
+```
+
+Caution:
+
+```text
+Use transaction/atomic swap when supported.
+Handle late-arriving data with lookback windows.
+```
+
+Interview line:
+
+```text
+For partitioned marts, overwrite or merge only affected partitions rather than rebuilding all history.
+```
+
+
+## 33. Late Arriving Data and Lookback Windows
+
+Problem:
+
+```text
+Some source records arrive late, so processing only records updated after last watermark may miss changes.
+```
+
+Common pattern:
+
+```text
+use a lookback window
+reprocess last N days
+dedupe/merge by business key
+```
+
+SQL:
+
+```sql
+WITH source_window AS (
+  SELECT *
+  FROM raw_orders
+  WHERE updated_at >= CURRENT_DATE - INTERVAL '3 days'
+),
+deduped AS (
+  SELECT *
+  FROM (
+    SELECT
+      *,
+      ROW_NUMBER() OVER (
+        PARTITION BY order_id
+        ORDER BY updated_at DESC, ingested_at DESC
+      ) AS rn
+    FROM source_window
+  ) x
+  WHERE rn = 1
+)
+SELECT *
+FROM deduped;
+```
+
+Interview line:
+
+```text
+A lookback window improves correctness for late arrivals, but it must be paired with idempotent merge or partition overwrite to avoid duplicates.
+```
+
+
+## 34. Materialized Aggregates
+
+Repeated dashboards should not always scan raw events.
+
+Bad:
+
+```sql
+SELECT
+  event_date,
+  COUNT(DISTINCT user_id) AS dau
+FROM raw_events
+GROUP BY event_date;
+```
+
+Better for repeated use:
+
+```text
+Build daily_user_activity table:
+one row per user_id per activity_date.
+```
+
+Then:
+
+```sql
+SELECT
+  activity_date,
+  COUNT(*) AS dau
+FROM mart.daily_user_activity
+GROUP BY activity_date;
+```
+
+Benefits:
+
+```text
+less scan
+simpler query
+reusable metric base
+consistent definitions
+faster dashboards
+```
+
+Trade-off:
+
+```text
+extra storage
+refresh logic
+late-arriving event handling
+data freshness
+```
+
+Interview line:
+
+```text
+For repeated expensive metrics, I would create a pre-aggregated or materialized table at the reusable grain.
+```
+
+
+## 35. Approximate Aggregations
+
+Approximate aggregations can reduce cost for exploratory analytics.
+
+Examples:
+
+```text
+approx_count_distinct
+HyperLogLog sketches
+sampling
+top-k approximations
+```
+
+Use when:
+
+```text
+business accepts approximate answers
+exploratory dashboards
+large-scale trend monitoring
+exact count is too expensive
+```
+
+Do not use when:
+
+```text
+finance reporting
+billing
+compliance
+contractual metrics
+critical experiments requiring exactness
+```
+
+Interview line:
+
+```text
+Approximate distinct can be an optimization only when the business accepts approximation; otherwise I use exact or pre-aggregated strategies.
+```
+
+
+## 36. Optimizing GROUP BY
+
+GROUP BY can be expensive when grouping many raw rows.
+
+Optimize by:
+
+```text
+filtering early
+selecting only group and metric columns
+pre-aggregating in stages
+grouping at correct grain
+avoiding unnecessary high-cardinality group columns
+using partition filters
+using materialized aggregates for repeated queries
+```
+
+Bad:
+
+```sql
+SELECT
+  user_id,
+  event_time,
+  event_name,
+  COUNT(*) AS events
+FROM events
+GROUP BY user_id, event_time, event_name;
+```
+
+Maybe better:
+
+```sql
+SELECT
+  user_id,
+  CAST(event_time AS DATE) AS event_date,
+  COUNT(*) AS events
+FROM events
+WHERE event_date >= DATE '2026-01-01'
+GROUP BY user_id, CAST(event_time AS DATE);
+```
+
+Interview line:
+
+```text
+GROUP BY should match the business output grain; unnecessary grouping columns increase cardinality and cost.
+```
+
+
+## 37. Optimizing HAVING
+
+HAVING filters after aggregation.
+
+Bad if filter can happen before grouping:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS completed_orders
+FROM orders
+GROUP BY user_id
+HAVING SUM(CASE WHEN order_status = 'COMPLETED' THEN 1 ELSE 0 END) > 0;
+```
+
+Better:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS completed_orders
+FROM orders
+WHERE order_status = 'COMPLETED'
+GROUP BY user_id;
+```
+
+Use HAVING when:
+
+```text
+filter depends on aggregate result
+```
+
+Example:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS completed_orders
+FROM orders
+WHERE order_status = 'COMPLETED'
+GROUP BY user_id
+HAVING COUNT(*) >= 5;
+```
+
+Interview line:
+
+```text
+Push row-level filters to WHERE; use HAVING only for aggregate-level filters.
+```
+
+
+## 38. Optimizing UNION vs UNION ALL
+
+UNION removes duplicates.
+
+```sql
+SELECT id FROM a
+UNION
+SELECT id FROM b;
+```
+
+UNION ALL keeps all rows.
+
+```sql
+SELECT id FROM a
+UNION ALL
+SELECT id FROM b;
+```
+
+Performance difference:
+
+```text
+UNION often requires sort/hash distinct
+UNION ALL is usually cheaper
+```
+
+Data Engineering pattern:
+
+```text
+Use UNION ALL for staging multiple sources, then deduplicate explicitly by business key if needed.
+```
+
+Example:
+
+```sql
+WITH combined AS (
+  SELECT 'source_a' AS source_system, * FROM source_a
+  UNION ALL
+  SELECT 'source_b' AS source_system, * FROM source_b
+),
+deduped AS (
+  SELECT *
+  FROM (
+    SELECT
+      *,
+      ROW_NUMBER() OVER (
+        PARTITION BY business_key
+        ORDER BY updated_at DESC
+      ) AS rn
+    FROM combined
+  ) x
+  WHERE rn = 1
+)
+SELECT *
+FROM deduped;
+```
+
+Interview line:
+
+```text
+UNION ALL plus explicit business dedupe is often better than UNION when source overlap must be controlled and audited.
+```
+
+
+## 39. Predicate Pushdown
+
+Predicate pushdown means filters are applied as close to the data source as possible.
+
+Good:
+
+```sql
+WITH filtered_orders AS (
+  SELECT *
+  FROM orders
+  WHERE order_date >= DATE '2026-01-01'
+)
+SELECT *
+FROM filtered_orders;
+```
+
+Risky:
+
+```sql
+SELECT *
+FROM external_table
+WHERE CAST(raw_timestamp AS DATE) = DATE '2026-01-01';
+```
+
+Better:
+
+```text
+store parsed partition date during ingestion
+filter directly on partition column
+```
+
+In data lakes:
+
+```text
+Parquet/ORC can skip row groups if predicates match stored statistics.
+Partition folders can be pruned by date.
+```
+
+Interview line:
+
+```text
+I design ingestion tables with typed partition/filter columns so predicates can be pushed down efficiently.
+```
+
+
+## 40. File Format and Layout Awareness
+
+For lakehouse/data lake systems, query performance depends on file layout.
+
+Important concepts:
+
+```text
+columnar file formats like Parquet/ORC
+partition folders
+file size
+small file problem
+statistics/min-max metadata
+compaction
+clustering/z-ordering
+schema evolution
+```
+
+Small file problem:
+
+```text
+many tiny files create overhead and slow scans
+```
+
+Fix:
+
+```text
+compact files
+write larger target file sizes
+partition appropriately
+avoid over-partitioning
+```
+
+Interview line:
+
+```text
+For data lake performance, table layout and file size can matter as much as SQL syntax.
+```
+
+
+## 41. Over-Partitioning
+
+Partitioning is not always good.
+
+Bad partitioning:
+
+```text
+partition by user_id with millions of users
+partition by timestamp to the second
+partition by high-cardinality column
+```
+
+Problems:
+
+```text
+too many partitions
+metadata overhead
+small files
+slow planning
+hard maintenance
+```
+
+Good partitioning candidates:
+
+```text
+date
+region if limited
+event_type if limited and common filter
+tenant_id only if moderate and frequently filtered
+```
+
+Interview line:
+
+```text
+Partition columns should be commonly filtered and not too high-cardinality.
+```
+
+
+## 42. Data Type Choices
+
+Data types affect performance and correctness.
+
+Good practices:
+
+```text
+use DATE for dates
+use TIMESTAMP for event times
+use numeric types for numeric values
+avoid storing numbers as strings
+standardize timezone
+avoid unnecessary casts
+store normalized join keys
+```
+
+Bad:
+
+```sql
+WHERE CAST(order_id AS INT) = 123
+```
+
+Better:
+
+```text
+store order_id as integer in staging
+```
+
+Interview line:
+
+```text
+Clean typed columns in staging improve both performance and data quality.
+```
+
+
+## 43. Optimizing LIKE and Pattern Matching
+
+Bad:
+
+```sql
+WHERE email LIKE '%@gmail.com'
+```
+
+Why slow:
+
+```text
+leading wildcard usually prevents index seek
+may scan many rows
+```
+
+Better options:
+
+```text
+store email_domain
+index/cluster email_domain
+precompute normalized fields
+use search indexes if platform supports
+```
+
+Example:
+
+```sql
+WHERE email_domain = 'gmail.com'
+```
+
+Interview line:
+
+```text
+For repeated pattern filters, I precompute searchable attributes instead of scanning strings with leading wildcards.
+```
+
+
+## 44. Optimizing JSON Queries
+
+JSON parsing can be expensive.
+
+Bad:
+
+```sql
+SELECT
+  JSON_VALUE(payload, '$.user.id') AS user_id
+FROM raw_events
+WHERE JSON_VALUE(payload, '$.eventName') = 'purchase';
+```
+
+Better:
+
+```text
+extract frequently used fields during ingestion/staging
+store typed columns:
+user_id
+event_name
+event_time
+```
+
+SQL:
+
+```sql
+SELECT
+  user_id
+FROM staged_events
+WHERE event_name = 'purchase';
+```
+
+Use JSON raw payload for:
+
+```text
+audit
+rare fields
+debugging
+schema-flexible ingestion
+```
+
+Interview line:
+
+```text
+For frequently queried JSON fields, I extract typed columns in staging to avoid repeated parsing and improve pruning/indexing.
+```
+
+
+## 45. Optimizing Date Truncation Metrics
+
+Bad repeated expression:
+
+```sql
+SELECT
+  DATE_TRUNC('day', event_time) AS event_day,
+  COUNT(*)
+FROM events
+GROUP BY DATE_TRUNC('day', event_time);
+```
+
+Better if used often:
+
+```text
+store event_date during ingestion
+partition by event_date
+```
+
+SQL:
+
+```sql
+SELECT
+  event_date,
+  COUNT(*)
+FROM events
+WHERE event_date >= DATE '2026-01-01'
+  AND event_date <  DATE '2026-02-01'
+GROUP BY event_date;
+```
+
+Interview line:
+
+```text
+For common date-grain metrics, storing event_date avoids repeated timestamp truncation and enables partition pruning.
+```
+
+
+## 46. Optimizing Top-N Queries
+
+Global top N:
+
+```sql
+SELECT
+  product_id,
+  SUM(revenue) AS revenue
+FROM sales
+WHERE sale_date >= DATE '2026-01-01'
+GROUP BY product_id
+ORDER BY revenue DESC
+LIMIT 10;
+```
+
+Top N per group:
+
+```sql
+WITH category_revenue AS (
+  SELECT
+    category,
+    product_id,
+    SUM(revenue) AS revenue
+  FROM sales
+  WHERE sale_date >= DATE '2026-01-01'
+  GROUP BY category, product_id
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY category
+      ORDER BY revenue DESC
+    ) AS rn
+  FROM category_revenue
+)
+SELECT *
+FROM ranked
+WHERE rn <= 10;
+```
+
+Optimization:
+
+```text
+filter date range
+aggregate before ranking
+rank aggregated rows, not raw rows
+```
+
+Interview line:
+
+```text
+For top-N per group, aggregate to the ranking grain first, then apply window ranking.
+```
+
+
+## 47. Optimizing Deduplication Queries
+
+Bad:
+
+```sql
+SELECT DISTINCT *
+FROM raw_events;
+```
+
+Better:
+
+```sql
+WITH filtered AS (
+  SELECT
+    event_id,
+    user_id,
+    event_name,
+    event_time,
+    ingested_at
+  FROM raw_events
+  WHERE event_date >= DATE '2026-01-01'
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY event_id
+      ORDER BY ingested_at DESC
+    ) AS rn
+  FROM filtered
+  WHERE event_id IS NOT NULL
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Optimization ideas:
+
+```text
+filter by partition
+select needed columns
+dedupe only affected incremental window
+use stable key
+avoid DISTINCT *
+```
+
+Interview line:
+
+```text
+Efficient dedupe starts with the dedupe key and filters the dataset before ranking.
+```
+
+
+## 48. Optimizing Gaps and Islands Queries
+
+Bad:
+
+```text
+Run row_number over raw event rows with many events per user per day.
+```
+
+Better:
+
+```sql
+WITH user_days AS (
+  SELECT DISTINCT
+    user_id,
+    event_date
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+),
+numbered AS (
+  SELECT
+    user_id,
+    event_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY event_date
+    ) AS rn
+  FROM user_days
+)
+SELECT *
+FROM numbered;
+```
+
+Why it helps:
+
+```text
+reduces raw events to one row per user-day
+less sorting/window cost
+correct streak logic
+```
+
+Interview line:
+
+```text
+For streaks, deduplicating to entity-date grain improves both correctness and performance.
+```
+
+
+## 49. Optimizing Reconciliation Queries
+
+Source-target reconciliation can be expensive.
+
+Optimize by:
+
+```text
+compare only relevant partitions
+select only comparison columns
+hash wide rows if needed
+dedupe each side by business key first
+aggregate counts before detailed comparisons
+separate missing-key check from value mismatch check
+```
+
+Pattern:
+
+```sql
+WITH source_base AS (
+  SELECT
+    id,
+    amount,
+    status,
+    updated_at
+  FROM source_table
+  WHERE load_date = DATE '2026-01-01'
+),
+target_base AS (
+  SELECT
+    id,
+    amount,
+    status,
+    updated_at
+  FROM target_table
+  WHERE load_date = DATE '2026-01-01'
+)
+SELECT
+  COALESCE(s.id, t.id) AS id,
+  CASE
+    WHEN s.id IS NULL THEN 'ONLY_IN_TARGET'
+    WHEN t.id IS NULL THEN 'ONLY_IN_SOURCE'
+    WHEN s.amount <> t.amount OR s.status <> t.status THEN 'MISMATCH'
+    ELSE 'MATCH'
+  END AS status
+FROM source_base s
+FULL OUTER JOIN target_base t
+  ON s.id = t.id;
+```
+
+Interview line:
+
+```text
+For reconciliation, I reduce both sides to the same partition and key grain before full outer joining.
+```
+
+
+## 50. Optimizing SCD Joins
+
+As-of joins can be expensive.
+
+Challenges:
+
+```text
+range join condition
+large fact table
+large history table
+overlapping intervals causing duplicates
+missing intervals
+```
+
+Optimization ideas:
+
+```text
+filter fact date range
+filter dimension intervals overlapping that range
+partition/cluster by entity and effective dates
+validate non-overlapping intervals
+precompute current snapshot if current-only reporting
+use surrogate dimension key during ingestion if possible
+```
+
+Example:
+
+```sql
+WITH facts AS (
+  SELECT *
+  FROM orders
+  WHERE order_date >= DATE '2026-01-01'
+    AND order_date <  DATE '2026-02-01'
+),
+history AS (
+  SELECT *
+  FROM user_plan_history
+  WHERE effective_from < TIMESTAMP '2026-02-01'
+    AND (effective_to IS NULL OR effective_to >= TIMESTAMP '2026-01-01')
+)
+SELECT
+  f.order_id,
+  h.plan
+FROM facts f
+LEFT JOIN history h
+  ON f.user_id = h.user_id
+ AND f.order_time >= h.effective_from
+ AND (h.effective_to IS NULL OR f.order_time < h.effective_to);
+```
+
+Interview line:
+
+```text
+For SCD as-of joins, I restrict both fact and history tables to overlapping time ranges and validate one match per fact.
+```
+
+
+## 51. Optimizing MERGE / UPSERT
+
+MERGE can be slow if source and target are huge.
+
+Optimize by:
+
+```text
+dedupe source before merge
+merge only affected partitions
+filter target to impacted keys/partitions if supported
+avoid updating unchanged rows
+cluster target by merge key
+use staging table
+batch large merges
+separate inserts and updates if beneficial
+```
+
+Source dedupe:
+
+```sql
+WITH ranked_source AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM source_staging
+)
+SELECT *
+FROM ranked_source
+WHERE rn = 1;
+```
+
+Avoid updating unchanged rows:
+
+```text
+compare hash or important columns before update
+```
+
+Interview line:
+
+```text
+Before MERGE, I deduplicate source to one row per key and limit the operation to changed/affected partitions.
+```
+
+
+## 52. Optimizing DELETE / UPDATE
+
+Large DELETE/UPDATE operations can be expensive.
+
+Better patterns:
+
+```text
+partition overwrite
+create new table as select valid rows
+merge changed records only
+soft delete if appropriate
+batch deletes
+use partition filters
+```
+
+Bad:
+
+```sql
+DELETE FROM huge_table
+WHERE created_at < DATE '2020-01-01';
+```
+
+Better if partitioned:
+
+```sql
+DELETE FROM huge_table
+WHERE created_date < DATE '2020-01-01';
+```
+
+Or:
+
+```text
+drop old partitions
+```
+
+Interview line:
+
+```text
+For large historical deletes, partition-level operations are usually safer and faster than row-by-row deletes.
+```
+
+
+## 53. Optimizing Data Quality Checks
+
+Data quality checks can be expensive if they scan full history.
+
+Optimize by:
+
+```text
+check only new/changed partitions
+use incremental DQ checks
+maintain summary audit tables
+run full checks less frequently
+use approximate checks for early warning
+partition by load_date
+select only tested columns
+```
+
+Example:
+
+```sql
+SELECT
+  order_date,
+  COUNT(*) AS rows,
+  SUM(CASE WHEN order_id IS NULL THEN 1 ELSE 0 END) AS missing_order_id
+FROM orders
+WHERE order_date = DATE '2026-01-15'
+GROUP BY order_date;
+```
+
+Instead of:
+
+```sql
+SELECT COUNT(*)
+FROM orders
+WHERE order_id IS NULL;
+```
+
+on all history every run.
+
+Interview line:
+
+```text
+Production data-quality checks should usually run on affected partitions and maintain historical audit summaries.
+```
+
+
+## 54. Query Result Correctness Validation
+
+Every optimization needs correctness validation.
+
+Checks:
+
+```text
+row count before and after
+sum of key metrics before and after
+count distinct business keys
+duplicate key check
+unmatched join keys
+sample record comparison
+source-target reconciliation
+NULL rate comparison
+date range comparison
+```
+
+Example:
+
+```sql
+SELECT COUNT(*) FROM old_result;
+SELECT COUNT(*) FROM new_result;
+
+SELECT SUM(revenue) FROM old_result;
+SELECT SUM(revenue) FROM new_result;
+```
+
+Detailed diff:
+
+```sql
+SELECT *
+FROM old_result o
+FULL OUTER JOIN new_result n
+  ON o.business_key = n.business_key
+WHERE o.metric_value <> n.metric_value
+   OR o.metric_value IS NULL AND n.metric_value IS NOT NULL
+   OR o.metric_value IS NOT NULL AND n.metric_value IS NULL;
+```
+
+Interview line:
+
+```text
+A faster query is not better if it silently changes the result; I always validate business totals and key-level differences.
+```
+
+
+## 55. Optimization Trade-Offs
+
+Common trade-offs:
+
+```text
+speed vs storage
+freshness vs cost
+exactness vs approximation
+simplicity vs performance
+full rebuild vs incremental complexity
+CTE readability vs materialized intermediate
+index speed vs write overhead
+partition count vs metadata overhead
+pre-aggregation speed vs flexibility
+```
+
+Examples:
+
+```text
+Materialized daily_user_activity speeds dashboards but adds storage and refresh logic.
+Approximate distinct reduces cost but may not be acceptable for finance.
+Incremental pipelines are faster but need watermark and late-arrival handling.
+```
+
+Interview line:
+
+```text
+Optimization is not free; I explain the trade-off and choose based on SLA, cost, correctness, and maintainability.
+```
+
+
+## 56. Case Study: Slow DAU Query
+
+Problem:
+
+```text
+DAU query scans raw events and takes 40 minutes.
+```
+
+Bad query:
+
+```sql
+SELECT
+  CAST(event_time AS DATE) AS activity_date,
+  COUNT(DISTINCT user_id) AS dau
+FROM raw_events
+WHERE CAST(event_time AS DATE) >= DATE '2026-01-01'
+GROUP BY CAST(event_time AS DATE);
+```
+
+Issues:
+
+```text
+function on timestamp filter
+scans raw events
+COUNT DISTINCT on huge data
+repeated date cast
+no event_date partition filter
+```
+
+Better:
+
+```sql
+WITH user_days AS (
+  SELECT DISTINCT
+    event_date,
+    user_id
+  FROM raw_events
+  WHERE event_date >= DATE '2026-01-01'
+    AND user_id IS NOT NULL
+)
+SELECT
+  event_date,
+  COUNT(*) AS dau
+FROM user_days
+GROUP BY event_date;
+```
+
+Best production direction:
+
+```text
+Create mart.daily_user_activity with one row per user/date.
+Incrementally update affected dates.
+```
+
+Interview line:
+
+```text
+For repeated DAU, I optimize by using partition date, reducing to user-day grain, and materializing that reusable grain.
+```
+
+
+## 57. Case Study: Slow Revenue by Country Query
+
+Bad query:
+
+```sql
+SELECT
+  u.country,
+  SUM(o.total_amount) AS revenue
+FROM orders o
+JOIN order_items oi
+  ON o.order_id = oi.order_id
+JOIN users u
+  ON o.user_id = u.user_id
+WHERE o.order_status = 'COMPLETED'
+GROUP BY u.country;
+```
+
+Issues:
+
+```text
+order_items join is unnecessary for country revenue
+order total may be multiplied by item count
+extra join cost
+wrong result
+```
+
+Better:
+
+```sql
+WITH completed_orders AS (
+  SELECT
+    user_id,
+    total_amount
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+)
+SELECT
+  COALESCE(u.country, 'UNKNOWN') AS country,
+  SUM(o.total_amount) AS revenue
+FROM completed_orders o
+LEFT JOIN users u
+  ON o.user_id = u.user_id
+GROUP BY COALESCE(u.country, 'UNKNOWN');
+```
+
+Validation:
+
+```sql
+SELECT SUM(total_amount)
+FROM orders
+WHERE order_status = 'COMPLETED';
+```
+
+should match sum across countries including UNKNOWN.
+
+Interview line:
+
+```text
+Optimization sometimes means removing an unnecessary join that also causes wrong results.
+```
+
+
+## 58. Case Study: Slow Fact-to-Fact Join
+
+Bad query:
+
+```sql
+SELECT
+  o.user_id,
+  SUM(o.total_amount) AS revenue,
+  COUNT(t.ticket_id) AS tickets
+FROM orders o
+LEFT JOIN tickets t
+  ON o.user_id = t.user_id
+GROUP BY o.user_id;
+```
+
+Issues:
+
+```text
+orders and tickets are both facts
+many-to-many by user_id
+revenue and ticket counts can inflate
+large join
+```
+
+Better:
+
+```sql
+WITH order_metrics AS (
+  SELECT
+    user_id,
+    SUM(total_amount) AS revenue
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+  GROUP BY user_id
+),
+ticket_metrics AS (
+  SELECT
+    user_id,
+    COUNT(*) AS tickets
+  FROM tickets
+  GROUP BY user_id
+)
+SELECT
+  COALESCE(o.user_id, t.user_id) AS user_id,
+  o.revenue,
+  t.tickets
+FROM order_metrics o
+FULL OUTER JOIN ticket_metrics t
+  ON o.user_id = t.user_id;
+```
+
+Interview line:
+
+```text
+For fact-to-fact joins, pre-aggregate each fact to the common grain first.
+```
+
+
+## 59. Case Study: Slow Latest Record Query
+
+Bad:
+
+```sql
+SELECT *
+FROM user_profiles p
+WHERE updated_at = (
+  SELECT MAX(updated_at)
+  FROM user_profiles p2
+  WHERE p2.user_id = p.user_id
+);
+```
+
+Issues:
+
+```text
+correlated subquery
+can return multiple rows on ties
+may be expensive
+```
+
+Better:
+
+```sql
+WITH ranked_profiles AS (
+  SELECT
+    user_id,
+    country,
+    plan,
+    updated_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM user_profiles
+)
+SELECT *
+FROM ranked_profiles
+WHERE rn = 1;
+```
+
+If only current snapshot is queried often:
+
+```text
+materialize dim_user_current
+```
+
+Interview line:
+
+```text
+Latest-record queries should use ROW_NUMBER with deterministic tie-breakers and may deserve a current snapshot table if reused often.
+```
+
+
+## 60. Case Study: Slow Reconciliation
+
+Bad:
+
+```sql
+SELECT *
+FROM source s
+FULL OUTER JOIN target t
+  ON s.id = t.id;
+```
+
+Issues:
+
+```text
+SELECT *
+all history
+wide rows
+no partition filter
+no duplicate key handling
+```
+
+Better:
+
+```sql
+WITH source_day AS (
+  SELECT
+    id,
+    amount,
+    status
+  FROM source
+  WHERE load_date = DATE '2026-01-15'
+),
+target_day AS (
+  SELECT
+    id,
+    amount,
+    status
+  FROM target
+  WHERE load_date = DATE '2026-01-15'
+)
+SELECT
+  COALESCE(s.id, t.id) AS id,
+  CASE
+    WHEN s.id IS NULL THEN 'ONLY_IN_TARGET'
+    WHEN t.id IS NULL THEN 'ONLY_IN_SOURCE'
+    WHEN s.amount <> t.amount OR s.status <> t.status THEN 'MISMATCH'
+    ELSE 'MATCH'
+  END AS reconciliation_status
+FROM source_day s
+FULL OUTER JOIN target_day t
+  ON s.id = t.id;
+```
+
+Interview line:
+
+```text
+For reconciliation, compare the same partition and only the fields needed for equality/mismatch checks.
+```
+
+
+## 61. Case Study: Slow SCD As-Of Join
+
+Bad:
+
+```sql
+SELECT
+  o.order_id,
+  h.plan
+FROM orders o
+LEFT JOIN user_plan_history h
+  ON o.user_id = h.user_id
+ AND o.order_time >= h.effective_from
+ AND (h.effective_to IS NULL OR o.order_time < h.effective_to);
+```
+
+Potential issues:
+
+```text
+all orders history
+all dimension history
+range join large
+overlapping intervals
+no partition filters
+```
+
+Better:
+
+```sql
+WITH order_window AS (
+  SELECT *
+  FROM orders
+  WHERE order_date >= DATE '2026-01-01'
+    AND order_date <  DATE '2026-02-01'
+),
+history_window AS (
+  SELECT *
+  FROM user_plan_history
+  WHERE effective_from < TIMESTAMP '2026-02-01'
+    AND (effective_to IS NULL OR effective_to >= TIMESTAMP '2026-01-01')
+)
+SELECT
+  o.order_id,
+  h.plan
+FROM order_window o
+LEFT JOIN history_window h
+  ON o.user_id = h.user_id
+ AND o.order_time >= h.effective_from
+ AND (h.effective_to IS NULL OR o.order_time < h.effective_to);
+```
+
+Validation:
+
+```sql
+SELECT
+  order_id,
+  COUNT(*) AS matches
+FROM joined_result
+GROUP BY order_id
+HAVING COUNT(*) > 1;
+```
+
+Interview line:
+
+```text
+Range joins should be filtered to overlapping time windows and validated for one match per fact.
+```
+
+
+## 62. Case Study: Slow JSON Event Query
+
+Bad:
+
+```sql
+SELECT
+  JSON_VALUE(payload, '$.userId') AS user_id,
+  COUNT(*) AS purchases
+FROM raw_events
+WHERE JSON_VALUE(payload, '$.eventName') = 'purchase'
+GROUP BY JSON_VALUE(payload, '$.userId');
+```
+
+Issues:
+
+```text
+repeated JSON parsing
+cannot use typed columns
+hard to partition/prune
+expensive group by expressions
+```
+
+Better staging model:
+
+```sql
+SELECT
+  event_id,
+  event_date,
+  user_id,
+  event_name
+FROM staged_events
+WHERE event_name = 'purchase'
+GROUP BY event_id, event_date, user_id, event_name;
+```
+
+Query:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS purchases
+FROM staged_events
+WHERE event_date >= DATE '2026-01-01'
+  AND event_name = 'purchase'
+GROUP BY user_id;
+```
+
+Interview line:
+
+```text
+Repeated JSON extraction in analytics queries should be moved to staging as typed columns.
+```
+
+
+## 63. Case Study: Slow Missing Date Check
+
+Bad:
+
+```sql
+SELECT *
+FROM dim_calendar c
+CROSS JOIN stores s
+LEFT JOIN sales x
+  ON s.store_id = x.store_id
+ AND c.calendar_date = x.sales_date;
+```
+
+Issues:
+
+```text
+unbounded calendar
+huge cross join
+SELECT *
+no date filter before expected grid
+actual side may have duplicates
+```
+
+Better:
+
+```sql
+WITH calendar AS (
+  SELECT calendar_date
+  FROM dim_calendar
+  WHERE calendar_date >= DATE '2026-01-01'
+    AND calendar_date <  DATE '2026-02-01'
+),
+expected AS (
+  SELECT
+    s.store_id,
+    c.calendar_date
+  FROM stores s
+  CROSS JOIN calendar c
+),
+actual AS (
+  SELECT DISTINCT
+    store_id,
+    sales_date
+  FROM sales
+  WHERE sales_date >= DATE '2026-01-01'
+    AND sales_date <  DATE '2026-02-01'
+)
+SELECT
+  e.store_id,
+  e.calendar_date
+FROM expected e
+LEFT JOIN actual a
+  ON e.store_id = a.store_id
+ AND e.calendar_date = a.sales_date
+WHERE a.sales_date IS NULL;
+```
+
+Interview line:
+
+```text
+Expected-grid queries must filter dimensions early and deduplicate actual records before anti-joining.
+```
+
+
+## 64. Case Study: Slow Window Top-N
+
+Bad:
+
+```sql
+SELECT
+  *,
+  ROW_NUMBER() OVER (
+    PARTITION BY category
+    ORDER BY revenue DESC
+  ) AS rn
+FROM raw_sales;
+```
+
+Issues:
+
+```text
+window over raw rows
+category revenue not aggregated
+SELECT *
+too many rows sorted
+```
+
+Better:
+
+```sql
+WITH product_revenue AS (
+  SELECT
+    category,
+    product_id,
+    SUM(revenue) AS revenue
+  FROM raw_sales
+  WHERE sale_date >= DATE '2026-01-01'
+    AND sale_date <  DATE '2026-02-01'
+  GROUP BY category, product_id
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY category
+      ORDER BY revenue DESC
+    ) AS rn
+  FROM product_revenue
+)
+SELECT *
+FROM ranked
+WHERE rn <= 10;
+```
+
+Interview line:
+
+```text
+Rank the aggregated result, not raw detail rows, when the ranking metric is aggregated.
+```
+
+
+## 65. Common Bad Query Patterns
+
+Bad patterns to recognize:
+
+```text
+SELECT *
+no partition filter
+function on partition column
+function on join key
+JOIN then DISTINCT to hide duplicates
+fact-to-fact join at detail grain
+COUNT DISTINCT over raw events for repeated dashboards
+window function over unfiltered raw table
+ORDER BY before reducing rows
+UNION when UNION ALL plus explicit dedupe is needed
+correlated subquery over large table
+LEFT JOIN with right filter in WHERE
+many-to-many join without allocation
+range join without overlap validation
+JSON extraction in repeated queries
+full refresh pipeline when incremental is enough
+```
+
+Interview line:
+
+```text
+Most slow SQL patterns are also correctness risks, especially joins and deduplication mistakes.
+```
+
+
+## 66. Optimization Checklist
+
+Use this checklist during mocks:
+
+```text
+1. What is the output grain?
+2. What tables are huge?
+3. Are date/partition filters present?
+4. Are filters sargable?
+5. Is SELECT * used?
+6. Are functions used on filter/join keys?
+7. Are joins at correct grain?
+8. Can we aggregate before joining?
+9. Can we deduplicate before joining?
+10. Is JOIN + DISTINCT hiding a bug?
+11. Can EXISTS replace JOIN?
+12. Can NOT EXISTS replace NOT IN?
+13. Is COUNT DISTINCT necessary?
+14. Can a reusable aggregate be materialized?
+15. Are window functions over too many rows?
+16. Is ORDER BY sorting too much data?
+17. Are CTEs reused repeatedly?
+18. Is data skew possible?
+19. Is incremental processing possible?
+20. How will correctness be validated?
+```
+
+
+## 67. Interview Clarifying Questions
+
+Ask these before optimizing:
+
+```text
+What database/warehouse is this?
+How large are the tables?
+How often does the query run?
+What is the SLA?
+What is the current runtime?
+What is the output grain?
+What date range is required?
+Are tables partitioned?
+What are common filters?
+What are join keys?
+Are join keys unique?
+Is exactness required?
+Can we use approximate aggregations?
+Can we create tables/materialized views?
+Can we change table design?
+Is this ad hoc, dashboard, or pipeline SQL?
+Is late-arriving data possible?
+Is the result used for finance/compliance?
+```
+
+Interview line:
+
+```text
+Optimization depends on workload, data size, engine, and correctness requirements, so I clarify those before proposing changes.
+```
+
+
+## 68. Communication Scripts
+
+### Baseline script
+
+```text
+Before optimizing, I would capture baseline runtime, bytes scanned, rows processed, and the execution plan.
+```
+
+### Scan script
+
+```text
+The first optimization is to reduce scanned data using direct partition filters and selecting only needed columns.
+```
+
+### Join script
+
+```text
+I would check join cardinality and aggregate or deduplicate before joining to avoid row explosion.
+```
+
+### Window script
+
+```text
+Window functions sort data inside partitions, so I reduce the input rows before applying them.
+```
+
+### CTE script
+
+```text
+CTEs help readability, but I would check whether this engine materializes or inlines them before assuming performance benefits.
+```
+
+### Incremental script
+
+```text
+Because this pipeline runs repeatedly, I would avoid full recomputation and process only affected partitions or changed records.
+```
+
+### Validation script
+
+```text
+After rewriting, I would compare row counts, key counts, and business metrics between old and new outputs.
+```
+
+### Trade-off script
+
+```text
+This optimization improves runtime but adds storage and refresh complexity, so I would use it only for repeated high-value queries.
+```
+
+
+## 69. Practice Problem 1: Optimize DAU Query
+
+Problem:
+
+```text
+The query calculates DAU from raw events and is slow.
+```
+
+Bad:
+
+```sql
+SELECT
+  CAST(event_time AS DATE) AS activity_date,
+  COUNT(DISTINCT user_id) AS dau
+FROM events
+GROUP BY CAST(event_time AS DATE);
+```
+
+Optimized:
+
+```sql
+WITH user_days AS (
+  SELECT DISTINCT
+    event_date,
+    user_id
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+    AND user_id IS NOT NULL
+)
+SELECT
+  event_date,
+  COUNT(*) AS dau
+FROM user_days
+GROUP BY event_date;
+```
+
+Explain:
+
+```text
+Use event_date partition.
+Avoid repeated CAST.
+Reduce to user-day grain.
+COUNT rows instead of COUNT DISTINCT after dedupe.
+```
+
+
+## 70. Practice Problem 2: Optimize Revenue by Country
+
+Problem:
+
+```text
+Revenue by country is slow and totals are too high.
+```
+
+Bad:
+
+```sql
+SELECT
+  u.country,
+  SUM(o.total_amount) AS revenue
+FROM orders o
+JOIN order_items oi
+  ON o.order_id = oi.order_id
+JOIN users u
+  ON o.user_id = u.user_id
+GROUP BY u.country;
+```
+
+Optimized:
+
+```sql
+WITH completed_orders AS (
+  SELECT
+    order_id,
+    user_id,
+    total_amount
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+)
+SELECT
+  COALESCE(u.country, 'UNKNOWN') AS country,
+  SUM(o.total_amount) AS revenue
+FROM completed_orders o
+LEFT JOIN users u
+  ON o.user_id = u.user_id
+GROUP BY COALESCE(u.country, 'UNKNOWN');
+```
+
+Explain:
+
+```text
+Remove unnecessary order_items join.
+Preserve orders with missing users if needed.
+Avoid multiplying order total by item count.
+```
+
+
+## 71. Practice Problem 3: Optimize Users With Orders
+
+Problem:
+
+```text
+Find users with at least one completed order.
+```
+
+Bad:
+
+```sql
+SELECT DISTINCT
+  u.user_id
+FROM users u
+JOIN orders o
+  ON u.user_id = o.user_id
+WHERE o.order_status = 'COMPLETED';
+```
+
+Optimized:
+
+```sql
+SELECT
+  u.user_id
+FROM users u
+WHERE EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.user_id = u.user_id
+    AND o.order_status = 'COMPLETED'
+);
+```
+
+Explain:
+
+```text
+EXISTS avoids multiplying users by orders and avoids DISTINCT.
+```
+
+
+## 72. Practice Problem 4: Optimize Fact-to-Fact Join
+
+Problem:
+
+```text
+Join orders and support tickets by user for a user summary.
+```
+
+Bad:
+
+```sql
+SELECT
+  o.user_id,
+  SUM(o.total_amount) AS revenue,
+  COUNT(t.ticket_id) AS tickets
+FROM orders o
+LEFT JOIN tickets t
+  ON o.user_id = t.user_id
+GROUP BY o.user_id;
+```
+
+Optimized:
+
+```sql
+WITH order_metrics AS (
+  SELECT
+    user_id,
+    SUM(total_amount) AS revenue
+  FROM orders
+  WHERE order_status = 'COMPLETED'
+  GROUP BY user_id
+),
+ticket_metrics AS (
+  SELECT
+    user_id,
+    COUNT(*) AS tickets
+  FROM tickets
+  GROUP BY user_id
+)
+SELECT
+  COALESCE(o.user_id, t.user_id) AS user_id,
+  COALESCE(o.revenue, 0) AS revenue,
+  COALESCE(t.tickets, 0) AS tickets
+FROM order_metrics o
+FULL OUTER JOIN ticket_metrics t
+  ON o.user_id = t.user_id;
+```
+
+Explain:
+
+```text
+Aggregate each fact to user grain before joining.
+```
+
+
+## 73. Practice Problem 5: Optimize Latest Profile
+
+Problem:
+
+```text
+Find latest profile per user.
+```
+
+Bad:
+
+```sql
+SELECT *
+FROM profiles p
+WHERE updated_at = (
+  SELECT MAX(updated_at)
+  FROM profiles p2
+  WHERE p2.user_id = p.user_id
+);
+```
+
+Optimized:
+
+```sql
+WITH ranked AS (
+  SELECT
+    user_id,
+    country,
+    plan,
+    updated_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY user_id
+      ORDER BY updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM profiles
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Explain:
+
+```text
+ROW_NUMBER is clearer, deterministic with tie-breaker, and avoids correlated subquery pattern.
+```
+
+
+## 74. Practice Problem 6: Optimize Missing Store-Date Check
+
+Problem:
+
+```text
+Find missing sales rows for each store-date.
+```
+
+Optimized:
+
+```sql
+WITH calendar AS (
+  SELECT calendar_date
+  FROM dim_calendar
+  WHERE calendar_date >= DATE '2026-01-01'
+    AND calendar_date <  DATE '2026-02-01'
+),
+expected AS (
+  SELECT
+    s.store_id,
+    c.calendar_date
+  FROM stores s
+  CROSS JOIN calendar c
+),
+actual AS (
+  SELECT DISTINCT
+    store_id,
+    sales_date
+  FROM sales
+  WHERE sales_date >= DATE '2026-01-01'
+    AND sales_date <  DATE '2026-02-01'
+)
+SELECT
+  e.store_id,
+  e.calendar_date
+FROM expected e
+LEFT JOIN actual a
+  ON e.store_id = a.store_id
+ AND e.calendar_date = a.sales_date
+WHERE a.sales_date IS NULL;
+```
+
+Explain:
+
+```text
+Filter calendar first.
+Deduplicate actual store-date.
+Avoid unbounded cross join.
+```
+
+
+## 75. Practice Problem 7: Optimize SCD Join
+
+Problem:
+
+```text
+Join orders to plan history active at order time.
+```
+
+Optimized:
+
+```sql
+WITH orders_window AS (
+  SELECT *
+  FROM orders
+  WHERE order_date >= DATE '2026-01-01'
+    AND order_date <  DATE '2026-02-01'
+),
+history_window AS (
+  SELECT *
+  FROM user_plan_history
+  WHERE effective_from < TIMESTAMP '2026-02-01'
+    AND (effective_to IS NULL OR effective_to >= TIMESTAMP '2026-01-01')
+)
+SELECT
+  o.order_id,
+  h.plan
+FROM orders_window o
+LEFT JOIN history_window h
+  ON o.user_id = h.user_id
+ AND o.order_time >= h.effective_from
+ AND (h.effective_to IS NULL OR o.order_time < h.effective_to);
+```
+
+Explain:
+
+```text
+Filter both fact and history to overlapping time range.
+Validate one match per order.
+```
+
+
+## 76. Practice Problem 8: Optimize JSON Query
+
+Problem:
+
+```text
+Purchase query parses raw JSON every run.
+```
+
+Bad:
+
+```sql
+SELECT
+  JSON_VALUE(payload, '$.userId') AS user_id,
+  COUNT(*) AS purchases
+FROM raw_events
+WHERE JSON_VALUE(payload, '$.eventName') = 'purchase'
+GROUP BY JSON_VALUE(payload, '$.userId');
+```
+
+Optimized target model:
+
+```sql
+SELECT
+  user_id,
+  COUNT(*) AS purchases
+FROM staged_events
+WHERE event_date >= DATE '2026-01-01'
+  AND event_name = 'purchase'
+GROUP BY user_id;
+```
+
+Explain:
+
+```text
+Extract user_id, event_name, and event_date as typed staging columns.
+```
+
+
+## 77. Practice Problem 9: Optimize COUNT DISTINCT
+
+Problem:
+
+```text
+COUNT DISTINCT user_id by date is slow.
+```
+
+Optimized:
+
+```sql
+WITH user_days AS (
+  SELECT DISTINCT
+    event_date,
+    user_id
+  FROM events
+  WHERE event_date >= DATE '2026-01-01'
+    AND event_date <  DATE '2026-02-01'
+    AND user_id IS NOT NULL
+)
+SELECT
+  event_date,
+  COUNT(*) AS active_users
+FROM user_days
+GROUP BY event_date;
+```
+
+Production improvement:
+
+```text
+Maintain daily_user_activity table with one row per user/date.
+```
+
+Explain:
+
+```text
+Deduplicate once at user-day grain and reuse.
+```
+
+
+## 78. Practice Problem 10: Optimize Top Products by Category
+
+Problem:
+
+```text
+Find top 5 products by revenue per category.
+```
+
+Optimized:
+
+```sql
+WITH product_revenue AS (
+  SELECT
+    p.category,
+    oi.product_id,
+    SUM(oi.quantity * oi.unit_price) AS revenue
+  FROM order_items oi
+  JOIN orders o
+    ON oi.order_id = o.order_id
+  JOIN products p
+    ON oi.product_id = p.product_id
+  WHERE o.order_status = 'COMPLETED'
+    AND o.order_date >= DATE '2026-01-01'
+    AND o.order_date <  DATE '2026-02-01'
+  GROUP BY p.category, oi.product_id
+),
+ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY category
+      ORDER BY revenue DESC
+    ) AS rn
+  FROM product_revenue
+)
+SELECT *
+FROM ranked
+WHERE rn <= 5;
+```
+
+Explain:
+
+```text
+Filter and aggregate before ranking.
+```
+
+
+## 79. Pattern Classification Drill
+
+Classify each optimization issue.
+
+```text
+1. Query scans full events table for one month.
+2. Query uses CAST(order_time AS DATE) in WHERE.
+3. Query selects 150 columns but uses 5.
+4. Query joins orders and tickets by user_id directly.
+5. Query uses JOIN + DISTINCT for users with orders.
+6. Query uses NOT IN with nullable subquery.
+7. Query calculates DAU from raw events every dashboard load.
+8. Query window ranks raw events before filtering date.
+9. Query FULL OUTER joins all source and target history.
+10. Query has one join key with millions of NULLs.
+11. Query uses JSON_VALUE in WHERE on raw payload.
+12. Query uses UNION but duplicates need custom keep rule.
+13. Query uses order_items join for order-level AOV.
+14. Query range joins all orders to all plan history.
+15. Query has huge ORDER BY before LIMIT.
+16. Query over-partitions table by user_id.
+17. Query runs full rebuild daily despite only new data.
+18. Query materializes many tables for one-off ad hoc work.
+19. Query uses approximate distinct for billing.
+20. Query improves runtime but changes row count.
+```
+
+Expected classification:
+
+```text
+1. missing partition pruning
+2. non-sargable date filter
+3. SELECT * / column pruning issue
+4. fact-to-fact join explosion
+5. use EXISTS semi-join
+6. use NOT EXISTS
+7. materialize user-day aggregate
+8. filter before window
+9. partition-limited reconciliation
+10. data skew / NULL key handling
+11. extract typed staging columns
+12. UNION ALL plus explicit dedupe
+13. grain/double-counting issue
+14. filter overlapping time range and validate SCD
+15. reduce rows before sorting
+16. over-partitioning
+17. incremental processing
+18. unnecessary materialization trade-off
+19. correctness violation
+20. failed validation
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed optimization mocks.
+```
+
+
+## 80. High-ROI Optimization Topics
+
+Practice these first.
+
+| Topic | Candidate Must Explain |
+|---|---|
+| baseline metrics | runtime, scan size, plan |
+| execution plan | scan, join, sort, aggregate |
+| SELECT fewer columns | column pruning |
+| partition pruning | direct partition filters |
+| sargable filters | avoid functions on columns |
+| filter early | reduce rows before expensive ops |
+| join optimization | grain and cardinality |
+| pre-aggregation | reduce join size |
+| EXISTS | avoid JOIN DISTINCT |
+| NOT EXISTS | safe anti-join |
+| window optimization | reduce input before sorting |
+| COUNT DISTINCT | user-day/materialized aggregate |
+| data skew | hot keys and NULLs |
+| incremental processing | avoid full recompute |
+| materialization | CTE/temp/materialized trade-offs |
+| validation | same result after rewrite |
+
+
+## 81. 7-Day Query Optimization Plan
+
+### Day 1: Baseline and scan reduction
+
+Problems:
+
+```text
+SELECT *
+partition pruning
+non-sargable filters
+date range rewrites
+column pruning
+```
+
+Focus:
+
+```text
+read less data
+```
+
+### Day 2: Join optimization
+
+Problems:
+
+```text
+join explosion
+fact-to-fact joins
+EXISTS replacement
+dedupe before join
+aggregate before join
+```
+
+Focus:
+
+```text
+join fewer rows
+```
+
+### Day 3: Aggregation optimization
+
+Problems:
+
+```text
+GROUP BY grain
+COUNT DISTINCT
+pre-aggregation
+materialized aggregates
+HAVING vs WHERE
+```
+
+Focus:
+
+```text
+aggregate at correct grain
+```
+
+### Day 4: Window and dedupe optimization
+
+Problems:
+
+```text
+latest records
+top N
+deduplication
+gaps and islands
+filter before window
+```
+
+Focus:
+
+```text
+sort fewer rows
+```
+
+### Day 5: Pipeline optimization
+
+Problems:
+
+```text
+incremental load
+partition overwrite
+lookback windows
+MERGE optimization
+data quality checks
+```
+
+Focus:
+
+```text
+avoid full recomputation
+```
+
+### Day 6: Advanced systems concepts
+
+Problems:
+
+```text
+broadcast vs shuffle
+data skew
+clustering
+materialized views
+file layout
+```
+
+Focus:
+
+```text
+distributed execution and storage design
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run optimization mock.
+Review mistakes.
+Repair weakest topic.
+Update progress.
+```
+
+
+## 82. 30-Day Query Optimization Plan
+
+### Week 1: SQL rewrite basics
+
+Focus:
+
+```text
+filters
+columns
+partition pruning
+sargability
+JOIN vs EXISTS
+HAVING vs WHERE
+UNION ALL
+```
+
+Exit:
+
+```text
+Candidate can identify common bad query patterns.
+```
+
+### Week 2: Joins, aggregations, and windows
+
+Focus:
+
+```text
+join cardinality
+pre-aggregation
+COUNT DISTINCT
+window function cost
+dedupe optimization
+fact-to-fact joins
+```
+
+Exit:
+
+```text
+Candidate can optimize common interview SQL safely.
+```
+
+### Week 3: Data Engineering pipelines
+
+Focus:
+
+```text
+incremental processing
+watermarks
+late arrivals
+MERGE
+partition overwrite
+materialized aggregates
+data quality checks
+```
+
+Exit:
+
+```text
+Candidate can optimize production pipelines, not only ad hoc queries.
+```
+
+### Week 4: Systems and mocks
+
+Focus:
+
+```text
+execution plans
+broadcast/shuffle
+data skew
+storage layout
+indexes/clustering
+cost trade-offs
+mock interviews
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 83. Mock Set 1: Scan and Filter Optimization
+
+Problems:
+
+```text
+1. Rewrite DATE_TRUNC filter into range predicate.
+2. Remove SELECT * from a query.
+3. Add partition filter to event query.
+4. Explain sargability.
+5. Identify why LIKE '%text' is slow.
+```
+
+Expected skills:
+
+```text
+partition pruning
+column pruning
+sargable predicates
+filter pushdown
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains why the rewrite reduces scanned data.
+```
+
+
+## 84. Mock Set 2: Join Optimization
+
+Problems:
+
+```text
+1. Replace JOIN DISTINCT with EXISTS.
+2. Fix fact-to-fact join double counting.
+3. Detect join explosion.
+4. Deduplicate dimension before join.
+5. Optimize product tag bridge query with allocation.
+```
+
+Expected skills:
+
+```text
+cardinality
+pre-aggregation
+semi-join
+dedupe
+many-to-many caution
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate protects correctness while optimizing.
+```
+
+
+## 85. Mock Set 3: Aggregation and Window Optimization
+
+Problems:
+
+```text
+1. Optimize DAU COUNT DISTINCT.
+2. Optimize latest profile query.
+3. Optimize top N per category.
+4. Optimize gaps-and-islands event streak query.
+5. Rewrite correlated subquery.
+```
+
+Expected skills:
+
+```text
+pre-aggregation
+window input reduction
+ROW_NUMBER
+COUNT DISTINCT strategy
+correlated rewrite
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate reduces rows before expensive windows/aggregates.
+```
+
+
+## 86. Mock Set 4: Pipeline and Warehouse Optimization
+
+Problems:
+
+```text
+1. Convert full rebuild to incremental load.
+2. Optimize MERGE source.
+3. Use partition overwrite for daily mart.
+4. Handle late-arriving data with lookback.
+5. Choose CTE vs temp table vs materialized view.
+```
+
+Expected skills:
+
+```text
+incremental processing
+idempotency
+watermarks
+partition operations
+materialization trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate connects query optimization to pipeline reliability.
+```
+
+
+## 87. Mock Set 5: Distributed Execution Concepts
+
+Problems:
+
+```text
+1. Explain broadcast vs shuffle join.
+2. Detect data skew using GROUP BY key count.
+3. Explain small file problem.
+4. Explain partitioning vs clustering.
+5. Explain approximate distinct trade-off.
+```
+
+Expected skills:
+
+```text
+distributed joins
+skew
+storage layout
+partition strategy
+cost/correctness trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains concepts at Data Engineer interview level.
+```
+
+
+## 88. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Simple rewrite
+
+```text
+10-15 minutes
+```
+
+### Medium optimization case
+
+```text
+20-35 minutes
+```
+
+### Full production optimization case
+
+```text
+35-45 minutes
+```
+
+Per drill:
+
+```text
+Minute 0-3:
+Restate goal and output grain.
+
+Minute 3-6:
+Identify likely bottleneck.
+
+Minute 6-20:
+Rewrite SQL.
+
+Minute 20-30:
+Add validation queries.
+
+Minute 30-40:
+Explain performance reason and trade-offs.
+
+Minute 40-45:
+State production considerations.
+```
+
+If candidate jumps to "add index":
+
+```text
+Stop and ask what evidence shows an index is needed and whether the system supports that style of indexing.
+```
+
+
+## 89. Review Checklist
+
+Review optimization answers using:
+
+```text
+1. Did candidate ask for baseline?
+2. Did candidate identify output grain?
+3. Did candidate identify bottleneck?
+4. Did candidate reduce scanned rows?
+5. Did candidate reduce selected columns?
+6. Did candidate use partition pruning?
+7. Did candidate avoid non-sargable filters?
+8. Did candidate optimize joins safely?
+9. Did candidate check join cardinality?
+10. Did candidate pre-aggregate when needed?
+11. Did candidate avoid DISTINCT as a band-aid?
+12. Did candidate optimize window input?
+13. Did candidate handle COUNT DISTINCT carefully?
+14. Did candidate consider CTE/materialization behavior?
+15. Did candidate consider incremental processing?
+16. Did candidate consider data skew?
+17. Did candidate explain trade-offs?
+18. Did candidate validate correctness?
+19. Did candidate compare before/after performance?
+20. Did candidate avoid changing business logic?
+```
+
+Verdict examples:
+
+```text
+Generic advice only.
+Good rewrite but no validation.
+Good scan reduction.
+Good join optimization but missing cardinality check.
+Good pipeline optimization with late-arrival handling.
+Interview-ready.
+Strong.
+```
+
+
+## 90. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Says only add index | baseline and plan drills |
+| Ignores grain | output grain drills |
+| Uses SELECT * | column pruning drills |
+| Weak partition pruning | date filter rewrite drills |
+| Non-sargable filters | sargability drills |
+| Join double counting | pre-aggregation drills |
+| JOIN DISTINCT | EXISTS drills |
+| NOT IN issue | NOT EXISTS drills |
+| Window too large | filter-before-window drills |
+| COUNT DISTINCT weak | user-day aggregate drills |
+| CTE misconceptions | CTE/temp/materialized drills |
+| No incremental thinking | watermark and partition overwrite drills |
+| Skew ignored | hot-key detection drills |
+| No validation | before/after result diff drills |
+| Trade-offs vague | cost/correctness/storage drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 91. Candidate Self-Review Questions
+
+After every optimization problem, candidate should answer:
+
+```text
+1. What is the business output?
+2. What is the output grain?
+3. What is the current bottleneck?
+4. What does the execution plan show?
+5. How many rows/bytes are scanned?
+6. Is there a partition filter?
+7. Is the filter sargable?
+8. Is SELECT * used?
+9. Are joins at correct grain?
+10. Can I pre-aggregate?
+11. Can I deduplicate before join?
+12. Can EXISTS replace JOIN DISTINCT?
+13. Is COUNT DISTINCT necessary?
+14. Can I reduce window input?
+15. Is data skew possible?
+16. Should this be incremental?
+17. Should I materialize an intermediate?
+18. What trade-off does my optimization create?
+19. How do I validate same results?
+20. How do I measure improvement?
+```
+
+If candidate cannot answer these:
+
+```text
+The optimization solution is not interview-ready.
+```
+
+
+## 92. Maintenance Drills
+
+After completing query optimization, maintain skill with:
+
+```text
+1 scan reduction drill per week
+1 join optimization drill per week
+1 aggregation/window optimization drill every 2 weeks
+1 incremental pipeline optimization drill every 2 weeks
+1 execution-plan explanation drill every month
+1 full optimization mock every month
+```
+
+Maintenance rotation:
+
+```text
+Week 1: filters, partitions, SELECT columns
+Week 2: joins, EXISTS, pre-aggregation
+Week 3: windows, COUNT DISTINCT, materialized aggregates
+Week 4: incremental pipelines, skew, execution concepts
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed topic.
+```
+
+
+## 93. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# SQL Query Optimization Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Topic | Score | Time | Mistake | Next Action
+
+## Topic Scores
+
+Baseline measurement:
+Execution plan reading:
+Output grain:
+Column pruning:
+Filter pushdown:
+Partition pruning:
+Sargable predicates:
+Join optimization:
+Join cardinality:
+Pre-aggregation:
+EXISTS rewrite:
+NOT EXISTS rewrite:
+Correlated subquery rewrite:
+COUNT DISTINCT:
+Window optimization:
+ORDER BY/LIMIT:
+CTE behavior:
+Temp tables:
+Materialized views:
+Index basics:
+Composite indexes:
+Partitioning:
+Clustering:
+Data skew:
+JSON optimization:
+Incremental processing:
+MERGE optimization:
+Late arrivals:
+Reconciliation optimization:
+SCD join optimization:
+Validation:
+Trade-offs:
+Communication:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 94. Final Exit Test
+
+Candidate passes query optimization when they can solve/explain:
+
+```text
+1. Baseline runtime and scan-size measurement.
+2. Execution plan red flags.
+3. SELECT column pruning.
+4. Filter early.
+5. Partition pruning.
+6. Sargable date filters.
+7. Avoid functions on filter columns.
+8. Avoid functions on join keys.
+9. JOIN DISTINCT to EXISTS rewrite.
+10. NOT IN to NOT EXISTS rewrite.
+11. Correlated subquery rewrite.
+12. Fact-to-fact pre-aggregation.
+13. Join explosion detection.
+14. Deduplicate before join.
+15. COUNT DISTINCT optimization.
+16. Window function input reduction.
+17. Top-N optimization.
+18. GROUP BY grain optimization.
+19. HAVING vs WHERE.
+20. UNION vs UNION ALL.
+21. CTE vs temp table vs materialized view.
+22. Index basics.
+23. Composite index order.
+24. Partitioning vs clustering vs indexing.
+25. Data skew detection.
+26. NULL/UNKNOWN skew handling.
+27. JSON field extraction to staging.
+28. Incremental pipeline optimization.
+29. Partition overwrite.
+30. Lookback windows for late arrivals.
+31. MERGE source optimization.
+32. Data quality check optimization.
+33. Reconciliation optimization.
+34. SCD join optimization.
+35. Correctness validation after rewrite.
+36. Cost-performance trade-offs.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No generic-only answers.
+No result-changing optimization.
+No missing validation.
+Can explain why rewrite is faster.
+Can connect optimization to Data Engineering pipeline reliability.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles scans, joins, windows, aggregations, partitions, distributed execution, skew, incremental pipelines, materialization, and correctness validation clearly under pressure.
+```
+
+
+## 95. Final Summary
+
+SQL query optimization is a core Data Engineering interview skill.
+
+It maps directly to:
+
+```text
+pipeline SLAs
+warehouse cost
+dashboard performance
+backfill speed
+data-quality checks
+incremental models
+source-target reconciliation
+large fact table joins
+event analytics
+materialized data marts
+production incident debugging
+```
+
+The candidate must master:
+
+```text
+baseline measurement
+execution plan reading
+scan reduction
+partition pruning
+sargable filters
+column pruning
+join cardinality
+pre-aggregation
+EXISTS and NOT EXISTS rewrites
+correlated subquery rewrites
+window optimization
+COUNT DISTINCT strategies
+CTE/materialization trade-offs
+index/partition/cluster basics
+data skew handling
+incremental processing
+MERGE optimization
+reconciliation optimization
+SCD join optimization
+correctness validation
+trade-off communication
+```
+
+The mentor must be strict:
+
+```text
+Only says "add index" → not interview-ready.
+No baseline → not interview-ready.
+No output grain → not interview-ready.
+Changes result semantics → not interview-ready.
+No validation → not interview-ready.
+Ignores join cardinality → not interview-ready.
+Ignores partition pruning → not interview-ready.
+```
+
+The goal is not to memorize random tips.
+
+The goal is to reduce unnecessary work, preserve correctness, and explain trade-offs like a production Data Engineer.
+
+
+## 96. Problem Card Appendix
+
+### Card 1: Column Pruning
+
+Topic:
+
+```text
+SELECT fewer columns
+```
+
+Core idea:
+
+```text
+Remove SELECT *.
+```
+
+Data Engineering connection:
+
+```text
+Lower scan/cost in column stores.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Partition Pruning
+
+Topic:
+
+```text
+date filters
+```
+
+Core idea:
+
+```text
+Filter directly on partition column.
+```
+
+Data Engineering connection:
+
+```text
+Daily pipelines.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Sargability
+
+Topic:
+
+```text
+efficient predicates
+```
+
+Core idea:
+
+```text
+Avoid functions on indexed/filter columns.
+```
+
+Data Engineering connection:
+
+```text
+OLTP and warehouse queries.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Filter Early
+
+Topic:
+
+```text
+pushdown
+```
+
+Core idea:
+
+```text
+Reduce rows before joins/windows.
+```
+
+Data Engineering connection:
+
+```text
+Large transformations.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Pre-Aggregation
+
+Topic:
+
+```text
+reduce grain
+```
+
+Core idea:
+
+```text
+Aggregate facts before joining.
+```
+
+Data Engineering connection:
+
+```text
+Metrics correctness.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: EXISTS Rewrite
+
+Topic:
+
+```text
+semi-join
+```
+
+Core idea:
+
+```text
+Replace JOIN DISTINCT.
+```
+
+Data Engineering connection:
+
+```text
+Existence checks.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: NOT EXISTS Rewrite
+
+Topic:
+
+```text
+anti-join
+```
+
+Core idea:
+
+```text
+Avoid NOT IN NULL trap.
+```
+
+Data Engineering connection:
+
+```text
+Missing records.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Correlated Rewrite
+
+Topic:
+
+```text
+window/join
+```
+
+Core idea:
+
+```text
+Avoid row-by-row subquery.
+```
+
+Data Engineering connection:
+
+```text
+Group comparisons.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Window Reduction
+
+Topic:
+
+```text
+filter before window
+```
+
+Core idea:
+
+```text
+Sort fewer rows.
+```
+
+Data Engineering connection:
+
+```text
+Dedup/latest/top-N.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: COUNT DISTINCT
+
+Topic:
+
+```text
+dedupe grain
+```
+
+Core idea:
+
+```text
+Precompute user-day.
+```
+
+Data Engineering connection:
+
+```text
+DAU/MAU.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Join Explosion
+
+Topic:
+
+```text
+cardinality
+```
+
+Core idea:
+
+```text
+Find duplicate right keys.
+```
+
+Data Engineering connection:
+
+```text
+Dashboard bugs.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Fact-to-Fact
+
+Topic:
+
+```text
+common grain
+```
+
+Core idea:
+
+```text
+Aggregate both facts before join.
+```
+
+Data Engineering connection:
+
+```text
+User summary marts.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Data Skew
+
+Topic:
+
+```text
+hot keys
+```
+
+Core idea:
+
+```text
+Find heavy join keys.
+```
+
+Data Engineering connection:
+
+```text
+Distributed joins.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Incremental Load
+
+Topic:
+
+```text
+watermark
+```
+
+Core idea:
+
+```text
+Process only changes.
+```
+
+Data Engineering connection:
+
+```text
+Pipelines.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Partition Overwrite
+
+Topic:
+
+```text
+affected partitions
+```
+
+Core idea:
+
+```text
+Avoid full rebuild.
+```
+
+Data Engineering connection:
+
+```text
+Daily marts.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Materialized Aggregate
+
+Topic:
+
+```text
+reuse
+```
+
+Core idea:
+
+```text
+Precompute expensive results.
+```
+
+Data Engineering connection:
+
+```text
+Dashboards.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: JSON Staging
+
+Topic:
+
+```text
+typed fields
+```
+
+Core idea:
+
+```text
+Extract common JSON fields.
+```
+
+Data Engineering connection:
+
+```text
+Event pipelines.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 18: SCD Optimization
+
+Topic:
+
+```text
+range filtering
+```
+
+Core idea:
+
+```text
+Limit history window.
+```
+
+Data Engineering connection:
+
+```text
+Historical reporting.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 19: Reconciliation
+
+Topic:
+
+```text
+limited full outer
+```
+
+Core idea:
+
+```text
+Compare affected partition.
+```
+
+Data Engineering connection:
+
+```text
+Migration validation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 20: Validation
+
+Topic:
+
+```text
+result diff
+```
+
+Core idea:
+
+```text
+Ensure same output.
+```
+
+Data Engineering connection:
+
+```text
+Production safety.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why the original query is slow.
+2. What physical work is reduced.
+3. SQL rewrite or design change.
+4. Correctness risk.
+5. Validation query.
+6. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 97. Data Engineering Scenario Appendix
+
+### Scenario 1: Slow DAU Dashboard
+
+Pattern:
+
+```text
+materialized user-day
+```
+
+Task:
+
+```text
+Raw events scanned every dashboard load.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 2: Slow Revenue Query
+
+Pattern:
+
+```text
+remove unnecessary join
+```
+
+Task:
+
+```text
+Order total multiplied by item rows.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 3: Slow Fact Summary
+
+Pattern:
+
+```text
+pre-aggregate facts
+```
+
+Task:
+
+```text
+Orders and tickets joined at detail grain.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 4: Slow Latest Profile
+
+Pattern:
+
+```text
+ROW_NUMBER
+```
+
+Task:
+
+```text
+Correlated max subquery.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 5: Slow Migration Check
+
+Pattern:
+
+```text
+partition reconciliation
+```
+
+Task:
+
+```text
+Full history compared daily.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 6: Slow SCD Report
+
+Pattern:
+
+```text
+filtered range join
+```
+
+Task:
+
+```text
+All facts joined to all history.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 7: Slow JSON Analytics
+
+Pattern:
+
+```text
+typed staging columns
+```
+
+Task:
+
+```text
+Repeated JSON extraction.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 8: Slow Missing Dates
+
+Pattern:
+
+```text
+bounded expected grid
+```
+
+Task:
+
+```text
+Unbounded cross join.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 9: Slow Top-N
+
+Pattern:
+
+```text
+aggregate before rank
+```
+
+Task:
+
+```text
+Window over raw rows.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 10: High Warehouse Cost
+
+Pattern:
+
+```text
+scan reduction
+```
+
+Task:
+
+```text
+SELECT * and no partition filters.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 11: Skewed Join
+
+Pattern:
+
+```text
+hot key handling
+```
+
+Task:
+
+```text
+One key dominates shuffle.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 12: Slow MERGE
+
+Pattern:
+
+```text
+source dedupe
+```
+
+Task:
+
+```text
+Multiple source rows and full target scan.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 13: Slow Backfill
+
+Pattern:
+
+```text
+partition overwrite
+```
+
+Task:
+
+```text
+Whole table rebuild.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 14: Slow Data Quality
+
+Pattern:
+
+```text
+partition-level checks
+```
+
+Task:
+
+```text
+Full table DQ every run.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 15: Slow Pattern Search
+
+Pattern:
+
+```text
+precomputed search fields
+```
+
+Task:
+
+```text
+Leading wildcard LIKE.
+```
+
+Minimum expected answer:
+
+```text
+1. State bottleneck.
+2. State rewrite/design change.
+3. Explain why work is reduced.
+4. Explain correctness validation.
+5. Explain trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 98. Drill Appendix
+
+### Drill 1: Baseline Drill
+
+Task:
+
+```text
+Given a slow query, list metrics to collect before optimizing.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Plan Drill
+
+Task:
+
+```text
+Identify scan/join/sort/aggregate red flags.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Column Drill
+
+Task:
+
+```text
+Rewrite SELECT * to required columns.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Partition Drill
+
+Task:
+
+```text
+Rewrite date functions into range filters.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Sargability Drill
+
+Task:
+
+```text
+Rewrite non-sargable predicates.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Join Drill
+
+Task:
+
+```text
+Pre-aggregate before joining facts.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: EXISTS Drill
+
+Task:
+
+```text
+Replace JOIN DISTINCT with EXISTS.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Anti-Join Drill
+
+Task:
+
+```text
+Replace NOT IN with NOT EXISTS.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Window Drill
+
+Task:
+
+```text
+Filter before ROW_NUMBER.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Count Distinct Drill
+
+Task:
+
+```text
+Create deduped grain before counting.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: CTE Drill
+
+Task:
+
+```text
+Decide CTE vs temp table vs materialized table.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Index Drill
+
+Task:
+
+```text
+Choose index/cluster key for query pattern.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Skew Drill
+
+Task:
+
+```text
+Find top heavy keys.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Incremental Drill
+
+Task:
+
+```text
+Convert full refresh to watermark load.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Merge Drill
+
+Task:
+
+```text
+Deduplicate source before MERGE.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Lookback Drill
+
+Task:
+
+```text
+Handle late-arriving records.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: JSON Drill
+
+Task:
+
+```text
+Move repeated JSON extraction to staging.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Validation Drill
+
+Task:
+
+```text
+Write old-vs-new result comparison.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 19: Trade-Off Drill
+
+Task:
+
+```text
+Explain storage vs speed trade-off.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 20: Cost Drill
+
+Task:
+
+```text
+Reduce bytes scanned in a warehouse query.
+```
+
+Minimum passing answer:
+
+```text
+1. Identify bottleneck.
+2. Propose targeted fix.
+3. Explain why it is faster.
+4. State correctness risk.
+5. State validation.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 99. Quick Reference Cards
+
+### Quick Card 1: Baseline
+
+Summary:
+
+```text
+Measure before changing SQL.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 2: Execution plan
+
+Summary:
+
+```text
+Find biggest scan/join/sort/aggregate cost.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 3: Column pruning
+
+Summary:
+
+```text
+Select only needed columns.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 4: Partition pruning
+
+Summary:
+
+```text
+Filter directly on partition columns.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 5: Sargability
+
+Summary:
+
+```text
+Use predicates engine can optimize.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 6: Filter early
+
+Summary:
+
+```text
+Reduce rows before joins/windows.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 7: Pre-aggregate
+
+Summary:
+
+```text
+Join at common metric grain.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 8: EXISTS
+
+Summary:
+
+```text
+Existence check without multiplication.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 9: NOT EXISTS
+
+Summary:
+
+```text
+NULL-safe anti-join.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 10: Window cost
+
+Summary:
+
+```text
+Sort fewer rows.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 11: COUNT DISTINCT
+
+Summary:
+
+```text
+Pre-deduplicate reusable grain.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 12: CTE
+
+Summary:
+
+```text
+Readability; performance depends on engine.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 13: Temp table
+
+Summary:
+
+```text
+Reusable intermediate in a job.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 14: Materialized table
+
+Summary:
+
+```text
+Reusable expensive result.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 15: Data skew
+
+Summary:
+
+```text
+Hot keys create slow distributed stages.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 16: Incremental
+
+Summary:
+
+```text
+Process only changed data.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+### Quick Card 17: Validation
+
+Summary:
+
+```text
+Faster is useless if wrong.
+```
+
+Interview check:
+
+```text
+Give one example query rewrite and one Data Engineering use case.
+```
+
+
+## 100. Query Optimization FAQ
+
+### FAQ 1: Should I always add an index?
+
+Answer:
+
+```text
+No. First inspect query pattern, table type, engine, selectivity, and write overhead.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 2: Are CTEs faster?
+
+Answer:
+
+```text
+Not automatically. CTE performance depends on whether the engine inlines or materializes them.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 3: Is SELECT * bad?
+
+Answer:
+
+```text
+Usually yes in production analytics because it reads and moves unnecessary columns.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 4: Why is function on date column bad?
+
+Answer:
+
+```text
+It can prevent partition pruning or index usage; use range predicates instead.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 5: When should I aggregate before joining?
+
+Answer:
+
+```text
+When joining detailed facts or when the metric grain is higher than raw row grain.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 6: When should I use EXISTS?
+
+Answer:
+
+```text
+When only existence matters and right-table attributes are not needed.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 7: How do I optimize COUNT DISTINCT?
+
+Answer:
+
+```text
+Reduce to distinct grain first, precompute reusable tables, or use approved approximations.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 8: How do I optimize window functions?
+
+Answer:
+
+```text
+Filter and project columns before windowing; rank aggregated rows when possible.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 9: What is data skew?
+
+Answer:
+
+```text
+Uneven key distribution causing some workers/tasks to process much more data.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+### FAQ 10: How do I prove optimization is correct?
+
+Answer:
+
+```text
+Compare row counts, key counts, metrics, and key-level diffs between old and new outputs.
+```
+
+Candidate should also explain:
+
+```text
+1. Example.
+2. Bottleneck reduced.
+3. Correctness risk.
+4. Validation query.
+```
+
+
+## 101. Additional Mini Scenario Cards
+
+### Mini Scenario 1: Date filter scans full table
+
+Recommended direction:
+
+```text
+Rewrite CAST(date_time AS DATE) to range filter or partition column filter.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 2: Email join is slow
+
+Recommended direction:
+
+```text
+Create normalized_email in staging and join on it.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 3: Dashboard query repeats daily aggregation
+
+Recommended direction:
+
+```text
+Materialize daily aggregate table.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 4: MERGE scans entire target
+
+Recommended direction:
+
+```text
+Limit source/target to affected partitions and dedupe source.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 5: A query spills during sort
+
+Recommended direction:
+
+```text
+Reduce rows/columns before ORDER BY or window.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 6: Join stage has skew
+
+Recommended direction:
+
+```text
+Find top join keys and handle heavy/NULL keys separately.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 7: Source reconciliation too slow
+
+Recommended direction:
+
+```text
+Compare only changed partition and hash wide columns.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 8: Raw JSON filter is slow
+
+Recommended direction:
+
+```text
+Extract event_name to typed column during staging.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 9: COUNT DISTINCT expensive
+
+Recommended direction:
+
+```text
+Maintain entity-day table or approved approximate sketch.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 10: Backfill takes days
+
+Recommended direction:
+
+```text
+Partition backfill, parallelize by date, and overwrite partitions.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 11: Late arrivals missed
+
+Recommended direction:
+
+```text
+Use lookback window and idempotent merge.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 12: SCD join duplicates rows
+
+Recommended direction:
+
+```text
+Validate overlaps and filter history to relevant time window.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 13: Top N per group slow
+
+Recommended direction:
+
+```text
+Aggregate first, then rank.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 14: Huge cross join
+
+Recommended direction:
+
+```text
+Filter dimensions before generating expected combinations.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 15: Query has many nested subqueries
+
+Recommended direction:
+
+```text
+Refactor into CTEs and materialize expensive reused stages if needed.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 16: Wrong use of DISTINCT
+
+Recommended direction:
+
+```text
+Fix join key/cardinality or dedupe source intentionally.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 17: Low-selectivity index suggested
+
+Recommended direction:
+
+```text
+Explain why index may not help when most rows are returned.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 18: Over-partitioned table
+
+Recommended direction:
+
+```text
+Reduce partition cardinality and compact files.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 19: Small file problem
+
+Recommended direction:
+
+```text
+Compact files and tune write sizes.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 20: Frequent current-state lookup
+
+Recommended direction:
+
+```text
+Maintain current snapshot table.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 21: Range join slow
+
+Recommended direction:
+
+```text
+Pre-filter ranges and validate non-overlap.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 22: Delete old data slow
+
+Recommended direction:
+
+```text
+Drop/overwrite partitions instead of row deletes.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 23: String ID cast in join
+
+Recommended direction:
+
+```text
+Standardize ID type in staging.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 24: HAVING used for row filter
+
+Recommended direction:
+
+```text
+Move row-level filter to WHERE.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 25: UNION slow
+
+Recommended direction:
+
+```text
+Use UNION ALL and explicit business dedupe.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 26: ORDER BY huge table
+
+Recommended direction:
+
+```text
+Filter and project before sorting; use clustering/index if appropriate.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 27: Natural key duplicates
+
+Recommended direction:
+
+```text
+Validate uniqueness or resolve identity before join.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 28: No result validation
+
+Recommended direction:
+
+```text
+Add old-vs-new row count and metric diff.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 29: One query used for many use cases
+
+Recommended direction:
+
+```text
+Split reusable data mart by common grain.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 30: Cloud cost spike
+
+Recommended direction:
+
+```text
+Check bytes scanned, partition filters, materialized aggregates, and query frequency.
+```
+
+Candidate must explain:
+
+```text
+1. Why this is slow.
+2. What work is reduced.
+3. What correctness risk exists.
+4. How to validate before and after.
+5. What trade-off remains.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```

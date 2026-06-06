@@ -1,0 +1,6232 @@
+# Sorting and Binary Search Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/dsa/sorting-binary-search.md
+```
+
+This guide teaches and drills **sorting and binary search patterns for Data Engineering interviews**.
+
+This is not a generic algorithm textbook. It is an interview-focused guide for Data Engineering candidates who need to solve sorted-array problems, rank/order records, search timestamps, locate partitions, find thresholds, optimize answer spaces, and reason about ordered data under interview pressure.
+
+Sorting and binary search are high-ROI because they appear in:
+
+- coding interviews
+- SQL-like ordering/ranking logic
+- sorted logs
+- sorted timestamps
+- partition lookup
+- time-window lookup
+- deduplication after sorting
+- source-target reconciliation
+- search insert position
+- first/last occurrence
+- lower bound / upper bound
+- binary search on answer
+- capacity planning
+- threshold detection
+- rotated sorted arrays
+- monotonic predicates
+- merge-like data processing
+- active interval lookup
+- SCD effective-date lookup
+- batch sizing
+- finding first failure
+- optimizing minimum/maximum feasible values
+
+Use this guide with:
+
+- `docs/dsa-for-data-engineers.md`
+- `docs/python-interview-guide.md`
+- `docs/leetcode-practice-map.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/dsa-drill-mode.md`
+- `modes/python-drill-mode.md`
+- `modes/pattern-mapper-mode.md`
+- `modes/tutor-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `modes/interview-mode.md`
+- `practice/dsa/arrays-strings.md`
+- `practice/dsa/hashmaps.md`
+- `practice/dsa/heap-top-k.md`
+- `practice/dsa/intervals.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering coding standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at sorting and binary search patterns.
+
+The candidate should learn to answer:
+
+```text
+When should I sort?
+What key should I sort by?
+When does sorting destroy original index information?
+When do I need stable sorting?
+When should I use binary search?
+What is lower bound?
+What is upper bound?
+How do I find first occurrence?
+How do I find last occurrence?
+How do I search a timestamp range?
+How do I search an answer space?
+What is a monotonic predicate?
+How do I avoid infinite loops?
+How do I handle duplicates?
+How do I handle rotated sorted arrays?
+How do I explain O(log n)?
+How does this map to Data Engineering work?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+identify sorting trigger clues
+choose correct sort key
+preserve original indices when needed
+explain sorting complexity
+write binary search without off-by-one bugs
+use lower_bound and upper_bound patterns
+find first/last valid position
+use binary search on answer
+define monotonic predicates clearly
+handle duplicates and edge cases
+dry run pointer movement
+connect ordered-data logic to Data Engineering scenarios
+```
+
+
+## 2. Why Sorting and Binary Search Matter for Data Engineers
+
+Sorting and binary search are practical Data Engineering skills.
+
+Real Data Engineering examples:
+
+```text
+Sort records by event_time before sessionization.
+Sort transactions by account_id and timestamp before deduplication.
+Sort files by partition date before gap detection.
+Sort pipeline runs by runtime to rank slow jobs.
+Sort schema changes by version.
+Find first failed pipeline run in sorted run history.
+Find insertion position for a new partition.
+Find active SCD2 record for a transaction timestamp.
+Find lower and upper timestamp bounds in sorted logs.
+Find first event at or after a watermark.
+Find last event before cutoff.
+Find minimum batch size that satisfies SLA.
+Find minimum worker capacity to finish jobs in time.
+Find maximum safe API page size under rate limits.
+Find threshold where data quality check starts failing.
+Find first bad version/config/deployment.
+```
+
+Interviewers ask sorting and binary search because they test whether the candidate can reason about order, boundaries, monotonic conditions, and efficient search.
+
+
+## 3. Core Mental Model: Sorting
+
+Sorting arranges items by a rule.
+
+Examples:
+
+```text
+numbers ascending
+strings lexicographic
+records by timestamp
+records by customer_id then updated_at
+intervals by start time
+logs by service then timestamp
+files by partition_date
+```
+
+Sorting helps when:
+
+```text
+neighbors matter
+order matters
+duplicates become adjacent
+two pointers become possible
+binary search becomes possible
+merge-like comparison becomes possible
+ranking is needed
+interval logic is needed
+```
+
+Sorting cost:
+
+```text
+O(n log n)
+```
+
+Interview line:
+
+```text
+I sort because after sorting, related items become adjacent and I can solve the rest in one scan or with two pointers.
+```
+
+Common warning:
+
+```text
+Sorting changes order. If the problem asks for original indices, preserve them before sorting.
+```
+
+
+## 4. Core Mental Model: Binary Search
+
+Binary search repeatedly cuts the search space in half.
+
+It works when:
+
+```text
+the data is sorted
+or
+the answer space has a monotonic true/false condition
+```
+
+Sorted array example:
+
+```text
+[1, 3, 5, 7, 9]
+target = 7
+```
+
+Answer-space example:
+
+```text
+Can we finish all jobs with capacity X?
+If yes for X, then yes for any larger capacity.
+This monotonic property allows binary search over X.
+```
+
+Binary search is not only for arrays.
+
+It can search:
+
+```text
+array indices
+timestamps
+answer values
+capacity values
+batch sizes
+partition boundaries
+versions
+thresholds
+```
+
+Interview line:
+
+```text
+Binary search applies because the condition is monotonic: once it becomes true, it stays true.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for sorting/binary search problems:
+
+```text
+1. Restate the problem.
+2. Clarify input order.
+3. Clarify duplicates.
+4. Clarify output: index, value, count, position, or boolean.
+5. Explain brute force.
+6. Identify sorting or binary search trigger.
+7. If sorting:
+   - define sort key
+   - preserve original indices if needed
+   - explain scan/two-pointer after sorting
+8. If binary search:
+   - define search space
+   - define condition
+   - define what left/right mean
+   - define loop invariant
+9. Write code.
+10. Dry run pointer movement.
+11. Explain edge cases.
+12. Explain time complexity.
+13. Explain space complexity.
+14. Connect to Data Engineering scenario.
+```
+
+Short binary search version:
+
+```text
+Search space:
+Predicate:
+Find first true or last true:
+Pointer update:
+Answer:
+Complexity:
+```
+
+Strict rule:
+
+```text
+No binary search code before defining what condition is monotonic.
+```
+
+
+## 6. Scoring Rubric
+
+Score each sorting/binary search attempt from 0 to 5.
+
+### Score 0
+
+No meaningful attempt.
+
+### Score 1
+
+Does not understand sorting or binary search.
+
+### Score 2
+
+Partial logic but wrong boundaries, wrong sort key, or broken edge cases.
+
+### Score 3
+
+Works for simple cases but weak on duplicates, off-by-one, or complexity.
+
+### Score 4
+
+Interview-ready. Correct pattern, clean code, edge cases, and complexity.
+
+### Score 5
+
+Strong. Handles variations, explains invariants, and connects to Data Engineering scenarios.
+
+Do not give 4+ if:
+
+```text
+candidate cannot explain why sorting helps
+candidate sorts but loses original indices when needed
+candidate writes binary search without clear invariant
+candidate has off-by-one loop bugs
+candidate cannot define monotonic predicate
+candidate cannot handle duplicates
+candidate cannot explain lower/upper bound
+candidate gives wrong complexity
+candidate only passes sample
+candidate cannot dry run pointer movement
+```
+
+
+## 7. Complexity Rules
+
+Common complexities:
+
+```text
+Sorting: O(n log n)
+Single scan after sorting: O(n)
+Binary search on array: O(log n)
+Binary search with O(n) feasibility check: O(n log range)
+Lower/upper bound: O(log n)
+Two pointers after sorting: O(n)
+Sorting records by key: O(n log n)
+Search in rotated sorted array: O(log n) without duplicates
+Search in rotated sorted array with many duplicates: can degrade to O(n)
+```
+
+Space:
+
+```text
+Python sort is in-place but uses extra memory internally.
+Sorted copy uses O(n).
+Preserving original index pairs uses O(n).
+Binary search uses O(1) extra space.
+```
+
+Interview wording:
+
+```text
+Time is O(log n) because each iteration halves the search space.
+```
+
+For answer search:
+
+```text
+Time is O(n log R), where R is the numeric search range, because each feasibility check scans n items.
+```
+
+
+## 8. Edge Case Checklist
+
+Sorting edge cases:
+
+```text
+empty input
+one element
+duplicates
+negative values
+already sorted
+reverse sorted
+same sort key
+tie-breakers
+original indices required
+stable ordering required
+invalid records
+None values
+mixed data types
+case sensitivity
+timestamp strings vs datetime
+```
+
+Binary search edge cases:
+
+```text
+empty array
+one element
+target smaller than all
+target larger than all
+target equal to first element
+target equal to last element
+target not present
+duplicates
+all values same
+left/right crossing
+mid calculation
+first occurrence
+last occurrence
+insert position at 0
+insert position at n
+minimum feasible value
+maximum feasible value
+predicate always false
+predicate always true
+```
+
+Data Engineering-specific edge cases:
+
+```text
+missing partition
+duplicate partition
+timestamp at boundary
+watermark exactly equals event_time
+late-arriving records
+timezone-normalization
+version list with duplicate deployment markers
+sorted logs with repeated timestamps
+SCD intervals with open-ended end date
+capacity zero or negative
+batch size larger than total rows
+```
+
+
+## 9. Pattern Map
+
+Sorting and binary search patterns:
+
+```text
+1. Sort and scan.
+2. Sort with custom key.
+3. Sort while preserving original index.
+4. Sort + two pointers.
+5. Sort + dedupe adjacent items.
+6. Sort + group adjacent records.
+7. Sort + greedy.
+8. Basic binary search exact target.
+9. Search insert position.
+10. Lower bound: first index >= target.
+11. Upper bound: first index > target.
+12. First occurrence / last occurrence.
+13. Count occurrences using bounds.
+14. Search range.
+15. Search rotated sorted array.
+16. Find minimum in rotated sorted array.
+17. Binary search on answer.
+18. First true / first bad version.
+19. Last true / maximum feasible value.
+20. Peak element.
+21. Matrix binary search.
+22. Sorted timestamp lookup.
+23. Active period lookup.
+24. Capacity planning with monotonic predicate.
+25. Partition/date boundary search.
+```
+
+Pattern selection rule:
+
+```text
+If the input is sorted or can be sorted profitably, consider binary search, two pointers, or adjacent grouping.
+If the question asks minimum feasible / maximum feasible, consider binary search on answer.
+```
+
+
+## 10. Common Mistakes
+
+Common sorting mistakes:
+
+```text
+Sorting when original index is required and not preserving index.
+Sorting by wrong key.
+Forgetting tie-breaker.
+Assuming sort is free.
+Sorting strings that represent dates without validating format.
+Sorting records with None values without handling them.
+Using sort when hash map would be O(n).
+```
+
+Common binary search mistakes:
+
+```text
+No clear invariant.
+Wrong while condition.
+Wrong pointer update.
+Infinite loop.
+Using left < right template incorrectly.
+Using left <= right template but returning wrong value.
+Not handling duplicates.
+Confusing lower_bound and upper_bound.
+Not checking target after loop when exact search is needed.
+Wrong mid update for first/last occurrence.
+Overflow mid in some languages.
+Predicate is not monotonic.
+Wrong search range for answer search.
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. You wrote binary search syntax, but you did not define the monotonic condition, so the pointer updates are not justified.
+```
+
+
+## 11. Python Sorting Essentials
+
+Python sorting tools:
+
+### In-place sort
+
+```python
+items.sort()
+```
+
+### Sorted copy
+
+```python
+sorted_items = sorted(items)
+```
+
+### Sort by key
+
+```python
+records.sort(key=lambda record: record["event_time"])
+```
+
+### Sort by multiple keys
+
+```python
+records.sort(key=lambda record: (record["customer_id"], record["event_time"]))
+```
+
+### Descending sort
+
+```python
+records.sort(key=lambda record: record["runtime_seconds"], reverse=True)
+```
+
+### Mixed ascending/descending
+
+```python
+records.sort(key=lambda record: (record["customer_id"], -record["score"]))
+```
+
+For strings or non-numeric descending, use careful transformations or custom key.
+
+### Preserve original index
+
+```python
+indexed = [(value, index) for index, value in enumerate(nums)]
+indexed.sort()
+```
+
+Interview warning:
+
+```text
+If output requires original positions, sort pairs containing original indices.
+```
+
+
+## 12. Stable Sorting
+
+Python's sort is stable.
+
+Stable means:
+
+```text
+If two items have equal sort key, their original relative order is preserved.
+```
+
+Why it matters:
+
+```text
+multi-step sorting
+tie-breaking
+preserving original arrival order
+Data Engineering deterministic processing
+```
+
+Example:
+
+```python
+records.sort(key=lambda record: record["event_time"])
+```
+
+Records with same event_time remain in their previous relative order.
+
+Multi-key sorting is usually clearer:
+
+```python
+records.sort(key=lambda record: (record["customer_id"], record["event_time"]))
+```
+
+Interview line:
+
+```text
+Python sort is stable, but I will still define explicit tie-breakers when deterministic ranking matters.
+```
+
+Data Engineering connection:
+
+```text
+When two records have the same updated_at, ingestion_time or sequence_number should be used as an explicit tie-breaker.
+```
+
+
+## 13. Pattern: Sort and Scan
+
+Use sort and scan when:
+
+```text
+duplicates should become adjacent
+records should be processed by timestamp
+need group adjacent records after sorting
+need compare neighboring values
+need detect gaps
+need merge ranges
+need greedy by order
+```
+
+Template:
+
+```python
+def sort_and_scan(items):
+    items.sort()
+    result = []
+
+    for item in items:
+        # compare with previous or accumulate group
+        pass
+
+    return result
+```
+
+Data Engineering examples:
+
+```text
+sort events by user_id and event_time
+sort files by partition date
+sort transactions by account_id then timestamp
+sort pipeline runs by start time
+```
+
+Interview line:
+
+```text
+Sorting makes related records adjacent, so I can solve the rest in a single linear scan.
+```
+
+
+## 14. Data Engineering Custom Problem: Sort Events by User and Time
+
+Problem:
+
+```text
+Given event records with user_id and event_time, return valid events sorted by user_id then event_time.
+Skip invalid records missing user_id or event_time.
+```
+
+Pattern:
+
+```text
+Sort by multiple keys
+```
+
+Code:
+
+```python
+def sort_events_by_user_time(events):
+    valid = []
+    invalid_count = 0
+
+    for event in events:
+        if event.get("user_id") is None or event.get("event_time") is None:
+            invalid_count += 1
+            continue
+
+        valid.append(event)
+
+    valid.sort(key=lambda event: (event["user_id"], event["event_time"]))
+
+    return valid, invalid_count
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n) for valid list
+```
+
+Follow-ups:
+
+```text
+What if event_time strings have different formats?
+What if same user_id and event_time have duplicate events?
+What if data is too large for memory?
+```
+
+Expected:
+
+```text
+Normalize timestamps, add tie-breakers, or use external/distributed sort when data is too large.
+```
+
+
+## 15. Pattern: Sort + Dedupe Adjacent Records
+
+Sorting can help deduplicate records.
+
+Use when:
+
+```text
+duplicates become adjacent after sorting by key
+need keep latest per key
+need compare neighboring records
+```
+
+Example:
+
+```text
+sort by id ascending, updated_at descending
+then keep first record per id
+```
+
+Template:
+
+```python
+def dedupe_latest(records):
+    records.sort(key=lambda record: (record["id"], -record["updated_at"]))
+    result = []
+    seen = set()
+
+    for record in records:
+        if record["id"] not in seen:
+            result.append(record)
+            seen.add(record["id"])
+
+    return result
+```
+
+For timestamps that are strings, cannot use unary `-`.
+
+Use:
+
+```python
+records.sort(key=lambda record: (record["id"], record["updated_at"]), reverse=False)
+```
+
+Then scan and compare, or sort with a parsed timestamp.
+
+Data Engineering line:
+
+```text
+Sort by business key and recency, then keep the first record per key.
+```
+
+
+## 16. Data Engineering Custom Problem: Latest Record by Sorting
+
+Problem:
+
+```text
+Given records with id, updated_at, and ingestion_time, keep latest record per id.
+Use sorting approach.
+Latest means highest updated_at, tie by highest ingestion_time.
+```
+
+Code:
+
+```python
+def latest_records_by_sorting(records):
+    valid = []
+    invalid = []
+
+    for record in records:
+        if record.get("id") is None or record.get("updated_at") is None:
+            invalid.append({"record": record, "reason": "missing_id_or_updated_at"})
+            continue
+
+        valid.append(record)
+
+    valid.sort(
+        key=lambda record: (
+            record["id"],
+            record["updated_at"],
+            record.get("ingestion_time"),
+        ),
+        reverse=False,
+    )
+
+    latest_by_id = {}
+
+    for record in valid:
+        record_id = record["id"]
+        latest_by_id[record_id] = record
+
+    return list(latest_by_id.values()), invalid
+```
+
+Note:
+
+```text
+This works because later sorted records overwrite earlier records for same ID.
+```
+
+Alternative:
+
+```text
+Sort by id ascending, updated_at descending, ingestion_time descending, then keep first per id.
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Interview comparison:
+
+```text
+Hash map latest-record approach is O(n) average and usually better.
+Sorting approach is useful when data is already sorted or when adjacent grouping is needed.
+```
+
+
+## 17. Pattern: Sort + Two Pointers
+
+Use sort + two pointers when:
+
+```text
+finding pairs/triplets
+comparing smallest and largest
+need reduce O(n²)
+sorted order gives direction
+```
+
+Examples:
+
+```text
+Two Sum II
+3Sum
+pair closest to target
+boats/rescue pairing
+source-target sorted reconciliation
+```
+
+Template:
+
+```python
+left = 0
+right = len(nums) - 1
+
+while left < right:
+    current = nums[left] + nums[right]
+
+    if current == target:
+        return True
+    elif current < target:
+        left += 1
+    else:
+        right -= 1
+```
+
+Interview line:
+
+```text
+After sorting, if the sum is too small I move left forward; if too large I move right backward.
+```
+
+Warning:
+
+```text
+If original indices are required, preserve them before sorting.
+```
+
+
+## 18. Problem: Two Sum II - Input Array Is Sorted
+
+LeetCode:
+
+```text
+167. Two Sum II - Input Array Is Sorted
+Difficulty: Medium
+Pattern: Two pointers on sorted array
+```
+
+Code:
+
+```python
+def two_sum(numbers, target):
+    left = 0
+    right = len(numbers) - 1
+
+    while left < right:
+        total = numbers[left] + numbers[right]
+
+        if total == target:
+            return [left + 1, right + 1]
+
+        if total < target:
+            left += 1
+        else:
+            right -= 1
+
+    return []
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find two sorted adjustment amounts that reconcile to a target.
+```
+
+Common mistake:
+
+```text
+Using hash map when sorted input allows O(1) extra space. Hash map still works but is not using the sorted property.
+```
+
+
+## 19. Problem: 3Sum
+
+LeetCode:
+
+```text
+15. 3Sum
+Difficulty: Medium
+Pattern: Sort + two pointers
+```
+
+Code:
+
+```python
+def three_sum(nums):
+    nums.sort()
+    result = []
+
+    for i in range(len(nums)):
+        if i > 0 and nums[i] == nums[i - 1]:
+            continue
+
+        left = i + 1
+        right = len(nums) - 1
+
+        while left < right:
+            total = nums[i] + nums[left] + nums[right]
+
+            if total == 0:
+                result.append([nums[i], nums[left], nums[right]])
+                left += 1
+                right -= 1
+
+                while left < right and nums[left] == nums[left - 1]:
+                    left += 1
+
+                while left < right and nums[right] == nums[right + 1]:
+                    right -= 1
+
+            elif total < 0:
+                left += 1
+            else:
+                right -= 1
+
+    return result
+```
+
+Complexity:
+
+```text
+Time: O(n²)
+Space: O(1) extra excluding output, depending sort implementation
+```
+
+Data Engineering connection:
+
+```text
+Find triplets of transactions that net to zero in reconciliation.
+```
+
+Common mistakes:
+
+```text
+not skipping duplicates
+using same index twice
+wrong pointer movement after finding triplet
+```
+
+
+## 20. Binary Search Template: Exact Target
+
+Use this when:
+
+```text
+array is sorted
+need to know whether target exists
+or return any index of target
+```
+
+Template:
+
+```python
+def binary_search(nums, target):
+    left = 0
+    right = len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return mid
+
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1
+```
+
+Invariant:
+
+```text
+If target exists, it is inside [left, right].
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Interview line:
+
+```text
+Each step discards half of the remaining search range.
+```
+
+
+## 21. Problem: Binary Search
+
+LeetCode:
+
+```text
+704. Binary Search
+Difficulty: Easy
+Pattern: Exact binary search
+```
+
+Code:
+
+```python
+def search(nums, target):
+    left = 0
+    right = len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return mid
+
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return -1
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Edge cases:
+
+```text
+empty array
+one element
+target absent
+target at first index
+target at last index
+```
+
+Data Engineering connection:
+
+```text
+Find exact partition date or version number in a sorted list.
+```
+
+
+## 22. Binary Search Template: Lower Bound
+
+Lower bound means:
+
+```text
+first index where nums[index] >= target
+```
+
+Template:
+
+```python
+def lower_bound(nums, target):
+    left = 0
+    right = len(nums)
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Search range:
+
+```text
+[left, right)
+```
+
+Return values:
+
+```text
+0 means target belongs before first element.
+len(nums) means target is greater than all elements.
+```
+
+Use for:
+
+```text
+search insert position
+first event >= watermark
+first partition >= target date
+first value not less than target
+```
+
+Interview line:
+
+```text
+Lower bound returns the first position where target could be inserted while keeping the list sorted.
+```
+
+
+## 23. Binary Search Template: Upper Bound
+
+Upper bound means:
+
+```text
+first index where nums[index] > target
+```
+
+Template:
+
+```python
+def upper_bound(nums, target):
+    left = 0
+    right = len(nums)
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] <= target:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Use for:
+
+```text
+first event after cutoff
+count values <= target
+right boundary of target range
+insert after duplicates
+```
+
+Count of target occurrences:
+
+```python
+count = upper_bound(nums, target) - lower_bound(nums, target)
+```
+
+Data Engineering connection:
+
+```text
+Find index range of events with timestamp equal to a specific timestamp or inside a boundary.
+```
+
+
+## 24. Problem: Search Insert Position
+
+LeetCode:
+
+```text
+35. Search Insert Position
+Difficulty: Easy
+Pattern: Lower bound
+```
+
+Problem:
+
+```text
+Return index if target is found. If not, return index where it would be inserted in order.
+```
+
+Code:
+
+```python
+def search_insert(nums, target):
+    left = 0
+    right = len(nums)
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find where to insert a new partition date into a sorted partition list.
+```
+
+Common mistake:
+
+```text
+Returning -1 when target is absent. This problem asks for insertion position, not exact search.
+```
+
+
+## 25. Data Engineering Custom Problem: Insert Partition Position
+
+Problem:
+
+```text
+Given sorted partition dates and a new partition date, return insertion index.
+If duplicate exists, return first duplicate position.
+```
+
+Pattern:
+
+```text
+Lower bound
+```
+
+Code:
+
+```python
+def partition_insert_position(partitions, new_partition):
+    left = 0
+    right = len(partitions)
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if partitions[mid] < new_partition:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if partitions are not sorted?
+What if partition dates are strings with inconsistent formats?
+What if duplicate partitions are invalid?
+```
+
+Expected:
+
+```text
+Sort/validate first, normalize dates, and check whether insert position already contains the partition.
+```
+
+
+## 26. Pattern: First and Last Occurrence
+
+Use modified binary search when duplicates exist.
+
+### First occurrence
+
+Find first index where:
+
+```text
+nums[index] >= target
+```
+
+Then check if value equals target.
+
+### Last occurrence
+
+Find first index where:
+
+```text
+nums[index] > target
+```
+
+Then subtract 1 and check.
+
+Code idea:
+
+```python
+first = lower_bound(nums, target)
+last = upper_bound(nums, target) - 1
+```
+
+If:
+
+```text
+first == len(nums) or nums[first] != target
+```
+
+target does not exist.
+
+Interview line:
+
+```text
+Because duplicates exist, exact binary search may return any matching index. I need lower and upper bounds to get the full range.
+```
+
+
+## 27. Problem: Find First and Last Position of Element in Sorted Array
+
+LeetCode:
+
+```text
+34. Find First and Last Position of Element in Sorted Array
+Difficulty: Medium
+Pattern: Lower bound + upper bound
+```
+
+Code:
+
+```python
+def search_range(nums, target):
+    def lower_bound(value):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] < value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    first = lower_bound(target)
+
+    if first == len(nums) or nums[first] != target:
+        return [-1, -1]
+
+    last = lower_bound(target + 1) - 1
+    return [first, last]
+```
+
+For non-integer generic values, use upper_bound:
+
+```python
+def search_range(nums, target):
+    def lower_bound(value):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] < value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    def upper_bound(value):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] <= value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    first = lower_bound(target)
+
+    if first == len(nums) or nums[first] != target:
+        return [-1, -1]
+
+    last = upper_bound(target) - 1
+    return [first, last]
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find first and last index of records with a specific timestamp or partition value.
+```
+
+
+## 28. Data Engineering Custom Problem: Timestamp Range Bounds
+
+Problem:
+
+```text
+Given sorted event timestamps and a half-open query range [start_time, end_time), return index range of events inside that window.
+```
+
+Pattern:
+
+```text
+lower_bound(start_time) and lower_bound(end_time)
+```
+
+Code:
+
+```python
+def timestamp_window_bounds(timestamps, start_time, end_time):
+    def lower_bound(value):
+        left = 0
+        right = len(timestamps)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if timestamps[mid] < value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    start_index = lower_bound(start_time)
+    end_index = lower_bound(end_time)
+
+    return [start_index, end_index]
+```
+
+Meaning:
+
+```text
+Events in range are timestamps[start_index:end_index].
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Efficiently locate records in a sorted log segment for an extraction window.
+```
+
+Boundary rule:
+
+```text
+Use [start, end) to avoid double-counting events exactly at end_time.
+```
+
+
+## 29. Python bisect Module
+
+Python provides binary search helpers.
+
+```python
+import bisect
+```
+
+### Lower bound
+
+```python
+bisect.bisect_left(nums, target)
+```
+
+Returns first index where value can be inserted before existing equal values.
+
+Equivalent:
+
+```text
+first index >= target
+```
+
+### Upper bound
+
+```python
+bisect.bisect_right(nums, target)
+```
+
+Returns first index after existing equal values.
+
+Equivalent:
+
+```text
+first index > target
+```
+
+Example:
+
+```python
+import bisect
+
+nums = [1, 2, 2, 2, 5]
+
+left = bisect.bisect_left(nums, 2)   # 1
+right = bisect.bisect_right(nums, 2) # 4
+count = right - left                 # 3
+```
+
+Interview note:
+
+```text
+It is okay to mention bisect, but also know how to implement lower_bound manually.
+```
+
+
+## 30. Problem: Count Occurrences in Sorted Array
+
+Custom problem:
+
+```text
+Given sorted nums and target, count how many times target appears.
+```
+
+Pattern:
+
+```text
+upper_bound - lower_bound
+```
+
+Code:
+
+```python
+def count_occurrences(nums, target):
+    def lower_bound(value):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] < value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    def upper_bound(value):
+        left = 0
+        right = len(nums)
+
+        while left < right:
+            mid = (left + right) // 2
+
+            if nums[mid] <= value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    return upper_bound(target) - lower_bound(target)
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Count records for a specific sorted partition or timestamp quickly.
+```
+
+
+## 31. Pattern: First True Binary Search
+
+This is the most important binary search-on-answer template.
+
+Problem form:
+
+```text
+Find the smallest x such that condition(x) is True.
+```
+
+Condition must be monotonic:
+
+```text
+False False False True True True
+```
+
+Template:
+
+```python
+def first_true(left, right):
+    # Search in [left, right], assuming at least one True exists.
+    while left < right:
+        mid = (left + right) // 2
+
+        if condition(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Use for:
+
+```text
+first bad version
+minimum feasible capacity
+minimum eating speed
+minimum days
+minimum batch size
+minimum workers
+minimum threshold
+```
+
+Interview line:
+
+```text
+I am searching for the minimum feasible value. If a value works, any larger value also works, so I move right to mid.
+```
+
+
+## 32. Pattern: Last True Binary Search
+
+Problem form:
+
+```text
+Find the largest x such that condition(x) is True.
+```
+
+Condition shape:
+
+```text
+True True True False False False
+```
+
+Template:
+
+```python
+def last_true(left, right):
+    while left < right:
+        mid = (left + right + 1) // 2
+
+        if condition(mid):
+            left = mid
+        else:
+            right = mid - 1
+
+    return left
+```
+
+Why `+1` in mid?
+
+```text
+It biases mid upward and prevents infinite loop when left and right are adjacent.
+```
+
+Use for:
+
+```text
+maximum safe batch size
+maximum throughput within error rate
+maximum pages per API call under limit
+maximum feasible threshold
+```
+
+Interview line:
+
+```text
+I use upper mid because I am searching for the last true value.
+```
+
+
+## 33. Problem: First Bad Version
+
+LeetCode:
+
+```text
+278. First Bad Version
+Difficulty: Easy
+Pattern: First true binary search
+```
+
+Problem:
+
+```text
+Versions are good until first bad version.
+Find first bad version.
+```
+
+Code:
+
+```python
+def first_bad_version(n):
+    left = 1
+    right = n
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if isBadVersion(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find first bad deployment/config/schema version where a pipeline started failing.
+```
+
+Common mistake:
+
+```text
+Returning mid immediately when bad is found. There may be an earlier bad version.
+```
+
+
+## 34. Data Engineering Custom Problem: First Failed Pipeline Run
+
+Problem:
+
+```text
+Pipeline runs are sorted by run_number.
+A helper failed(run_number) returns True if that run and all later runs failed.
+Find first failed run.
+```
+
+Pattern:
+
+```text
+First true binary search
+```
+
+Code:
+
+```python
+def first_failed_run(total_runs, failed):
+    left = 1
+    right = total_runs
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if failed(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left if failed(left) else None
+```
+
+Complexity:
+
+```text
+Time: O(log n) calls to failed
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if failures are not monotonic?
+What if runs can recover?
+What if failed() is expensive?
+```
+
+Expected:
+
+```text
+Binary search only works if failure condition is monotonic. If runs can recover, scan or different analysis is needed.
+```
+
+
+## 35. Binary Search on Answer
+
+Binary search on answer is used when the answer is numeric and feasibility is monotonic.
+
+Steps:
+
+```text
+1. Identify answer range [low, high].
+2. Define feasible(x).
+3. Prove monotonic behavior.
+4. Use first_true or last_true template.
+5. Return boundary value.
+```
+
+Common forms:
+
+```text
+minimum speed to finish within H hours
+minimum capacity to ship within D days
+minimum workers to finish jobs
+maximum batch size under memory limit
+minimum threshold to satisfy quality
+```
+
+Key requirement:
+
+```text
+feasible(x) must be monotonic.
+```
+
+Example:
+
+```text
+If capacity 100 works, capacity 101 also works.
+```
+
+Then:
+
+```text
+Find minimum capacity that works.
+```
+
+Interview line:
+
+```text
+I am not searching the array. I am searching the answer space.
+```
+
+
+## 36. Problem: Koko Eating Bananas
+
+LeetCode:
+
+```text
+875. Koko Eating Bananas
+Difficulty: Medium
+Pattern: Binary search on answer
+```
+
+Problem:
+
+```text
+Find minimum eating speed k so all piles are eaten within h hours.
+```
+
+Monotonic predicate:
+
+```text
+If speed k works, any speed greater than k also works.
+```
+
+Code:
+
+```python
+def min_eating_speed(piles, h):
+    left = 1
+    right = max(piles)
+
+    def can_finish(speed):
+        hours = 0
+
+        for pile in piles:
+            hours += (pile + speed - 1) // speed
+
+        return hours <= h
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_finish(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log max_pile)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find minimum processing speed needed to finish all batches before SLA.
+```
+
+Common mistake:
+
+```text
+Using normal division instead of ceiling division.
+```
+
+
+## 37. Problem: Capacity To Ship Packages Within D Days
+
+LeetCode:
+
+```text
+1011. Capacity To Ship Packages Within D Days
+Difficulty: Medium
+Pattern: Binary search on answer
+```
+
+Problem:
+
+```text
+Find minimum ship capacity to ship packages in order within days.
+```
+
+Search range:
+
+```text
+left = max(weights)
+right = sum(weights)
+```
+
+Monotonic predicate:
+
+```text
+If capacity works, any larger capacity works.
+```
+
+Code:
+
+```python
+def ship_within_days(weights, days):
+    left = max(weights)
+    right = sum(weights)
+
+    def can_ship(capacity):
+        used_days = 1
+        current_load = 0
+
+        for weight in weights:
+            if current_load + weight > capacity:
+                used_days += 1
+                current_load = 0
+
+            current_load += weight
+
+        return used_days <= days
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_ship(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log sum(weights))
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find minimum worker/batch capacity needed to process ordered partitions within a deadline.
+```
+
+Common mistake:
+
+```text
+Setting left = 1. Capacity must be at least max(weights).
+```
+
+
+## 38. Data Engineering Custom Problem: Minimum Batch Capacity
+
+Problem:
+
+```text
+Given ordered partition row counts and max_days, find minimum daily processing capacity so all partitions are processed in order within max_days.
+```
+
+Pattern:
+
+```text
+Binary search on answer
+```
+
+Code:
+
+```python
+def minimum_daily_capacity(row_counts, max_days):
+    if not row_counts:
+        return 0
+
+    left = max(row_counts)
+    right = sum(row_counts)
+
+    def can_process(capacity):
+        days = 1
+        current = 0
+
+        for rows in row_counts:
+            if current + rows > capacity:
+                days += 1
+                current = 0
+
+            current += rows
+
+        return days <= max_days
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_process(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log total_rows)
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if partitions can be processed out of order?
+What if some partitions cannot be split?
+What if capacity has cost?
+```
+
+Expected:
+
+```text
+If order does not matter, the predicate may change. If partitions cannot be split, max(row_counts) lower bound remains required.
+```
+
+
+## 39. Problem: Split Array Largest Sum
+
+LeetCode:
+
+```text
+410. Split Array Largest Sum
+Difficulty: Hard
+Pattern: Binary search on answer
+```
+
+Problem:
+
+```text
+Split array into k non-empty continuous subarrays, minimize largest subarray sum.
+```
+
+Search range:
+
+```text
+left = max(nums)
+right = sum(nums)
+```
+
+Predicate:
+
+```text
+Can split into <= k subarrays if max allowed sum is limit?
+```
+
+Code:
+
+```python
+def split_array(nums, k):
+    left = max(nums)
+    right = sum(nums)
+
+    def can_split(limit):
+        groups = 1
+        current = 0
+
+        for value in nums:
+            if current + value > limit:
+                groups += 1
+                current = 0
+
+            current += value
+
+        return groups <= k
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_split(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log sum(nums))
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Split ordered workload into K batches while minimizing maximum batch size.
+```
+
+Common mistake:
+
+```text
+Forgetting that subarrays must be continuous.
+```
+
+
+## 40. Problem: Minimum Number of Days to Make m Bouquets
+
+LeetCode:
+
+```text
+1482. Minimum Number of Days to Make m Bouquets
+Difficulty: Medium
+Pattern: Binary search on answer
+```
+
+Predicate:
+
+```text
+Can make m bouquets by day X?
+```
+
+Monotonic:
+
+```text
+If possible by day X, also possible by any later day.
+```
+
+Code:
+
+```python
+def min_days(bloom_day, m, k):
+    if m * k > len(bloom_day):
+        return -1
+
+    left = min(bloom_day)
+    right = max(bloom_day)
+
+    def can_make(day):
+        bouquets = 0
+        consecutive = 0
+
+        for bloom in bloom_day:
+            if bloom <= day:
+                consecutive += 1
+
+                if consecutive == k:
+                    bouquets += 1
+                    consecutive = 0
+            else:
+                consecutive = 0
+
+        return bouquets >= m
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_make(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log R)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find earliest day when enough partitions/files are available for a downstream job.
+```
+
+
+## 41. Data Engineering Custom Problem: Earliest Complete Partition Day
+
+Problem:
+
+```text
+Given availability_day for files, each partition needs k files.
+Find earliest day when at least m complete partitions are available.
+Files for a partition must be consecutive in the input order.
+```
+
+Pattern:
+
+```text
+Binary search on answer
+```
+
+Code:
+
+```python
+def earliest_complete_partition_day(availability_day, m, k):
+    if m * k > len(availability_day):
+        return -1
+
+    left = min(availability_day)
+    right = max(availability_day)
+
+    def enough_complete(day):
+        complete = 0
+        consecutive = 0
+
+        for available in availability_day:
+            if available <= day:
+                consecutive += 1
+
+                if consecutive == k:
+                    complete += 1
+                    consecutive = 0
+            else:
+                consecutive = 0
+
+        return complete >= m
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if enough_complete(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(n log R)
+Space: O(1)
+```
+
+Interview point:
+
+```text
+The condition is monotonic because availability only increases as day increases.
+```
+
+
+## 42. Problem: Sqrt(x)
+
+LeetCode:
+
+```text
+69. Sqrt(x)
+Difficulty: Easy
+Pattern: Binary search on answer
+```
+
+Problem:
+
+```text
+Return floor of square root of x.
+```
+
+Code:
+
+```python
+def my_sqrt(x):
+    if x < 2:
+        return x
+
+    left = 1
+    right = x // 2
+
+    while left <= right:
+        mid = (left + right) // 2
+        square = mid * mid
+
+        if square == x:
+            return mid
+
+        if square < x:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return right
+```
+
+Complexity:
+
+```text
+Time: O(log x)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find integer threshold where a quadratic cost limit is crossed.
+```
+
+Common mistake:
+
+```text
+Returning left instead of right for floor sqrt after loop.
+```
+
+
+## 43. Problem: Find Peak Element
+
+LeetCode:
+
+```text
+162. Find Peak Element
+Difficulty: Medium
+Pattern: Binary search by slope
+```
+
+Problem:
+
+```text
+Find an index i where nums[i] is greater than neighbors.
+```
+
+Key idea:
+
+```text
+If nums[mid] < nums[mid + 1], a peak exists on the right.
+Otherwise, a peak exists on the left including mid.
+```
+
+Code:
+
+```python
+def find_peak_element(nums):
+    left = 0
+    right = len(nums) - 1
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] < nums[mid + 1]:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find a local peak in ordered metric series, such as latency or error count.
+```
+
+Common mistake:
+
+```text
+Accessing nums[mid + 1] when mid can be last. The left < right loop prevents that.
+```
+
+
+## 44. Pattern: Rotated Sorted Array
+
+A rotated sorted array is sorted but shifted.
+
+Example:
+
+```text
+[4, 5, 6, 7, 0, 1, 2]
+```
+
+At least one half is sorted.
+
+For search:
+
+```text
+Check which half is sorted.
+Then decide whether target lies inside that half.
+```
+
+For finding minimum:
+
+```text
+Compare nums[mid] with nums[right].
+If nums[mid] > nums[right], minimum is right of mid.
+Else minimum is at mid or left of mid.
+```
+
+Interview line:
+
+```text
+Even after rotation, one side of mid remains sorted, so I can still discard half the array.
+```
+
+Warning:
+
+```text
+Duplicates can make the decision ambiguous and may degrade to O(n).
+```
+
+
+## 45. Problem: Search in Rotated Sorted Array
+
+LeetCode:
+
+```text
+33. Search in Rotated Sorted Array
+Difficulty: Medium
+Pattern: Modified binary search
+```
+
+Code:
+
+```python
+def search(nums, target):
+    left = 0
+    right = len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return mid
+
+        if nums[left] <= nums[mid]:
+            # Left half is sorted.
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        else:
+            # Right half is sorted.
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+    return -1
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Search in a cyclically rotated ordered batch/version list.
+```
+
+Common mistake:
+
+```text
+Not handling equality when determining sorted half.
+```
+
+
+## 46. Problem: Find Minimum in Rotated Sorted Array
+
+LeetCode:
+
+```text
+153. Find Minimum in Rotated Sorted Array
+Difficulty: Medium
+Pattern: Modified binary search
+```
+
+Code:
+
+```python
+def find_min(nums):
+    left = 0
+    right = len(nums) - 1
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if nums[mid] > nums[right]:
+            left = mid + 1
+        else:
+            right = mid
+
+    return nums[left]
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Find earliest version/partition in a rotated ordered sequence.
+```
+
+Common mistake:
+
+```text
+Comparing nums[mid] to nums[left] and mishandling already sorted sections.
+```
+
+
+## 47. Problem: Search in Rotated Sorted Array II
+
+LeetCode:
+
+```text
+81. Search in Rotated Sorted Array II
+Difficulty: Medium
+Pattern: Modified binary search with duplicates
+```
+
+Code:
+
+```python
+def search(nums, target):
+    left = 0
+    right = len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return True
+
+        if nums[left] == nums[mid] == nums[right]:
+            left += 1
+            right -= 1
+        elif nums[left] <= nums[mid]:
+            if nums[left] <= target < nums[mid]:
+                right = mid - 1
+            else:
+                left = mid + 1
+        else:
+            if nums[mid] < target <= nums[right]:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+    return False
+```
+
+Complexity:
+
+```text
+Average: O(log n)
+Worst case with many duplicates: O(n)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Search in rotated sequence where duplicates make boundary decisions ambiguous.
+```
+
+Interview point:
+
+```text
+Duplicates can destroy the ability to confidently discard half.
+```
+
+
+## 48. Pattern: Matrix Binary Search
+
+Use matrix binary search when:
+
+```text
+matrix rows are sorted
+and first element of each row is greater than last element of previous row
+```
+
+Treat matrix as a flattened sorted array.
+
+Mapping:
+
+```text
+row = mid // cols
+col = mid % cols
+```
+
+Search range:
+
+```text
+0 to rows * cols - 1
+```
+
+Data Engineering connection:
+
+```text
+Search in a sorted 2D layout, such as partition blocks or ordered table chunks.
+```
+
+
+## 49. Problem: Search a 2D Matrix
+
+LeetCode:
+
+```text
+74. Search a 2D Matrix
+Difficulty: Medium
+Pattern: Binary search flattened matrix
+```
+
+Code:
+
+```python
+def search_matrix(matrix, target):
+    if not matrix or not matrix[0]:
+        return False
+
+    rows = len(matrix)
+    cols = len(matrix[0])
+
+    left = 0
+    right = rows * cols - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+        row = mid // cols
+        col = mid % cols
+        value = matrix[row][col]
+
+        if value == target:
+            return True
+
+        if value < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(log(rows * cols))
+Space: O(1)
+```
+
+Common mistake:
+
+```text
+Using this flattened approach when matrix only has rows and columns sorted independently but not globally sorted.
+```
+
+
+## 50. Problem: Search a 2D Matrix II
+
+LeetCode:
+
+```text
+240. Search a 2D Matrix II
+Difficulty: Medium
+Pattern: Staircase search
+```
+
+Matrix property:
+
+```text
+Rows sorted left to right.
+Columns sorted top to bottom.
+```
+
+Approach:
+
+```text
+Start top-right.
+If value > target, move left.
+If value < target, move down.
+```
+
+Code:
+
+```python
+def search_matrix(matrix, target):
+    if not matrix or not matrix[0]:
+        return False
+
+    row = 0
+    col = len(matrix[0]) - 1
+
+    while row < len(matrix) and col >= 0:
+        value = matrix[row][col]
+
+        if value == target:
+            return True
+
+        if value > target:
+            col -= 1
+        else:
+            row += 1
+
+    return False
+```
+
+Complexity:
+
+```text
+Time: O(rows + cols)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Search in a table-like sorted grid where both dimensions have ordering.
+```
+
+Common mistake:
+
+```text
+Applying flattened binary search even though global row-to-row ordering is not guaranteed.
+```
+
+
+## 51. Pattern: Binary Search for Timestamp Lookup
+
+Sorted timestamps are common in Data Engineering.
+
+Use lower_bound and upper_bound for:
+
+```text
+first event >= watermark
+first event after cutoff
+events in [start, end)
+records before a timestamp
+records at exact timestamp
+range slicing
+```
+
+Half-open window:
+
+```text
+[start_time, end_time)
+```
+
+Bounds:
+
+```text
+start_index = lower_bound(start_time)
+end_index = lower_bound(end_time)
+events = events[start_index:end_index]
+```
+
+Interview line:
+
+```text
+Using lower_bound on start and end gives safe half-open timestamp slicing without double-counting boundary records.
+```
+
+
+## 52. Data Engineering Custom Problem: First Event After Watermark
+
+Problem:
+
+```text
+Given sorted events by event_time and a watermark, return index of first event with event_time >= watermark.
+```
+
+Pattern:
+
+```text
+Lower bound on event_time
+```
+
+Code:
+
+```python
+def first_event_after_watermark(events, watermark):
+    left = 0
+    right = len(events)
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if events[mid]["event_time"] < watermark:
+            left = mid + 1
+        else:
+            right = mid
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Meaning:
+
+```text
+If return value equals len(events), no event is at or after the watermark.
+```
+
+Follow-ups:
+
+```text
+What if events are not sorted?
+What if event_time strings are not normalized?
+What if there are late events before watermark?
+```
+
+Expected:
+
+```text
+Sort/validate timestamps, normalize timezones, and use lookback windows for late events.
+```
+
+
+## 53. Pattern: Active Period Lookup with Binary Search
+
+When intervals are sorted and non-overlapping, binary search can find the active interval.
+
+Condition for timestamp:
+
+```text
+start <= timestamp < end
+```
+
+Algorithm:
+
+```text
+binary search over interval start/end
+if timestamp < start: move left
+elif timestamp >= end: move right
+else: found
+```
+
+Use for:
+
+```text
+SCD2 effective dates
+subscription periods
+pricing periods
+policy periods
+SLA periods
+```
+
+Data Engineering line:
+
+```text
+This is equivalent to an as-of join against effective-date ranges.
+```
+
+
+## 54. Data Engineering Custom Problem: Active Price Lookup
+
+Problem:
+
+```text
+Given sorted non-overlapping price intervals:
+[start_time, end_time, price]
+
+Return price active at event_time.
+Intervals are half-open [start_time, end_time).
+```
+
+Code:
+
+```python
+def active_price_lookup(price_intervals, event_time):
+    left = 0
+    right = len(price_intervals) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+        start_time, end_time, price = price_intervals[mid]
+
+        if start_time <= event_time < end_time:
+            return price
+
+        if event_time < start_time:
+            right = mid - 1
+        else:
+            left = mid + 1
+
+    return None
+```
+
+Complexity:
+
+```text
+Time: O(log n)
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if intervals overlap?
+What if intervals have gaps?
+What if there are many products?
+```
+
+Expected:
+
+```text
+Validate intervals; group intervals by product_id; binary search inside each product's sorted intervals.
+```
+
+
+## 55. Pattern: Monotonic Predicate Design
+
+The hardest part of binary search on answer is not code.
+
+The hard part is defining the predicate.
+
+A predicate is monotonic when it looks like one of these:
+
+```text
+False False False True True True
+True True True False False False
+```
+
+Examples:
+
+```text
+capacity works → larger capacity also works
+speed works → larger speed also works
+day works → later day also works
+threshold passes → higher threshold may or may not work depending metric
+batch size safe → smaller batch size likely safe
+```
+
+Bad predicate:
+
+```text
+This version failed.
+```
+
+If versions can fail, recover, then fail again, not monotonic.
+
+Good predicate:
+
+```text
+This version is bad and all later versions are bad.
+```
+
+Interview line:
+
+```text
+I need to prove monotonicity before using binary search on answer.
+```
+
+
+## 56. Data Engineering Custom Problem: Maximum Safe Batch Size
+
+Problem:
+
+```text
+Given total rows and a function memory_ok(batch_size), find maximum batch size that is safe.
+Assume if batch_size is safe, any smaller batch size is also safe.
+```
+
+Pattern:
+
+```text
+Last true binary search
+```
+
+Code:
+
+```python
+def maximum_safe_batch_size(total_rows, memory_ok):
+    left = 1
+    right = total_rows
+
+    while left < right:
+        mid = (left + right + 1) // 2
+
+        if memory_ok(mid):
+            left = mid
+        else:
+            right = mid - 1
+
+    return left if memory_ok(left) else 0
+```
+
+Complexity:
+
+```text
+Time: O(log total_rows) calls to memory_ok
+Space: O(1)
+```
+
+Follow-ups:
+
+```text
+What if memory_ok is noisy?
+What if larger batch sometimes uses less memory due to compression?
+What if batch size must be multiple of 1000?
+```
+
+Expected:
+
+```text
+Binary search requires reliable monotonic behavior. For multiples, search over multiplier values.
+```
+
+
+## 57. Data Engineering Custom Problem: Minimum Workers for SLA
+
+Problem:
+
+```text
+Given job_sizes and SLA hours, find minimum number of workers so each worker processes equal speed and jobs are assigned in order.
+A helper can_finish(workers) returns True if SLA is met.
+If workers works, more workers also works.
+```
+
+Pattern:
+
+```text
+First true binary search
+```
+
+Code:
+
+```python
+def minimum_workers_for_sla(max_workers, can_finish):
+    left = 1
+    right = max_workers
+
+    if not can_finish(right):
+        return None
+
+    while left < right:
+        mid = (left + right) // 2
+
+        if can_finish(mid):
+            right = mid
+        else:
+            left = mid + 1
+
+    return left
+```
+
+Complexity:
+
+```text
+Time: O(log max_workers * cost(can_finish))
+Space: O(1)
+```
+
+Interview point:
+
+```text
+The monotonic condition is: once enough workers can meet SLA, any larger worker count can also meet SLA.
+```
+
+
+## 58. Pattern: Sorting with Original Indices
+
+When problem asks for original indices, preserve them before sorting.
+
+Example:
+
+```python
+indexed = [(value, index) for index, value in enumerate(nums)]
+indexed.sort(key=lambda pair: pair[0])
+```
+
+Use for:
+
+```text
+two sum original indices after sorting
+rank output with original position
+restore original order after sorting
+annotate records with rank
+```
+
+Data Engineering examples:
+
+```text
+sort records for processing but return original row numbers with errors
+rank pipeline runs but preserve run_id
+dedupe but report original file line number
+```
+
+Common mistake:
+
+```text
+Sorting values alone and then trying to recover original indices with nums.index(value), which fails with duplicates.
+```
+
+
+## 59. Data Engineering Custom Problem: Rank Slow Runs with Original Position
+
+Problem:
+
+```text
+Given pipeline runs in original order, return top k slowest runs with original index.
+Tie-break by smaller original index.
+```
+
+Pattern:
+
+```text
+Sort with original indices
+```
+
+Code:
+
+```python
+def top_slowest_runs_with_index(runtimes, k):
+    indexed = []
+
+    for index, runtime in enumerate(runtimes):
+        if runtime is None:
+            continue
+
+        indexed.append((runtime, index))
+
+    indexed.sort(key=lambda item: (-item[0], item[1]))
+
+    return [
+        {"runtime": runtime, "original_index": index}
+        for runtime, index in indexed[:k]
+    ]
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-up:
+
+```text
+What if k is much smaller than n?
+```
+
+Expected:
+
+```text
+Use heap-top-k pattern for O(n log k).
+```
+
+
+## 60. Pattern: Sort + Group Adjacent
+
+When records are sorted by group key, all records for a group become contiguous.
+
+Use for:
+
+```text
+group records by key without hash map
+streaming sorted files
+reduce memory
+external sort + group-by
+dedupe sorted records
+```
+
+Template:
+
+```python
+def group_sorted_records(records):
+    records.sort(key=lambda record: record["key"])
+    groups = []
+    current_key = None
+    current_group = []
+
+    for record in records:
+        key = record["key"]
+
+        if key != current_key:
+            if current_group:
+                groups.append((current_key, current_group))
+
+            current_key = key
+            current_group = [record]
+        else:
+            current_group.append(record)
+
+    if current_group:
+        groups.append((current_key, current_group))
+
+    return groups
+```
+
+Data Engineering connection:
+
+```text
+This is how sort-based grouping works in batch processing systems.
+```
+
+Interview comparison:
+
+```text
+Hash grouping is often O(n) average but uses memory for all groups. Sort grouping is O(n log n) but useful for ordered/external workflows.
+```
+
+
+## 61. Data Engineering Custom Problem: Group Sorted Transactions
+
+Problem:
+
+```text
+Given transactions, group by account_id after sorting by account_id and transaction_time.
+Return list of groups.
+```
+
+Code:
+
+```python
+def group_transactions_sorted(transactions):
+    valid = []
+
+    for transaction in transactions:
+        if transaction.get("account_id") is None:
+            continue
+
+        valid.append(transaction)
+
+    valid.sort(key=lambda transaction: (
+        transaction["account_id"],
+        transaction.get("transaction_time"),
+    ))
+
+    groups = []
+    current_account = None
+    current_group = []
+
+    for transaction in valid:
+        account_id = transaction["account_id"]
+
+        if account_id != current_account:
+            if current_group:
+                groups.append({
+                    "account_id": current_account,
+                    "transactions": current_group,
+                })
+
+            current_account = account_id
+            current_group = [transaction]
+        else:
+            current_group.append(transaction)
+
+    if current_group:
+        groups.append({
+            "account_id": current_account,
+            "transactions": current_group,
+        })
+
+    return groups
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Follow-up:
+
+```text
+How would this work if input is already sorted by account_id?
+```
+
+Expected:
+
+```text
+Then grouping is O(n) and can be streamed group by group.
+```
+
+
+## 62. Pattern: External Sort Awareness
+
+For Data Engineering, data may be too large for memory.
+
+Interview-level answer:
+
+```text
+If the data is too large to sort in memory, use external sorting:
+1. Split data into chunks.
+2. Sort each chunk.
+3. Write sorted chunks.
+4. Merge sorted chunks using a heap.
+```
+
+This connects to:
+
+```text
+merge sort
+distributed sort
+Spark sort
+warehouse ORDER BY
+external merge sort
+```
+
+Interview line:
+
+```text
+In coding I sort in memory, but in a real data pipeline I would use external/distributed sort for large datasets.
+```
+
+Do not overcomplicate coding answer unless interviewer asks.
+
+
+## 63. Binary Search Debugging Checklist
+
+When binary search fails, check:
+
+```text
+1. What is the search space?
+2. Is it inclusive [left, right] or half-open [left, right)?
+3. What does condition(mid) mean?
+4. Is the condition monotonic?
+5. Are you finding exact target, first true, or last true?
+6. Does pointer update remove mid correctly?
+7. Can the loop become infinite?
+8. What is returned after loop?
+9. What happens when target is absent?
+10. What happens with duplicates?
+11. What happens at boundaries?
+12. What happens for empty input?
+```
+
+Strict repair:
+
+```text
+If candidate cannot state invariant, do not let them continue writing random binary search code.
+```
+
+
+## 64. Sorting Debugging Checklist
+
+When sorting solution fails, check:
+
+```text
+1. Did we need sorting?
+2. What is the sort key?
+3. Is tie-breaker required?
+4. Does sorting destroy needed original order?
+5. Are original indices needed?
+6. Are duplicates handled?
+7. Are invalid records handled?
+8. Are date strings normalized?
+9. Is output expected sorted?
+10. Is O(n log n) acceptable?
+11. Would hash map be better?
+12. Would heap be better for Top K?
+13. Would two pointers apply after sorting?
+```
+
+Strict repair:
+
+```text
+If candidate sorts without explaining why, ask them what property sorting creates.
+```
+
+
+## 65. Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Find target in sorted array.
+2. Return first index where timestamp >= watermark.
+3. Return first and last position of target.
+4. Count target occurrences in sorted array.
+5. Find insertion position for partition date.
+6. Find minimum capacity to process partitions in D days.
+7. Find maximum safe batch size.
+8. Search in rotated sorted array.
+9. Find minimum in rotated sorted array.
+10. Find local peak in metric series.
+11. Search globally sorted matrix.
+12. Search row/column sorted matrix.
+13. Sort events by user and timestamp.
+14. Keep latest record by sorting.
+15. Return top K slowest runs.
+16. Merge overlapping intervals.
+17. Find kth largest value.
+18. Find first bad pipeline version.
+19. Find active price at event_time.
+20. Group sorted transactions by account.
+```
+
+Expected patterns:
+
+```text
+1. exact binary search
+2. lower bound
+3. lower + upper bound
+4. upper - lower bound
+5. lower bound
+6. binary search on answer / first true
+7. binary search on answer / last true
+8. modified binary search
+9. modified binary search
+10. binary search by slope
+11. flattened matrix binary search
+12. staircase search
+13. sorting with custom key
+14. sorting + dedupe/group
+15. sorting or heap depending K
+16. intervals, sort + merge
+17. heap/quickselect/sort depending requirement
+18. first true binary search
+19. binary search over intervals
+20. sort + group adjacent
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed sorting/binary-search mocks.
+```
+
+
+## 66. High-ROI LeetCode List
+
+Practice these first.
+
+| No. | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 704 | Binary Search | Easy | Exact binary search |
+| 35 | Search Insert Position | Easy | Lower bound |
+| 34 | Find First and Last Position | Medium | Lower/upper bound |
+| 278 | First Bad Version | Easy | First true |
+| 69 | Sqrt(x) | Easy | Binary search answer |
+| 875 | Koko Eating Bananas | Medium | Binary search answer |
+| 1011 | Capacity To Ship Packages Within D Days | Medium | Binary search answer |
+| 410 | Split Array Largest Sum | Hard | Binary search answer |
+| 1482 | Minimum Days to Make Bouquets | Medium | Binary search answer |
+| 162 | Find Peak Element | Medium | Binary search slope |
+| 33 | Search in Rotated Sorted Array | Medium | Modified binary search |
+| 153 | Find Minimum in Rotated Sorted Array | Medium | Modified binary search |
+| 81 | Search in Rotated Sorted Array II | Medium | Rotated + duplicates |
+| 74 | Search a 2D Matrix | Medium | Matrix binary search |
+| 240 | Search a 2D Matrix II | Medium | Staircase search |
+| 167 | Two Sum II | Medium | Sorted two pointers |
+| 15 | 3Sum | Medium | Sort + two pointers |
+| 56 | Merge Intervals | Medium | Sort + merge |
+| 435 | Non-overlapping Intervals | Medium | Sort + greedy |
+| 215 | Kth Largest Element | Medium | Heap/quickselect/sort |
+
+
+## 67. Practice Ladder
+
+### Level 1: Sorting basics
+
+```text
+Sort events by user/time
+Sort with original indices
+Group sorted transactions
+Two Sum II
+```
+
+Exit:
+
+```text
+Candidate can define sort key and explain O(n log n).
+```
+
+### Level 2: Basic binary search
+
+```text
+Binary Search
+Search Insert Position
+Count Occurrences
+Find First and Last Position
+Timestamp Range Bounds
+```
+
+Exit:
+
+```text
+Candidate can write exact, lower_bound, and upper_bound from memory.
+```
+
+### Level 3: Binary search on answer
+
+```text
+First Bad Version
+Sqrt(x)
+Koko Eating Bananas
+Ship Packages
+Minimum Batch Capacity custom
+```
+
+Exit:
+
+```text
+Candidate can define monotonic predicate.
+```
+
+### Level 4: Modified binary search
+
+```text
+Search Rotated Sorted Array
+Find Minimum in Rotated Sorted Array
+Find Peak Element
+Search 2D Matrix
+Search 2D Matrix II
+```
+
+Exit:
+
+```text
+Candidate handles non-standard sorted structure.
+```
+
+### Level 5: Data Engineering sorted data
+
+```text
+First event after watermark
+Active price lookup
+Latest record by sorting
+Maximum safe batch size
+Minimum workers for SLA
+```
+
+Exit:
+
+```text
+Candidate can apply sorting/binary search to timestamp, partition, and capacity problems.
+```
+
+
+## 68. 7-Day Sorting/Binary Search Plan
+
+### Day 1: Sorting fundamentals
+
+Problems:
+
+```text
+Sort events by user/time
+Sort with original indices
+Group sorted transactions
+Two Sum II
+```
+
+Focus:
+
+```text
+sort key
+tie-breakers
+original indices
+scan after sort
+```
+
+### Day 2: Basic binary search
+
+Problems:
+
+```text
+Binary Search
+Search Insert Position
+Count Occurrences
+Find First and Last Position
+```
+
+Focus:
+
+```text
+exact search
+lower bound
+upper bound
+duplicates
+```
+
+### Day 3: Timestamp and partition search
+
+Problems:
+
+```text
+Insert partition position
+Timestamp range bounds
+First event after watermark
+Active price lookup
+```
+
+Focus:
+
+```text
+half-open windows
+lower_bound
+active interval lookup
+```
+
+### Day 4: Binary search on answer
+
+Problems:
+
+```text
+First Bad Version
+Koko Eating Bananas
+Ship Packages
+Minimum daily capacity custom
+```
+
+Focus:
+
+```text
+monotonic predicate
+first true
+search range
+```
+
+### Day 5: Advanced answer search
+
+Problems:
+
+```text
+Split Array Largest Sum
+Minimum Days to Make Bouquets
+Maximum safe batch size
+Minimum workers for SLA
+```
+
+Focus:
+
+```text
+predicate design
+last true
+edge cases
+```
+
+### Day 6: Modified binary search
+
+Problems:
+
+```text
+Search Rotated Sorted Array
+Find Minimum in Rotated Sorted Array
+Find Peak Element
+Search 2D Matrix
+```
+
+Focus:
+
+```text
+discard half safely
+slope logic
+matrix mapping
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run Mock Set 2 or 3.
+Review mistakes.
+Repair weakest binary search pattern.
+Update progress.
+```
+
+
+## 69. 30-Day Sorting/Binary Search Plan
+
+### Week 1: Sorting and lower/upper bound
+
+Focus:
+
+```text
+sort keys
+original indices
+lower_bound
+upper_bound
+duplicates
+```
+
+Problems:
+
+```text
+704, 35, 34, custom partition/timestamp problems
+```
+
+Exit:
+
+```text
+Candidate can write lower_bound and upper_bound from memory.
+```
+
+### Week 2: Binary search on answer
+
+Focus:
+
+```text
+first true
+last true
+monotonic predicates
+capacity problems
+```
+
+Problems:
+
+```text
+278, 69, 875, 1011, 410, custom capacity/SLA problems
+```
+
+Exit:
+
+```text
+Candidate can define and prove monotonic predicates.
+```
+
+### Week 3: Modified binary search
+
+Focus:
+
+```text
+rotated arrays
+peak element
+matrix search
+duplicates
+```
+
+Problems:
+
+```text
+33, 153, 81, 162, 74, 240
+```
+
+Exit:
+
+```text
+Candidate can adapt binary search beyond basic sorted arrays.
+```
+
+### Week 4: Data Engineering ordered-data applications
+
+Focus:
+
+```text
+timestamps
+partitions
+active intervals
+sorted groups
+latest records
+mock interviews
+```
+
+Problems:
+
+```text
+custom DE problems, mixed mocks, repair drills
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 70. Mock Set 1: Beginner
+
+Problems:
+
+```text
+1. Binary Search
+2. Search Insert Position
+3. Sort Events by User and Time custom
+4. Count Occurrences in Sorted Array
+5. Two Sum II
+```
+
+Expected skills:
+
+```text
+exact binary search
+lower bound
+sorting key
+upper/lower bound count
+two pointers
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains pointer updates.
+```
+
+
+## 71. Mock Set 2: Core Medium
+
+Problems:
+
+```text
+1. Find First and Last Position
+2. Koko Eating Bananas
+3. Capacity To Ship Packages
+4. Search in Rotated Sorted Array
+5. Find Peak Element
+```
+
+Expected skills:
+
+```text
+bounds
+binary search on answer
+modified binary search
+slope reasoning
+monotonic predicate
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate defines search space and predicate clearly.
+```
+
+
+## 72. Mock Set 3: Data Engineering Flavor
+
+Problems:
+
+```text
+1. First event after watermark.
+2. Timestamp range bounds for [start, end).
+3. Active price lookup.
+4. Minimum daily capacity for ordered partitions.
+5. Maximum safe batch size.
+```
+
+Expected skills:
+
+```text
+lower_bound
+half-open timestamp windows
+active interval search
+first true
+last true
+Data Engineering boundary explanation
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains production risks like timezone and boundary double-counting.
+```
+
+
+## 73. Mock Set 4: Strong Candidate
+
+Problems:
+
+```text
+1. Split Array Largest Sum
+2. Minimum Days to Make Bouquets
+3. Search a 2D Matrix II
+4. Search in Rotated Sorted Array II
+5. Latest records by sorting with tie-breakers
+```
+
+Expected skills:
+
+```text
+harder predicates
+matrix sorted search
+duplicates in rotated array
+sorting with tie-breakers
+edge-case discipline
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate handles follow-ups and explains trade-offs.
+```
+
+
+## 74. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Easy sorting/binary search problem
+
+```text
+10-15 minutes
+```
+
+### Medium binary search problem
+
+```text
+25-35 minutes
+```
+
+### Hard binary search on answer problem
+
+```text
+40-45 minutes
+```
+
+Per problem:
+
+```text
+Minute 0-3:
+Clarify sortedness, duplicates, and output.
+
+Minute 3-6:
+Define pattern, search space, or sort key.
+
+Minute 6-9:
+State invariant or monotonic predicate.
+
+Minute 9-25:
+Code.
+
+Minute 25-30:
+Dry run boundary case.
+
+Minute 30-35:
+Complexity and Data Engineering connection.
+```
+
+If candidate cannot define predicate/invariant:
+
+```text
+Stop and switch to weakness-repair-mode.md.
+```
+
+
+## 75. Review Checklist
+
+Review sorting/binary search solutions using:
+
+```text
+1. Did candidate identify why sorting or binary search applies?
+2. Did candidate define sort key or search space?
+3. Did candidate handle duplicates?
+4. Did candidate preserve original indices if needed?
+5. Did candidate define lower/upper bound correctly?
+6. Did candidate state invariant or predicate?
+7. Is predicate monotonic?
+8. Did candidate avoid infinite loop?
+9. Did candidate return correct boundary after loop?
+10. Did candidate handle empty input?
+11. Did candidate handle target not found?
+12. Did candidate explain time complexity?
+13. Did candidate explain space complexity?
+14. Did candidate dry run first/last/missing cases?
+15. Did candidate connect to Data Engineering?
+```
+
+Verdict examples:
+
+```text
+Correct sort key but missing original index.
+Correct binary search but wrong return after loop.
+Good lower_bound but cannot explain upper_bound.
+Predicate is not monotonic, so binary search is invalid.
+Works for sample but fails duplicate boundary.
+Interview-ready.
+Strong.
+```
+
+
+## 76. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Off-by-one errors | Lower/upper bound drills |
+| Infinite loop | First true / last true template drills |
+| Cannot define predicate | Monotonic predicate drills |
+| Wrong return value | Post-loop return drills |
+| Duplicate handling weak | First/last occurrence drills |
+| Loses original indices | Sort pair/index drills |
+| Wrong sort key | Custom key classification drills |
+| Uses binary search without sorted data | Pattern validation drills |
+| Rotated array confusion | Sorted-half drills |
+| Matrix search confusion | Matrix property comparison drills |
+| Answer search range wrong | Lower/upper bound range drills |
+| Data timestamp boundary bugs | Half-open timestamp drills |
+| Cannot connect to DE | Partition/watermark/SCD lookup drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 77. Communication Scripts
+
+### Sorting script
+
+```text
+I will sort by the key that makes related records adjacent. After sorting, I can scan once to detect duplicates, group records, or compare neighbors.
+```
+
+### Preserve index script
+
+```text
+Because the output needs original indices, I will sort pairs of value and original index instead of sorting values alone.
+```
+
+### Lower bound script
+
+```text
+I need the first index where the value is at least target, so I will use a lower_bound binary search over [0, n).
+```
+
+### Binary search on answer script
+
+```text
+I am searching the answer space, not the array. The feasibility condition is monotonic: once a value works, all larger values also work.
+```
+
+### First true script
+
+```text
+If mid works, I keep mid as a possible answer and move right to mid. If it does not work, I move left to mid + 1.
+```
+
+### Last true script
+
+```text
+I use upper mid because I am looking for the largest value that still works, and this avoids infinite loops.
+```
+
+### Data Engineering script
+
+```text
+This is similar to finding the first event after a watermark, locating a partition boundary, or finding minimum capacity to process data before SLA.
+```
+
+
+## 78. Candidate Self-Review Questions
+
+After every sorting/binary search problem, candidate should answer:
+
+```text
+1. Is the input already sorted?
+2. If sorting, what is the key?
+3. Do I need original indices?
+4. Are duplicates important?
+5. If binary search, what is the search space?
+6. What does left represent?
+7. What does right represent?
+8. What is the predicate or comparison?
+9. Is the predicate monotonic?
+10. Am I finding exact target, first true, last true, lower bound, or upper bound?
+11. What is returned after the loop?
+12. What edge case could break this?
+13. What is time complexity?
+14. What is space complexity?
+15. What Data Engineering scenario uses this?
+```
+
+If candidate cannot answer these:
+
+```text
+The problem is not fully learned.
+```
+
+
+## 79. Maintenance Drills
+
+After completing sorting and binary search, maintain skill with:
+
+```text
+1 lower_bound/upper_bound drill per week
+1 binary search on answer drill per week
+1 sorting custom-key drill per week
+1 modified binary search drill every 2 weeks
+1 Data Engineering timestamp/partition drill per week
+1 mixed mock every 2 weeks
+```
+
+Maintenance rotation:
+
+```text
+Week 1: lower/upper bound + timestamp search
+Week 2: answer search + capacity planning
+Week 3: rotated/matrix search + sort keys
+Week 4: DE custom mock + weakness repair
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed pattern.
+```
+
+
+## 80. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# Sorting and Binary Search Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Pattern | Difficulty | Score | Time | Mistake | Next Action
+
+## Pattern Scores
+
+Sorting key:
+Original index preservation:
+Sort + scan:
+Sort + two pointers:
+Lower bound:
+Upper bound:
+First/last occurrence:
+Exact binary search:
+First true:
+Last true:
+Binary search on answer:
+Rotated array:
+Peak element:
+Matrix search:
+Timestamp bounds:
+Active period lookup:
+Data Engineering capacity search:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 81. Final Exit Test
+
+Candidate passes sorting and binary search when they can solve:
+
+```text
+1. Binary Search
+2. Search Insert Position
+3. Find First and Last Position
+4. Count Occurrences in Sorted Array
+5. First Bad Version
+6. Sqrt(x)
+7. Koko Eating Bananas
+8. Capacity To Ship Packages
+9. Split Array Largest Sum
+10. Find Peak Element
+11. Search in Rotated Sorted Array
+12. Find Minimum in Rotated Sorted Array
+13. Search a 2D Matrix
+14. Search a 2D Matrix II
+15. Two Sum II
+16. 3Sum
+17. Data Engineering: insert partition position
+18. Data Engineering: timestamp window bounds
+19. Data Engineering: first event after watermark
+20. Data Engineering: active price lookup
+21. Data Engineering: minimum daily capacity
+22. Data Engineering: maximum safe batch size
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No lower/upper bound confusion.
+No infinite loops.
+No missing monotonic predicate.
+No wrong search range.
+No sort-key confusion.
+Can explain Data Engineering relevance.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles timestamp boundaries, duplicates, and answer-search follow-ups under pressure.
+```
+
+
+## 82. Final Summary
+
+Sorting and binary search are foundational patterns for Data Engineering interviews.
+
+They map directly to:
+
+```text
+ordered logs
+partition lookup
+watermarks
+timestamp slicing
+SCD active-period lookup
+capacity planning
+batch sizing
+threshold detection
+first failure detection
+sorted grouping
+deduplication
+ranking
+merge-like processing
+```
+
+The candidate must master:
+
+```text
+sorting keys
+tie-breakers
+stable sort
+preserving original indices
+sort + scan
+sort + two pointers
+exact binary search
+lower bound
+upper bound
+first/last occurrence
+first true
+last true
+binary search on answer
+monotonic predicates
+rotated array search
+matrix search
+timestamp range lookup
+```
+
+The mentor must be strict:
+
+```text
+No invariant or predicate → not interview-ready.
+No complexity → not interview-ready.
+Wrong boundary return → not interview-ready.
+Sorting without explaining why → not interview-ready.
+Only sample passes → not interview-ready.
+```
+
+The goal is not to memorize binary search syntax.
+
+The goal is to reason clearly about ordered data, boundaries, and monotonic search spaces.
+
+
+## 83. Problem Card Appendix
+
+### Card 1: Binary Search
+
+LeetCode:
+
+```text
+704. Binary Search
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Exact binary search
+```
+
+Core idea:
+
+```text
+Search sorted array for target.
+```
+
+Data Engineering connection:
+
+```text
+Find exact partition/version.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Search Insert Position
+
+LeetCode:
+
+```text
+35. Search Insert Position
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Lower bound
+```
+
+Core idea:
+
+```text
+First index >= target.
+```
+
+Data Engineering connection:
+
+```text
+Insert partition date.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Find First and Last Position
+
+LeetCode:
+
+```text
+34. Find First and Last Position
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Lower/upper bound
+```
+
+Core idea:
+
+```text
+Range of duplicate target.
+```
+
+Data Engineering connection:
+
+```text
+Timestamp/partition duplicate range.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: First Bad Version
+
+LeetCode:
+
+```text
+278. First Bad Version
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+First true
+```
+
+Core idea:
+
+```text
+Find first bad monotonic version.
+```
+
+Data Engineering connection:
+
+```text
+First failed pipeline version.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Sqrt(x)
+
+LeetCode:
+
+```text
+69. Sqrt(x)
+Difficulty: Easy
+```
+
+Primary pattern:
+
+```text
+Answer search
+```
+
+Core idea:
+
+```text
+Find floor sqrt.
+```
+
+Data Engineering connection:
+
+```text
+Threshold search.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Koko Eating Bananas
+
+LeetCode:
+
+```text
+875. Koko Eating Bananas
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Answer search
+```
+
+Core idea:
+
+```text
+Minimum feasible speed.
+```
+
+Data Engineering connection:
+
+```text
+Minimum processing speed for SLA.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Capacity To Ship Packages
+
+LeetCode:
+
+```text
+1011. Capacity To Ship Packages
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Answer search
+```
+
+Core idea:
+
+```text
+Minimum feasible capacity.
+```
+
+Data Engineering connection:
+
+```text
+Minimum daily batch capacity.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Split Array Largest Sum
+
+LeetCode:
+
+```text
+410. Split Array Largest Sum
+Difficulty: Hard
+```
+
+Primary pattern:
+
+```text
+Answer search
+```
+
+Core idea:
+
+```text
+Minimize largest group sum.
+```
+
+Data Engineering connection:
+
+```text
+Split workload into batches.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Minimum Days to Make Bouquets
+
+LeetCode:
+
+```text
+1482. Minimum Days to Make Bouquets
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Answer search
+```
+
+Core idea:
+
+```text
+Earliest feasible day.
+```
+
+Data Engineering connection:
+
+```text
+Earliest complete partition day.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: Find Peak Element
+
+LeetCode:
+
+```text
+162. Find Peak Element
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Binary search by slope
+```
+
+Core idea:
+
+```text
+Move toward rising side.
+```
+
+Data Engineering connection:
+
+```text
+Find local peak metric.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Search in Rotated Sorted Array
+
+LeetCode:
+
+```text
+33. Search in Rotated Sorted Array
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Modified binary search
+```
+
+Core idea:
+
+```text
+One half is sorted.
+```
+
+Data Engineering connection:
+
+```text
+Search rotated version list.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Find Minimum in Rotated Sorted Array
+
+LeetCode:
+
+```text
+153. Find Minimum in Rotated Sorted Array
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Modified binary search
+```
+
+Core idea:
+
+```text
+Compare mid with right.
+```
+
+Data Engineering connection:
+
+```text
+Find earliest rotated partition.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Search Rotated Sorted Array II
+
+LeetCode:
+
+```text
+81. Search Rotated Sorted Array II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Modified binary search with duplicates
+```
+
+Core idea:
+
+```text
+Duplicates can degrade search.
+```
+
+Data Engineering connection:
+
+```text
+Ambiguous duplicate boundaries.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Search a 2D Matrix
+
+LeetCode:
+
+```text
+74. Search a 2D Matrix
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Flattened binary search
+```
+
+Core idea:
+
+```text
+Treat matrix as sorted array.
+```
+
+Data Engineering connection:
+
+```text
+Search sorted chunks.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Search a 2D Matrix II
+
+LeetCode:
+
+```text
+240. Search a 2D Matrix II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Staircase search
+```
+
+Core idea:
+
+```text
+Move left/down from top-right.
+```
+
+Data Engineering connection:
+
+```text
+Search row/column sorted grid.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Two Sum II
+
+LeetCode:
+
+```text
+167. Two Sum II
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Sorted two pointers
+```
+
+Core idea:
+
+```text
+Move pointers based on sum.
+```
+
+Data Engineering connection:
+
+```text
+Find matching sorted adjustments.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: 3Sum
+
+LeetCode:
+
+```text
+15. 3Sum
+Difficulty: Medium
+```
+
+Primary pattern:
+
+```text
+Sort + two pointers
+```
+
+Core idea:
+
+```text
+Fix one value, search pair.
+```
+
+Data Engineering connection:
+
+```text
+Find zero-sum transaction triplets.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Why sorting or binary search applies.
+2. Search space or sort key.
+3. Invariant or monotonic predicate.
+4. Pointer movement.
+5. Edge cases.
+6. Time complexity.
+7. Space complexity.
+8. One Data Engineering variation.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 84. Data Engineering Custom Problem Card Appendix
+
+### Custom Card 1: Insert Partition Position
+
+Pattern:
+
+```text
+lower bound
+```
+
+Task:
+
+```text
+Find where a partition date belongs.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 2: Timestamp Window Bounds
+
+Pattern:
+
+```text
+lower_bound(start), lower_bound(end)
+```
+
+Task:
+
+```text
+Find events in [start, end).
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 3: First Event After Watermark
+
+Pattern:
+
+```text
+lower bound
+```
+
+Task:
+
+```text
+Find first event_time >= watermark.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 4: Active Price Lookup
+
+Pattern:
+
+```text
+binary search intervals
+```
+
+Task:
+
+```text
+Find active price at event_time.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 5: Minimum Daily Capacity
+
+Pattern:
+
+```text
+first true answer search
+```
+
+Task:
+
+```text
+Minimum capacity for ordered partitions by deadline.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 6: Maximum Safe Batch Size
+
+Pattern:
+
+```text
+last true answer search
+```
+
+Task:
+
+```text
+Largest batch that memory allows.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 7: First Failed Pipeline Run
+
+Pattern:
+
+```text
+first true
+```
+
+Task:
+
+```text
+Find first run after which all fail.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 8: Sort Events by User Time
+
+Pattern:
+
+```text
+custom sorting key
+```
+
+Task:
+
+```text
+Sort records for sessionization.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 9: Latest Records by Sorting
+
+Pattern:
+
+```text
+sort + dedupe
+```
+
+Task:
+
+```text
+Keep latest record per ID.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 10: Rank Slow Runs with Index
+
+Pattern:
+
+```text
+sort with original index
+```
+
+Task:
+
+```text
+Rank while preserving original positions.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 11: Group Sorted Transactions
+
+Pattern:
+
+```text
+sort + group adjacent
+```
+
+Task:
+
+```text
+Group account records after sorting.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 12: Minimum Workers for SLA
+
+Pattern:
+
+```text
+first true
+```
+
+Task:
+
+```text
+Find minimum worker count meeting SLA.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 13: Earliest Complete Partition Day
+
+Pattern:
+
+```text
+first true
+```
+
+Task:
+
+```text
+Find earliest date enough files are ready.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 14: External Sort Awareness
+
+Pattern:
+
+```text
+chunk sort + heap merge
+```
+
+Task:
+
+```text
+Sort data too large for memory.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Custom Card 15: Sorted Timestamp Count
+
+Pattern:
+
+```text
+upper - lower bound
+```
+
+Task:
+
+```text
+Count records for timestamp/partition.
+```
+
+Minimum expected answer:
+
+```text
+1. Define sortedness or search space.
+2. Define sort key or predicate.
+3. Handle boundary cases.
+4. Explain time and space complexity.
+5. Explain production risk if ordering/boundary is wrong.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 85. Drill Appendix
+
+### Drill 1: Sort Key Basics
+
+Task:
+
+```text
+Sort records by one key, two keys, and mixed ranking.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Original Index
+
+Task:
+
+```text
+Sort values while preserving original indices.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Lower Bound
+
+Task:
+
+```text
+Write lower_bound from memory and test 10 cases.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Upper Bound
+
+Task:
+
+```text
+Write upper_bound from memory and count duplicates.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Search Range
+
+Task:
+
+```text
+Solve first/last position and timestamp range bounds.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: First True
+
+Task:
+
+```text
+Solve first bad version and minimum feasible capacity.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Last True
+
+Task:
+
+```text
+Solve maximum safe batch size.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Predicate Design
+
+Task:
+
+```text
+Given 10 prompts, say whether condition is monotonic.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: Rotated Search
+
+Task:
+
+```text
+Solve search and find minimum in rotated array.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Matrix Search
+
+Task:
+
+```text
+Compare flattened matrix search and staircase search.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Sort + Two Pointers
+
+Task:
+
+```text
+Solve Two Sum II and 3Sum.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Timestamp Search
+
+Task:
+
+```text
+Find first event after watermark and window bounds.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Active Interval Lookup
+
+Task:
+
+```text
+Binary search active price/SCD interval.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Capacity Planning
+
+Task:
+
+```text
+Minimum daily capacity and workers for SLA.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Sorting vs Hash vs Heap
+
+Task:
+
+```text
+Classify when sorting is worse than hash/heap.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Timed Mock
+
+Task:
+
+```text
+Run 5 mixed sorting/binary-search problems in 90 minutes.
+```
+
+Minimum passing answer:
+
+```text
+1. State the pattern.
+2. Define sort key or search space.
+3. Define invariant or predicate.
+4. Write clean Python.
+5. Dry run boundary cases.
+6. Explain time and space complexity.
+7. Connect to Data Engineering when relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 86. Quick Reference Cards
+
+### Quick Card 1: Sorting
+
+Summary:
+
+```text
+O(n log n), useful when order/adjacency matters.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 2: Sort key
+
+Summary:
+
+```text
+Use key=lambda record: (...).
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 3: Original index
+
+Summary:
+
+```text
+Sort pairs (value, index) when original positions matter.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 4: Lower bound
+
+Summary:
+
+```text
+First index where value >= target.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 5: Upper bound
+
+Summary:
+
+```text
+First index where value > target.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 6: Count target
+
+Summary:
+
+```text
+upper_bound(target) - lower_bound(target).
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 7: Exact search
+
+Summary:
+
+```text
+Use left <= right and return -1 if absent.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 8: First true
+
+Summary:
+
+```text
+Minimum x where condition(x) is True.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 9: Last true
+
+Summary:
+
+```text
+Maximum x where condition(x) is True; use upper mid.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 10: Monotonic predicate
+
+Summary:
+
+```text
+Binary search on answer requires monotonic condition.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 11: Rotated array
+
+Summary:
+
+```text
+One side of mid is sorted.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 12: Peak element
+
+Summary:
+
+```text
+Move toward larger neighbor.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 13: Timestamp window
+
+Summary:
+
+```text
+Use [start, end) with lower_bound on both boundaries.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 14: Active period
+
+Summary:
+
+```text
+Find interval where start <= t < end.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```
+
+### Quick Card 15: DE capacity
+
+Summary:
+
+```text
+Minimum feasible capacity is first true answer search.
+```
+
+Interview check:
+
+```text
+Give one LeetCode example and one Data Engineering example where this applies.
+```

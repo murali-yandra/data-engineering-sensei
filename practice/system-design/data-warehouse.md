@@ -1,0 +1,4874 @@
+# Data Warehouse System Design Guide
+
+Generated: 2026-06-06
+
+This guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/system-design/data-warehouse.md
+```
+
+This guide trains the mentor and candidate on **data warehouse system design** for Data Engineering interviews.
+
+The guide is interview-focused. It teaches how to design a production-grade data warehouse that supports analytics, dashboards, finance reporting, product metrics, customer 360, ML features, and data marts with correct modeling, reliable ETL/ELT, data quality, governance, scalability, cost control, and operational ownership.
+
+Data warehouse design is high-ROI because Data Engineering interviews often ask:
+
+```text
+Design a data warehouse for an e-commerce company.
+Design a sales reporting warehouse.
+Design a warehouse for customer 360.
+Design a warehouse with facts and dimensions.
+Design star schema for orders and payments.
+Design slowly changing dimensions.
+Design a warehouse that supports daily dashboards.
+Design an incremental warehouse pipeline.
+Design data marts from warehouse facts.
+Design a warehouse with source-to-target reconciliation.
+Design a warehouse from CDC sources.
+Design a warehouse that handles late-arriving facts.
+Design a warehouse for finance reporting.
+Design warehouse table partitioning and clustering.
+Design warehouse data quality and freshness checks.
+Design semantic layer / metrics layer.
+Design warehouse governance and access control.
+Explain fact vs dimension tables.
+Explain star schema vs snowflake schema.
+Explain OLTP vs OLAP.
+Explain data lake vs warehouse vs lakehouse.
+Explain ETL vs ELT in a warehouse.
+Explain aggregate tables and materialized views.
+```
+
+Use this with:
+
+```text
+docs/system-design-guide.md
+docs/data-engineering-fundamentals.md
+docs/etl-elt-pipelines-guide.md
+docs/data-warehouse-guide.md
+docs/data-modeling-guide.md
+docs/cloud-data-platforms-guide.md
+docs/orchestration-airflow-guide.md
+docs/sql-interview-guide.md
+docs/query-optimization.md
+docs/assessment-rubric.md
+docs/communication-rubric.md
+modes/system-design-mode.md
+modes/interview-mode.md
+modes/feedback-mode.md
+modes/weakness-repair-mode.md
+practice/system-design/batch-pipeline.md
+practice/system-design/cdc-pipeline.md
+practice/system-design/data-lake.md
+practice/system-design/data-quality-framework.md
+practice/sql/joins.md
+practice/sql/window-functions.md
+practice/sql/deduplication.md
+practice/sql/query-optimization.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+```
+
+Default interview target:
+
+```text
+FAANG-style Data Engineering interview standard, adjusted by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at data warehouse system design interviews.
+
+The candidate should learn to answer:
+
+```text
+What is a data warehouse?
+Why use a data warehouse?
+How is it different from OLTP?
+How is it different from a data lake?
+What are facts and dimensions?
+What is a star schema?
+What is a snowflake schema?
+How do we model orders, payments, users, products, inventory, sessions, and finance data?
+How do we define table grain?
+How do we handle slowly changing dimensions?
+How do we handle late-arriving facts?
+How do we design incremental loads?
+How do we load data from CDC?
+How do we design staging, curated, and mart layers?
+How do we create a semantic or metrics layer?
+How do we optimize queries?
+How do we partition and cluster tables?
+How do we validate warehouse correctness?
+How do we monitor freshness and quality?
+How do we govern access and PII?
+How do we support backfills?
+How do we control cost?
+```
+
+A candidate is interview-ready only when they can design:
+
+```text
+source ingestion into warehouse
+staging tables
+curated facts and dimensions
+star schema
+data marts
+semantic/metrics layer
+incremental loading
+idempotent writes
+SCD Type 1 and Type 2
+late-arriving facts/dimensions
+source-to-target reconciliation
+data quality checks
+orchestration
+freshness monitoring
+warehouse query optimization
+partitioning and clustering
+access control
+PII governance
+backfills
+cost controls
+trade-offs
+```
+
+
+## 2. What Interviewers Are Testing
+
+Data warehouse design tests whether the candidate can model business data correctly and operate warehouse pipelines reliably.
+
+Interviewers evaluate:
+
+```text
+does the candidate clarify business use cases?
+does the candidate define output grain?
+does the candidate understand facts and dimensions?
+does the candidate know star schema design?
+does the candidate avoid fact-to-fact join explosions?
+does the candidate handle mutable source data?
+does the candidate handle late-arriving facts and dimensions?
+does the candidate design SCD Type 2 when history matters?
+does the candidate explain ETL/ELT layers?
+does the candidate define data quality checks?
+does the candidate reconcile warehouse outputs to source?
+does the candidate optimize for dashboard performance?
+does the candidate govern sensitive data?
+does the candidate explain trade-offs between normalized and dimensional models?
+```
+
+Weak answer:
+
+```text
+Put all data into one big table and query it.
+```
+
+Strong answer:
+
+```text
+I would define the business questions and output grains first, then build a warehouse with staging tables, curated fact and dimension tables, and business-specific marts. Orders would be modeled as fact_orders at one row per order, order items as fact_order_items at one row per order item, users/products as dimensions, and daily revenue as a gold mart. Incremental loads would use MERGE or partition overwrite, SCD Type 2 would preserve historical attributes where needed, DQ checks would validate keys, row counts, freshness, and reconciled metrics, and tables would be partitioned/clustering optimized for common filters and joins.
+```
+
+Interview line:
+
+```text
+A warehouse is not just storage; it is a modeled, governed, query-optimized representation of business facts and dimensions.
+```
+
+
+## 3. Core Mental Model
+
+A data warehouse converts operational data into analytical data.
+
+Mental model:
+
+```text
+Sources
+  OLTP databases
+  SaaS APIs
+  files
+  CDC feeds
+  data lake
+      ↓
+Staging
+  source-shaped, cleaned, typed data
+      ↓
+Curated warehouse
+  facts and dimensions
+      ↓
+Data marts
+  business-specific aggregates and wide tables
+      ↓
+Semantic layer
+  consistent metrics and business definitions
+      ↓
+Consumers
+  BI dashboards
+  analysts
+  finance
+  ML
+  operations
+```
+
+Key warehouse idea:
+
+```text
+Operational systems optimize transactions.
+Warehouses optimize analytical reads and business questions.
+```
+
+Core interview line:
+
+```text
+I design the warehouse around business process facts, descriptive dimensions, and clearly defined table grain.
+```
+
+
+## 4. Data Warehouse Vocabulary
+
+Important terms:
+
+```text
+Data warehouse:
+Central analytical system for structured, trusted, queryable business data.
+
+OLTP:
+Online Transaction Processing. Transactional systems optimized for writes.
+
+OLAP:
+Online Analytical Processing. Analytical systems optimized for reads and aggregations.
+
+Fact table:
+Table that stores measurable business events or snapshots.
+
+Dimension table:
+Table that stores descriptive attributes used to filter and group facts.
+
+Grain:
+What one row in a table represents.
+
+Star schema:
+Fact table surrounded by denormalized dimension tables.
+
+Snowflake schema:
+Dimension tables normalized into sub-dimensions.
+
+Data mart:
+Business-specific subset or aggregate built from the warehouse.
+
+Semantic layer:
+Layer that defines consistent business metrics and dimensions.
+
+SCD:
+Slowly Changing Dimension.
+
+SCD Type 1:
+Overwrite dimension attributes.
+
+SCD Type 2:
+Preserve historical versions with effective dates.
+
+Surrogate key:
+Warehouse-generated key for dimensions.
+
+Natural key:
+Business/source key such as user_id or product_id.
+
+Conformed dimension:
+Dimension shared across multiple fact tables.
+
+Snapshot fact:
+Fact table representing state at a point in time.
+
+Transaction fact:
+Fact table representing individual events/transactions.
+
+Accumulating snapshot:
+Fact table tracking process milestones over time.
+
+Late-arriving fact:
+Fact row that arrives after related reporting period.
+
+Late-arriving dimension:
+Dimension row arrives after fact referencing it.
+
+Aggregate table:
+Precomputed summary table for performance.
+
+Materialized view:
+Stored query result maintained by system or pipeline.
+
+ELT:
+Extract, Load, Transform.
+
+ETL:
+Extract, Transform, Load.
+```
+
+
+## 5. Standard Data Warehouse Answer Framework
+
+Use this framework for every data warehouse system design question:
+
+```text
+1. Clarify business use cases.
+2. Identify source systems.
+3. Identify consumers and dashboards.
+4. Define freshness SLA.
+5. Estimate data volume and query patterns.
+6. Define warehouse layers:
+   - staging
+   - curated facts/dimensions
+   - marts
+   - semantic layer
+7. Define table grains.
+8. Model facts.
+9. Model dimensions.
+10. Define SCD/history requirements.
+11. Define incremental load strategy.
+12. Define late data handling.
+13. Define idempotent writes.
+14. Define data quality checks.
+15. Define reconciliation checks.
+16. Define orchestration.
+17. Define partitioning/clustering.
+18. Define query optimization.
+19. Define access control and governance.
+20. Define monitoring and alerts.
+21. Define backfills.
+22. Explain trade-offs.
+23. Summarize final design.
+```
+
+Short version:
+
+```text
+Use cases → Grain → Facts/Dimensions → Loads → Quality → Performance → Governance → Operations
+```
+
+Strict rule:
+
+```text
+No warehouse design is strong if the candidate does not define grain, facts, dimensions, load strategy, and data quality.
+```
+
+
+## 6. Scoring Rubric
+
+Score data warehouse design answers from 0 to 5.
+
+### Score 0
+
+No meaningful warehouse design. Only names tools.
+
+### Score 1
+
+Mentions tables and dashboards but no modeling, grain, or data quality.
+
+### Score 2
+
+Has some fact/dimension ideas but weak on grain, incremental loading, late data, SCD, and validation.
+
+### Score 3
+
+Reasonable design but weak on governance, query optimization, data marts, reconciliation, or operations.
+
+### Score 4
+
+Interview-ready. Covers requirements, grain, facts, dimensions, marts, SCD, incremental/idempotent loads, quality, reconciliation, partitioning, monitoring, and trade-offs.
+
+### Score 5
+
+Strong. Handles multiple business processes, conformed dimensions, SCD Type 2, CDC integration, late-arriving data, semantic layer, aggregate marts, performance optimization, cost, governance, lineage, backfills, and production failure modes.
+
+Automatic score cap below 4 if:
+
+```text
+no requirements clarification
+no table grain
+no fact/dimension modeling
+no data quality checks
+no incremental load strategy
+no idempotency
+no late-data handling
+no SCD discussion when dimensions change
+no query optimization
+no monitoring/freshness
+only says load data to warehouse
+```
+
+
+## 7. Requirement Clarification Questions
+
+Ask these before designing.
+
+### Business
+
+```text
+What business questions must the warehouse answer?
+Which dashboards or reports are required?
+Who are the consumers?
+Are the outputs for finance, product, marketing, ML, or operations?
+What metrics are critical?
+What is the freshness SLA?
+```
+
+### Source
+
+```text
+What source systems feed the warehouse?
+Are they OLTP databases, APIs, files, SaaS tools, CDC streams, or data lake tables?
+Are source records mutable?
+Are deletes possible?
+Do source tables have primary keys and updated_at?
+Is CDC available?
+```
+
+### Modeling
+
+```text
+What business processes need facts?
+What are the dimensions?
+What is the grain of each output table?
+Do dimensions need history?
+Do reports need as-of historical attributes?
+Do we need conformed dimensions across marts?
+```
+
+### Scale and performance
+
+```text
+How many rows per day?
+How much history?
+How many dashboards/users?
+What are common filters and joins?
+What query latency is expected?
+```
+
+### Operations
+
+```text
+How are failures handled?
+Do we need backfills?
+How late can source data arrive?
+What data quality checks are required?
+What access controls are needed?
+```
+
+Interview line:
+
+```text
+I clarify business questions and table grain before choosing schemas or tools.
+```
+
+
+## 8. OLTP vs OLAP
+
+### OLTP
+
+```text
+transactional systems
+many small reads/writes
+normalized schema
+optimized for inserts/updates
+source of operational truth
+examples: orders service database, payments database
+```
+
+### OLAP / warehouse
+
+```text
+analytical systems
+large scans and aggregations
+dimensional or analytical schema
+optimized for read/query performance
+source of reporting truth
+examples: sales mart, customer 360, finance reporting
+```
+
+Interview line:
+
+```text
+OLTP systems run the business; OLAP systems analyze the business.
+```
+
+
+## 9. Data Lake vs Data Warehouse vs Lakehouse
+
+### Data lake
+
+```text
+stores raw and processed data flexibly
+handles structured, semi-structured, unstructured data
+good for replay, ML, large-scale storage
+needs governance to avoid becoming a swamp
+```
+
+### Data warehouse
+
+```text
+structured, modeled, trusted analytical data
+good for BI, reporting, SQL analytics
+strong governance and performance
+```
+
+### Lakehouse
+
+```text
+data lake storage with warehouse-like table features
+supports ACID, MERGE, schema enforcement, time travel
+bridges lake and warehouse use cases
+```
+
+Interview line:
+
+```text
+The lake stores flexible raw and processed data; the warehouse serves trusted structured analytics; the lakehouse combines lake storage with warehouse-style table reliability.
+```
+
+
+## 10. Reference Warehouse Architecture
+
+Reference architecture:
+
+```text
+[Sources]
+  OLTP DBs
+  SaaS APIs
+  partner files
+  CDC streams
+  data lake
+        ↓
+[Ingestion]
+  batch extract
+  CDC capture
+  API pull
+  file load
+        ↓
+[Staging]
+  source-shaped
+  typed
+  cleaned
+  deduped
+        ↓
+[Curated Warehouse]
+  fact tables
+  dimension tables
+  history tables
+        ↓
+[Data Marts]
+  sales mart
+  finance mart
+  product analytics mart
+  customer 360
+  ML feature tables
+        ↓
+[Semantic Layer]
+  metric definitions
+  dimensions
+  certified datasets
+        ↓
+[Consumers]
+  dashboards
+  analysts
+  finance
+  ML
+  operations
+```
+
+Control plane:
+
+```text
+orchestration
+metadata
+data quality
+lineage
+catalog
+access control
+monitoring
+cost tracking
+backfill tooling
+```
+
+Interview line:
+
+```text
+I separate source-shaped staging from modeled curated tables and consumer-specific marts.
+```
+
+
+## 11. Warehouse Layers
+
+### Staging
+
+```text
+Source-shaped, typed, cleaned, deduplicated tables.
+```
+
+### Curated
+
+```text
+Trusted facts and dimensions with business rules applied.
+```
+
+### Marts
+
+```text
+Business-specific aggregates or wide tables for dashboards/consumers.
+```
+
+### Semantic layer
+
+```text
+Consistent metrics and dimensions exposed to BI/users.
+```
+
+### Audit/metadata
+
+```text
+Run logs, load counts, quality results, lineage metadata.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 12. Table Grain
+
+### Definition
+
+```text
+What one row in a table represents.
+```
+
+### Why it matters
+
+```text
+Controls primary key, joins, duplicates, aggregations, and validation.
+```
+
+### Examples
+
+```text
+one row per order, one row per order item, one row per user per day, one row per product per snapshot date.
+```
+
+### Interview rule
+
+```text
+State grain before defining columns.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 13. Fact Tables
+
+### Purpose
+
+```text
+Store measurable business events or states.
+```
+
+### Common measures
+
+```text
+amount, quantity, count, duration, revenue, cost, balance.
+```
+
+### Foreign keys
+
+```text
+Reference dimensions such as user, product, date, store.
+```
+
+### Metadata
+
+```text
+load timestamp, source system, batch ID, quality status.
+```
+
+### Rule
+
+```text
+Facts should have clear business process and grain.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 14. Dimension Tables
+
+### Purpose
+
+```text
+Store descriptive attributes used for filtering and grouping.
+```
+
+### Examples
+
+```text
+dim_user, dim_product, dim_date, dim_store, dim_campaign.
+```
+
+### Keys
+
+```text
+Often use surrogate keys plus source natural keys.
+```
+
+### History
+
+```text
+Can be current-only or SCD Type 2 historical.
+```
+
+### Rule
+
+```text
+Dimensions make facts understandable.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 15. Star Schema
+
+### Shape
+
+```text
+A central fact table joined to dimension tables.
+```
+
+### Pros
+
+```text
+Simple, fast for analytics, easy for BI users.
+```
+
+### Example
+
+```text
+fact_orders joined to dim_user, dim_product, dim_date, dim_store.
+```
+
+### Use case
+
+```text
+Most warehouse marts and BI reporting.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 16. Snowflake Schema
+
+### Shape
+
+```text
+Dimensions normalized into sub-dimensions.
+```
+
+### Pros
+
+```text
+Less redundancy, more normalized.
+```
+
+### Cons
+
+```text
+More joins, less BI-friendly.
+```
+
+### Use case
+
+```text
+Large complex dimensions or strict normalization needs.
+```
+
+### Interview default
+
+```text
+Prefer star schema for analytics unless normalization has strong reason.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 17. Conformed Dimensions
+
+### Definition
+
+```text
+Shared dimensions used consistently across multiple facts/marts.
+```
+
+### Examples
+
+```text
+dim_date, dim_user, dim_product, dim_store.
+```
+
+### Benefit
+
+```text
+Metrics from different facts can be compared consistently.
+```
+
+### Risk
+
+```text
+Without conformed dimensions, teams define customers/products/dates differently.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 18. Surrogate Keys vs Natural Keys
+
+### Natural key
+
+```text
+Business/source key such as user_id, product_id.
+```
+
+### Surrogate key
+
+```text
+Warehouse-generated key, useful for SCD Type 2.
+```
+
+### Why surrogate
+
+```text
+Allows multiple historical versions of same natural key.
+```
+
+### Common design
+
+```text
+dimension_sk as surrogate key, source_id as natural key.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 19. Fact Table Types
+
+### Transaction fact
+
+```text
+One row per event/transaction, e.g., order, payment.
+```
+
+### Periodic snapshot fact
+
+```text
+One row per entity per period, e.g., daily inventory.
+```
+
+### Accumulating snapshot
+
+```text
+One row per process instance updated as milestones complete.
+```
+
+### Factless fact
+
+```text
+Records occurrence or relationship without numeric measures.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 20. Dimension Types
+
+### Current dimension
+
+```text
+Only latest attributes.
+```
+
+### SCD Type 1
+
+```text
+Overwrite old values.
+```
+
+### SCD Type 2
+
+```text
+Preserve history with effective dates.
+```
+
+### Role-playing dimension
+
+```text
+Same dimension used in multiple roles, e.g., order_date and ship_date.
+```
+
+### Junk dimension
+
+```text
+Groups low-cardinality flags.
+```
+
+### Degenerate dimension
+
+```text
+Identifier stored in fact, e.g., order_number.
+```
+
+Interview line:
+
+```text
+Warehouse modeling starts with business process, grain, facts, and dimensions.
+```
+
+
+## 21. SCD Type 1
+
+SCD Type 1 overwrites old values.
+
+Use when:
+
+```text
+history does not matter
+only current attribute is needed
+corrections should replace old values
+```
+
+Example:
+
+```text
+user email correction
+product typo correction
+current customer segment only
+```
+
+Pros:
+
+```text
+simple
+small table
+easy queries
+```
+
+Cons:
+
+```text
+loses historical truth
+past reports may change
+```
+
+Interview line:
+
+```text
+Use Type 1 when current correctness matters more than historical attribute tracking.
+```
+
+
+## 22. SCD Type 2
+
+SCD Type 2 preserves history.
+
+Columns:
+
+```text
+user_sk
+user_id
+plan
+country
+effective_from
+effective_to
+is_current
+source_updated_at
+```
+
+Use when:
+
+```text
+reports need historical attribute values
+facts must join to dimension as-of event time
+compliance/audit needs history
+```
+
+Validation:
+
+```text
+one current row per natural key
+no overlapping intervals
+effective_from < effective_to
+surrogate key unique
+```
+
+Interview line:
+
+```text
+Use Type 2 when historical reporting needs to know what the dimension looked like at the time of the fact.
+```
+
+
+## 23. Late-Arriving Facts
+
+Late-arriving facts arrive after the normal reporting window.
+
+Examples:
+
+```text
+mobile event uploaded late
+payment update after daily report
+partner order file delayed
+timezone mismatch
+```
+
+Handling:
+
+```text
+partition overwrite recent dates
+incremental merge by business key
+lookback window
+late-data audit metrics
+closed-period policy for finance
+```
+
+Interview line:
+
+```text
+Late facts require reprocessing affected business-date partitions, not just ingestion-date partitions.
+```
+
+
+## 24. Late-Arriving Dimensions
+
+Late-arriving dimensions arrive after facts referencing them.
+
+Strategies:
+
+```text
+use unknown dimension row temporarily
+update dimension when it arrives
+backfill fact foreign keys
+use natural key joins in staging before surrogate resolution
+define grace period for referential checks
+```
+
+Example:
+
+```text
+order arrives with user_id before user dimension row is loaded.
+```
+
+Interview line:
+
+```text
+Late dimensions require either unknown rows or delayed surrogate key resolution.
+```
+
+
+## 25. Fact-to-Fact Join Explosion
+
+Joining raw fact tables directly can multiply rows.
+
+Bad:
+
+```text
+orders joined to payments joined to events by user_id
+```
+
+Problem:
+
+```text
+one-to-many joins multiply metrics
+revenue gets duplicated
+counts become wrong
+```
+
+Better:
+
+```text
+aggregate each fact to common grain first
+or join through conformed dimensions
+```
+
+Interview line:
+
+```text
+When combining multiple facts, align them to the same grain before joining.
+```
+
+
+## 26. Data Mart Design
+
+Data marts are consumer-focused outputs.
+
+Examples:
+
+```text
+daily_sales_mart
+customer_360
+marketing_campaign_performance
+finance_reconciliation_summary
+product_performance_daily
+user_features_daily
+```
+
+Mart design principles:
+
+```text
+clear grain
+stable metric definitions
+pre-aggregated for performance
+validated against curated facts
+owned by business/domain team
+freshness SLA
+documented columns
+```
+
+Interview line:
+
+```text
+Marts should optimize for consumer questions, not mirror raw source tables.
+```
+
+
+## 27. Semantic Layer / Metrics Layer
+
+A semantic layer defines consistent metrics.
+
+Examples:
+
+```text
+revenue
+gross revenue
+net revenue
+active user
+conversion rate
+average order value
+churn rate
+refund rate
+```
+
+Benefits:
+
+```text
+single source of metric truth
+consistent BI dashboards
+less duplicated logic
+governed definitions
+```
+
+Components:
+
+```text
+metrics
+dimensions
+joins
+filters
+certified datasets
+owners
+documentation
+```
+
+Interview line:
+
+```text
+A semantic layer prevents every dashboard from redefining revenue differently.
+```
+
+
+## 28. Aggregate Tables
+
+Aggregate tables improve performance.
+
+Examples:
+
+```text
+daily_revenue_by_country
+monthly_customer_revenue
+product_sales_daily
+campaign_performance_daily
+```
+
+Use when:
+
+```text
+raw fact table is huge
+dashboards repeatedly query same metrics
+query latency matters
+cost of repeated scans is high
+```
+
+Validation:
+
+```text
+aggregate totals reconcile to base facts
+grain is unique
+freshness meets SLA
+```
+
+Interview line:
+
+```text
+Aggregate tables trade storage and pipeline complexity for faster, cheaper dashboard queries.
+```
+
+
+## 29. Materialized Views
+
+Materialized views store query results.
+
+Pros:
+
+```text
+can speed repeated queries
+can simplify consumer access
+may be automatically refreshed depending on warehouse
+```
+
+Cons:
+
+```text
+refresh cost
+staleness
+limited SQL support in some platforms
+dependency complexity
+```
+
+Interview line:
+
+```text
+I use materialized views or aggregate tables when repeated analytical queries justify the refresh and storage cost.
+```
+
+
+## 30. Wide Tables vs Star Schema
+
+Wide tables denormalize many attributes into one table.
+
+Pros:
+
+```text
+easy for BI users
+fewer joins
+fast dashboards for fixed use cases
+```
+
+Cons:
+
+```text
+duplication
+harder governance
+less flexible
+risk of inconsistent attributes
+large storage footprint
+```
+
+Star schema pros:
+
+```text
+reusable dimensions
+cleaner modeling
+more flexible analysis
+```
+
+Interview line:
+
+```text
+I use star schema for core warehouse modeling and wide marts for specific high-value consumer use cases.
+```
+
+
+## 31. Warehouse Ingestion
+
+Warehouse sources include:
+
+```text
+OLTP extracts
+CDC streams
+data lake silver tables
+SaaS APIs
+partner files
+application logs
+```
+
+Ingestion pattern:
+
+```text
+extract/load into staging
+validate staging
+deduplicate source data
+merge/insert into curated facts/dimensions
+build marts
+validate marts
+publish/certify
+```
+
+Interview line:
+
+```text
+I avoid loading raw source data directly into business marts without staging and validation.
+```
+
+
+## 32. ETL vs ELT in Warehouse
+
+ETL:
+
+```text
+extract, transform before loading warehouse, load final data
+```
+
+ELT:
+
+```text
+extract, load raw/staged data to warehouse, transform inside warehouse
+```
+
+Warehouse default:
+
+```text
+ELT is common because modern warehouses are strong at SQL transformations.
+```
+
+Use ETL when:
+
+```text
+complex parsing outside warehouse is needed
+large file processing is better in Spark
+source data needs heavy pre-processing
+```
+
+Interview line:
+
+```text
+I usually use ELT for warehouse SQL transformations and Spark/Python only where they fit better.
+```
+
+
+## 33. Incremental Loading
+
+Incremental loading processes new or changed records.
+
+Methods:
+
+```text
+updated_at watermark
+CDC offset
+partition-based incremental
+file audit
+source sequence
+```
+
+Safe rule:
+
+```text
+advance watermark only after target write and validation succeed
+```
+
+Interview line:
+
+```text
+Incremental warehouse loads must be paired with idempotent writes and safe watermark updates.
+```
+
+
+## 34. MERGE / Upsert
+
+Use MERGE for mutable source records.
+
+Pattern:
+
+```sql
+MERGE INTO fact_orders t
+USING staging_orders s
+ON t.order_id = s.order_id
+WHEN MATCHED THEN UPDATE SET ...
+WHEN NOT MATCHED THEN INSERT (...);
+```
+
+Preconditions:
+
+```text
+staging source has one row per business key
+dedupe applied
+delete behavior defined
+data quality checks pass
+```
+
+Interview line:
+
+```text
+MERGE source must be deduplicated to one row per key before applying to target.
+```
+
+
+## 35. Partition Overwrite
+
+Use partition overwrite for date-grained facts or marts.
+
+Steps:
+
+```text
+identify affected business dates
+recompute full partition
+write to temp table/path
+validate row count and metrics
+overwrite partition
+publish
+```
+
+Good for:
+
+```text
+daily marts
+late-arriving facts
+feature tables
+snapshot facts
+backfills
+```
+
+Interview line:
+
+```text
+For date-grained marts, partition overwrite is often simpler and safer than row-by-row updates.
+```
+
+
+## 36. Deduplication Before Load
+
+Deduplication needs:
+
+```text
+business key
+keep rule
+tie-breaker
+audit metadata
+```
+
+SQL pattern:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY source_updated_at DESC, ingested_at DESC
+    ) AS rn
+  FROM staging_source
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Warehouse targets should not receive ambiguous duplicate source keys.
+```
+
+
+## 37. Delete Handling
+
+Deletes in warehouse can be handled by:
+
+```text
+hard delete from current table
+soft delete with is_deleted
+end-date SCD history
+retain tombstone/audit record
+```
+
+Decision depends on:
+
+```text
+consumer expectation
+audit requirements
+privacy requirements
+history requirements
+source semantics
+```
+
+Interview line:
+
+```text
+Warehouse delete behavior must be explicit, especially when source data comes from CDC.
+```
+
+
+## 38. Backfills
+
+Backfills reprocess historical data.
+
+Backfill requirements:
+
+```text
+parameterized date/key range
+same code path as regular pipeline where possible
+idempotent writes
+validation before publish
+dependent marts rebuilt
+audit metadata stored
+consumer communication
+```
+
+Interview line:
+
+```text
+Backfills should be controlled, validated production workflows, not ad hoc manual SQL.
+```
+
+
+## 39. Source-to-Target Reconciliation
+
+Reconciliation validates warehouse accuracy.
+
+Types:
+
+```text
+row count
+key set
+sum totals
+hash totals
+sample records
+partition-level metrics
+```
+
+Example:
+
+```sql
+SELECT
+  source_count,
+  target_count,
+  source_count - target_count AS diff
+FROM reconciliation_summary;
+```
+
+Interview line:
+
+```text
+For critical warehouse tables, source-to-target reconciliation is stronger than only checking target constraints.
+```
+
+
+## 40. Data Quality Checks
+
+Warehouse DQ checks:
+
+```text
+freshness
+row count by partition
+primary key uniqueness
+foreign key/reference checks
+required fields not null
+accepted values
+SCD interval validity
+mart totals reconcile to facts
+source-target reconciliation
+metric anomaly detection
+```
+
+Interview line:
+
+```text
+Data quality checks should validate both technical constraints and business metric correctness.
+```
+
+
+## 41. Partitioning Strategy
+
+Partitioning improves pruning and load management.
+
+Common partition columns:
+
+```text
+order_date
+event_date
+snapshot_date
+report_date
+feature_date
+load_date
+```
+
+Good partition:
+
+```text
+frequently filtered
+moderate cardinality
+aligned with incremental/backfill unit
+```
+
+Bad partition:
+
+```text
+user_id with millions of values
+timestamp to second
+rarely filtered column
+```
+
+Interview line:
+
+```text
+Partition by the date or business unit most commonly used for filtering and backfills.
+```
+
+
+## 42. Clustering / Sorting
+
+Clustering or sorting improves pruning inside partitions.
+
+Use for:
+
+```text
+join keys
+high-cardinality filters
+user_id lookups
+product_id lookups
+order_id lookups
+```
+
+Example:
+
+```text
+partition fact_orders by order_date
+cluster by user_id or order_id
+```
+
+Interview line:
+
+```text
+Partition by broad date filters and cluster by common join/filter keys.
+```
+
+
+## 43. Indexes and Warehouse Optimization
+
+Traditional indexes may not apply in cloud warehouses, but optimization still matters.
+
+Techniques:
+
+```text
+partitioning
+clustering/sorting
+statistics
+materialized views
+aggregate tables
+column pruning
+predicate pushdown
+join order
+broadcast small dimensions
+avoid SELECT *
+avoid cross joins
+filter early
+```
+
+Interview line:
+
+```text
+Warehouse optimization usually means reducing scanned data and precomputing common business aggregates.
+```
+
+
+## 44. Query Performance Anti-Patterns
+
+Avoid:
+
+```text
+dashboard scans raw billion-row fact every refresh
+joining facts at incompatible grains
+SELECT * in marts
+no partition filters
+unbounded COUNT DISTINCT
+duplicated metric logic in many dashboards
+no aggregate tables for common queries
+high-cardinality partitioning
+stale statistics
+```
+
+Interview line:
+
+```text
+Most warehouse performance issues come from poor grain, poor pruning, or repeated expensive raw scans.
+```
+
+
+## 45. Cost Optimization
+
+Warehouse cost drivers:
+
+```text
+bytes scanned
+compute time
+warehouse size
+full refreshes
+bad joins
+unpartitioned queries
+COUNT DISTINCT
+dashboard refresh frequency
+duplicate marts
+materialized view refreshes
+backfills
+```
+
+Cost controls:
+
+```text
+incremental loads
+partition pruning
+aggregate marts
+query guardrails
+right-sized compute
+auto-suspend/auto-scale controls
+cost attribution by team/pipeline
+materialize high-use metrics
+archive old data
+```
+
+Interview line:
+
+```text
+The cheapest warehouse query is the one that scans only the needed columns and partitions.
+```
+
+
+## 46. Concurrency and Workload Management
+
+Warehouses support many consumers.
+
+Workload types:
+
+```text
+ETL/ELT transformations
+BI dashboard queries
+ad hoc analyst queries
+ML feature extraction
+backfills
+data quality checks
+```
+
+Controls:
+
+```text
+separate compute pools/warehouses
+query priority
+resource monitors
+scheduling heavy jobs off-peak
+limit ad hoc expensive queries
+cache or materialize common marts
+```
+
+Interview line:
+
+```text
+Separate transformation workloads from BI workloads when concurrency and SLA matter.
+```
+
+
+## 47. Freshness and SLA
+
+Warehouse freshness is consumer-facing.
+
+Track:
+
+```text
+source freshness
+staging freshness
+curated fact freshness
+mart freshness
+dashboard freshness
+```
+
+Example SLA:
+
+```text
+daily sales mart for D-1 must be available by 7 AM
+```
+
+Interview line:
+
+```text
+Freshness should be measured at the dataset consumers actually use.
+```
+
+
+## 48. Monitoring and Observability
+
+Monitor:
+
+```text
+pipeline success
+task duration
+warehouse load time
+rows processed
+DQ results
+freshness
+query latency
+cost by job
+failed queries
+SLA misses
+backfill status
+table growth
+```
+
+Interview line:
+
+```text
+Warehouse observability should cover data health, pipeline health, query performance, and cost.
+```
+
+
+## 49. Alerting
+
+Alert on:
+
+```text
+pipeline failure
+SLA miss
+critical DQ failure
+missing partition
+duplicate primary keys
+reconciliation mismatch
+query cost spike
+dashboard freshness failure
+schema breaking change
+backfill failure
+```
+
+Alert content:
+
+```text
+dataset
+partition
+severity
+owner
+actual vs expected
+runbook link
+dashboard/log link
+```
+
+Interview line:
+
+```text
+Warehouse alerts should be actionable and routed to dataset owners.
+```
+
+
+## 50. Metadata and Audit Tables
+
+Useful warehouse metadata tables:
+
+```text
+pipeline_run
+task_run
+load_audit
+watermark_state
+dq_result
+reconciliation_result
+schema_change_log
+backfill_run
+table_freshness
+```
+
+Interview line:
+
+```text
+Audit metadata makes warehouse pipelines debuggable and trustworthy.
+```
+
+
+## 51. Governance
+
+- define table owners
+- document table grain
+- document metric definitions
+- classify sensitive columns
+- enforce access controls
+- track lineage
+- certify trusted marts
+- retire unused datasets
+- manage schema changes
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 52. Access Control
+
+- least privilege
+- role-based access
+- column masking for PII
+- row-level security for region/team restrictions
+- separate raw/staging from curated/gold access
+- service accounts for pipelines
+- audited access logs
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 53. PII Handling
+
+- classify PII columns
+- mask or tokenize sensitive fields
+- restrict staging/raw access
+- avoid exposing PII in marts unless required
+- control exports
+- audit access
+- support deletion/retention policies
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 54. Catalog and Documentation
+
+- table owner
+- description
+- grain
+- primary key
+- partition key
+- freshness SLA
+- lineage
+- quality status
+- sample queries
+- metric definitions
+- deprecation status
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 55. Lineage
+
+- source-to-staging lineage
+- staging-to-curated lineage
+- curated-to-mart lineage
+- column-level lineage for critical metrics
+- dashboard dependency lineage
+- impact analysis for schema changes
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 56. Certified Datasets
+
+- owned by a team
+- documented grain and metrics
+- passes critical DQ checks
+- freshness SLA monitored
+- lineage available
+- approved for business use
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 57. Schema Change Management
+
+- detect source schema changes
+- allow safe additive changes
+- fail fast on breaking changes
+- version transformations
+- notify consumers
+- update catalog
+- run regression tests
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 58. Retention and Archival
+
+- retain facts based on business requirements
+- archive old low-query partitions
+- retain audit and reconciliation history
+- expire temporary/backfill tables
+- apply legal/privacy retention rules
+
+Interview line:
+
+```text
+A trusted warehouse needs ownership, documentation, lineage, quality, and access control.
+```
+
+
+## 59. Practice Case 1: E-Commerce Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for e-commerce warehouse.
+```
+
+Sources:
+
+```text
+orders, order_items, payments, users, products, inventory
+```
+
+Goal:
+
+```text
+sales and product analytics
+```
+
+Strong design points:
+
+- fact_orders one row per order
+- fact_order_items one row per order item
+- fact_payments one row per payment transaction
+- dim_user, dim_product, dim_date, dim_store
+- daily_sales_mart by order_date + country + category
+- SCD Type 2 for user plan or product category if historical reporting needs it
+- incremental MERGE for mutable orders/payments
+- partition facts by business date
+- validate revenue totals and duplicate keys
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 60. Practice Case 2: Daily Sales Reporting Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for daily sales reporting warehouse.
+```
+
+Sources:
+
+```text
+orders and payments
+```
+
+Goal:
+
+```text
+daily revenue dashboard
+```
+
+Strong design points:
+
+- define revenue metric and refund/cancel rules
+- stage orders and payments
+- curate fact_orders and fact_payments
+- build daily_revenue_by_country/category
+- overwrite recent date partitions for late updates
+- reconcile mart revenue to fact_orders
+- freshness SLA before dashboard publish
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 61. Practice Case 3: Customer 360 Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for customer 360 warehouse.
+```
+
+Sources:
+
+```text
+users, orders, payments, support, events, marketing
+```
+
+Goal:
+
+```text
+one row per user snapshot
+```
+
+Strong design points:
+
+- curate each source independently
+- aggregate each fact to user grain
+- avoid fact-to-fact join explosion
+- dim_user current/SCD history
+- customer_360 one row per user_id + snapshot_date
+- validate one row per user/date
+- reconcile feature totals to source facts
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 62. Practice Case 4: Finance Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for finance warehouse.
+```
+
+Sources:
+
+```text
+payments, invoices, bank/provider files
+```
+
+Goal:
+
+```text
+audited finance reporting
+```
+
+Strong design points:
+
+- strict source-to-target reconciliation
+- fact_payments and fact_invoices
+- currency and amount validation
+- duplicate transaction checks
+- finance marts partitioned by accounting_date
+- closed-period policy
+- critical DQ failures block publish
+- retain audit history
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 63. Practice Case 5: Marketing Analytics Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for marketing analytics warehouse.
+```
+
+Sources:
+
+```text
+campaign touches, users, orders, ad spend
+```
+
+Goal:
+
+```text
+campaign performance mart
+```
+
+Strong design points:
+
+- fact_campaign_touches
+- fact_ad_spend
+- fact_orders
+- dim_campaign and dim_user
+- attribution logic defined clearly
+- aggregate to campaign_id + report_date
+- reconcile ad spend and attributed revenue
+- document attribution caveats
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 64. Practice Case 6: Product Analytics Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for product analytics warehouse.
+```
+
+Sources:
+
+```text
+events, sessions, users, experiments
+```
+
+Goal:
+
+```text
+product metrics and funnels
+```
+
+Strong design points:
+
+- fact_events one row per event
+- fact_sessions one row per session
+- dim_user, dim_experiment, dim_date
+- dedupe event_id
+- late event lookback
+- DAU and funnel marts
+- monitor event volume and null user rate
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 65. Practice Case 7: Inventory Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for inventory warehouse.
+```
+
+Sources:
+
+```text
+inventory movements, products, warehouses
+```
+
+Goal:
+
+```text
+daily inventory snapshots
+```
+
+Strong design points:
+
+- fact_inventory_movements
+- inventory_snapshot_daily one row per product + warehouse + date
+- dim_product and dim_warehouse
+- running quantity logic
+- negative inventory checks
+- partition by snapshot_date
+- late movement corrections
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 66. Practice Case 8: Subscription Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for subscription warehouse.
+```
+
+Sources:
+
+```text
+subscriptions, invoices, users, plans
+```
+
+Goal:
+
+```text
+MRR/churn reporting
+```
+
+Strong design points:
+
+- dim_user and dim_plan
+- subscription history with effective dates
+- fact_invoices and fact_subscription_events
+- MRR mart by month
+- churn and expansion metrics defined
+- SCD Type 2 for plan changes if needed
+- reconcile invoice totals
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 67. Practice Case 9: ML Feature Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for ml feature warehouse.
+```
+
+Sources:
+
+```text
+curated facts and dimensions
+```
+
+Goal:
+
+```text
+feature tables
+```
+
+Strong design points:
+
+- user_features_daily one row per user_id + feature_date
+- point-in-time correctness
+- no future leakage
+- partition by feature_date
+- backfill historical features
+- feature null and distribution checks
+- training-serving consistency
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 68. Practice Case 10: Executive Metrics Warehouse
+
+Prompt:
+
+```text
+Design a data warehouse for executive metrics warehouse.
+```
+
+Sources:
+
+```text
+multiple curated facts
+```
+
+Goal:
+
+```text
+certified KPI mart
+```
+
+Strong design points:
+
+- semantic layer defines KPIs
+- gold KPI table by report_date
+- certified metric definitions
+- strict DQ and reconciliation
+- dashboard freshness SLA
+- owner and lineage visible
+- avoid dashboard-specific metric drift
+
+Minimum interview answer must include:
+
+```text
+requirements
+table grain
+facts
+dimensions
+load strategy
+SCD/late data
+data quality
+performance
+governance
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie every warehouse table to a business process, grain, and consumer use case.
+```
+
+
+## 69. Dimensional Modeling Interview Script
+
+Script:
+
+```text
+I first identify the business process, then define the fact table grain. After that I identify dimensions used to slice the facts, decide which dimensions need history, and build marts or aggregates for common dashboard queries.
+```
+
+Example:
+
+```text
+For orders, the business process is order placement. fact_orders has one row per order. fact_order_items has one row per item because product-level metrics need item grain. dim_user, dim_product, dim_date, and dim_store describe the facts. Daily revenue mart aggregates facts by date, country, and category.
+```
+
+
+## 70. Metric Definition Discipline
+
+Metrics need precise definitions.
+
+Example revenue questions:
+
+```text
+gross or net revenue?
+include cancelled orders?
+include refunds?
+which currency?
+which timezone?
+order date or payment date?
+tax included?
+shipping included?
+```
+
+Interview line:
+
+```text
+Before modeling revenue, I clarify the business definition because different teams may define it differently.
+```
+
+
+## 71. Handling Timezones
+
+Timezones affect reporting.
+
+Rules:
+
+```text
+store timestamps in UTC
+derive business_date based on reporting timezone
+document timezone assumptions
+handle daylight saving time
+separate load_date from event/business date
+```
+
+Interview line:
+
+```text
+Warehouse facts should separate source timestamp, UTC timestamp, load date, and business reporting date.
+```
+
+
+## 72. As-Of Joins
+
+As-of joins connect facts to the dimension version active at fact time.
+
+Example logic:
+
+```text
+fact.order_time >= dim.effective_from
+AND fact.order_time < COALESCE(dim.effective_to, future_date)
+```
+
+Use for:
+
+```text
+SCD Type 2 user plan
+product category history
+sales territory history
+account owner history
+```
+
+Interview line:
+
+```text
+If historical attributes matter, facts should join to the dimension version active at the fact time.
+```
+
+
+## 73. Accumulating Snapshot Facts
+
+Accumulating snapshot tracks a process lifecycle.
+
+Example order lifecycle:
+
+```text
+order_id
+created_at
+paid_at
+shipped_at
+delivered_at
+cancelled_at
+current_status
+days_to_ship
+days_to_deliver
+```
+
+Use when:
+
+```text
+one business process has milestones that update over time
+```
+
+Interview line:
+
+```text
+Accumulating snapshot facts are useful for process lifecycle analytics.
+```
+
+
+## 74. Periodic Snapshot Facts
+
+Periodic snapshot captures state at regular intervals.
+
+Examples:
+
+```text
+daily inventory level
+daily account balance
+daily subscription status
+monthly customer MRR
+```
+
+Grain examples:
+
+```text
+one row per account + snapshot_date
+one row per product + warehouse + snapshot_date
+```
+
+Interview line:
+
+```text
+Snapshot facts are used when the business asks about state over time, not just events.
+```
+
+
+## 75. Factless Fact Tables
+
+Factless facts record occurrences or relationships.
+
+Examples:
+
+```text
+student attendance
+user exposed to experiment
+promotion eligibility
+account feature enabled
+```
+
+Interview line:
+
+```text
+A fact table does not always need numeric measures; sometimes the occurrence itself is the fact.
+```
+
+
+## 76. Warehouse Anti-Patterns
+
+Avoid:
+
+```text
+one giant table for everything
+no table grain
+raw source tables exposed as certified marts
+fact-to-fact joins without grain alignment
+no SCD for historical dimensions when needed
+no source-to-target reconciliation
+no semantic metric definitions
+no DQ checks
+dashboards directly querying staging
+full refresh of huge tables without reason
+no partitioning
+duplicated metric logic across dashboards
+```
+
+Interview line:
+
+```text
+Most warehouse mistakes are grain mistakes, metric-definition mistakes, or missing data-quality controls.
+```
+
+
+## 77. Warehouse Trade-Offs
+
+Common trade-offs:
+
+```text
+star schema vs wide marts
+SCD Type 1 vs Type 2
+full refresh vs incremental
+MERGE vs partition overwrite
+freshness vs cost
+strict DQ blocking vs availability
+normalization vs BI simplicity
+aggregate tables vs flexibility
+warehouse vs lakehouse
+```
+
+Interview line:
+
+```text
+Warehouse design is choosing the right trade-off between correctness, usability, performance, and cost.
+```
+
+
+## 78. Warehouse Migration / Modernization
+
+Migration concerns:
+
+```text
+source system mapping
+old metric compatibility
+parallel runs
+data reconciliation
+dashboard migration
+user training
+access control migration
+cutover plan
+rollback plan
+```
+
+Interview line:
+
+```text
+For warehouse migration, I would run old and new outputs in parallel and reconcile metrics before cutover.
+```
+
+
+## 79. Pattern Classification Drill
+
+### Need current product name only
+
+```text
+SCD Type 1 or current dimension.
+```
+
+### Need historical user plan at order time
+
+```text
+SCD Type 2 and as-of join.
+```
+
+### Need daily inventory level
+
+```text
+Periodic snapshot fact.
+```
+
+### Need order lifecycle milestones
+
+```text
+Accumulating snapshot fact.
+```
+
+### Need one row per order item
+
+```text
+Transaction fact at item grain.
+```
+
+### Revenue dashboard slow
+
+```text
+Aggregate mart or materialized view.
+```
+
+### Orders duplicated after rerun
+
+```text
+Missing idempotent MERGE/overwrite.
+```
+
+### Late events change yesterday
+
+```text
+Lookback and partition overwrite.
+```
+
+### Customer 360 revenue inflated
+
+```text
+Fact-to-fact join explosion; aggregate to user grain.
+```
+
+### Dashboard metric definitions differ
+
+```text
+Semantic layer/metric governance.
+```
+
+### payment_id duplicates
+
+```text
+Uniqueness DQ check and dedupe.
+```
+
+### source updated_at unreliable
+
+```text
+CDC or stronger extraction method.
+```
+
+### dimension arrives after fact
+
+```text
+Unknown dimension or delayed surrogate resolution.
+```
+
+### reports need closed accounting periods
+
+```text
+Closed-period policy and finance controls.
+```
+
+### ad hoc queries too expensive
+
+```text
+Partitioning, aggregate marts, query guardrails.
+```
+
+### PII visible to all analysts
+
+```text
+Column masking and access control.
+```
+
+### schema type changed
+
+```text
+Schema change management and fail-fast.
+```
+
+### backfill needed for two years
+
+```text
+Parameterized backfill with validation.
+```
+
+### Gold mart total differs from fact
+
+```text
+Reconciliation DQ failure.
+```
+
+### No one trusts table
+
+```text
+Documentation, lineage, DQ status, certification.
+```
+
+
+## 80. High-ROI Warehouse Topics
+
+### grain
+
+```text
+what one row means
+```
+
+### facts
+
+```text
+measurable business events/states
+```
+
+### dimensions
+
+```text
+descriptive attributes
+```
+
+### star schema
+
+```text
+BI-friendly model
+```
+
+### SCD Type 1
+
+```text
+overwrite current attributes
+```
+
+### SCD Type 2
+
+```text
+preserve history
+```
+
+### conformed dimensions
+
+```text
+shared definitions
+```
+
+### data marts
+
+```text
+consumer-specific outputs
+```
+
+### semantic layer
+
+```text
+consistent metrics
+```
+
+### incremental loads
+
+```text
+watermarks/CDC/partitions
+```
+
+### idempotency
+
+```text
+safe reruns
+```
+
+### late data
+
+```text
+lookback/reprocess
+```
+
+### reconciliation
+
+```text
+source-target trust
+```
+
+### partitioning
+
+```text
+performance and backfills
+```
+
+### clustering
+
+```text
+join/filter optimization
+```
+
+### governance
+
+```text
+ownership and access
+```
+
+### DQ
+
+```text
+freshness, uniqueness, RI, metrics
+```
+
+
+## 81. Review Checklist
+
+### Did candidate clarify business questions?
+
+```text
+Required.
+```
+
+### Did candidate define consumers and SLA?
+
+```text
+Required.
+```
+
+### Did candidate define table grain?
+
+```text
+Critical.
+```
+
+### Did candidate identify facts?
+
+```text
+Core modeling.
+```
+
+### Did candidate identify dimensions?
+
+```text
+Core modeling.
+```
+
+### Did candidate choose star/snowflake/wide where appropriate?
+
+```text
+Design maturity.
+```
+
+### Did candidate address SCD/history?
+
+```text
+Historical correctness.
+```
+
+### Did candidate handle late data?
+
+```text
+Pipeline correctness.
+```
+
+### Did candidate define incremental load?
+
+```text
+Scalability.
+```
+
+### Did candidate make writes idempotent?
+
+```text
+Reliability.
+```
+
+### Did candidate define data quality checks?
+
+```text
+Trust.
+```
+
+### Did candidate include reconciliation?
+
+```text
+Critical data correctness.
+```
+
+### Did candidate optimize performance?
+
+```text
+Production readiness.
+```
+
+### Did candidate define marts/semantic layer?
+
+```text
+Consumer usability.
+```
+
+### Did candidate address governance and PII?
+
+```text
+Enterprise readiness.
+```
+
+### Did candidate define monitoring and alerts?
+
+```text
+Operations.
+```
+
+### Did candidate explain trade-offs?
+
+```text
+System design maturity.
+```
+
+
+## 82. Weakness Repair Map
+
+### No grain
+
+```text
+Practice grain-first modeling drills.
+```
+
+### Confuses fact and dimension
+
+```text
+Practice fact/dimension classification.
+```
+
+### No SCD
+
+```text
+Practice Type 1 vs Type 2 cases.
+```
+
+### Fact-to-fact explosion
+
+```text
+Practice aggregate-to-common-grain drills.
+```
+
+### No load strategy
+
+```text
+Practice MERGE vs overwrite.
+```
+
+### No DQ
+
+```text
+Practice warehouse DQ checklist.
+```
+
+### No performance
+
+```text
+Practice partition/cluster/aggregate design.
+```
+
+### No governance
+
+```text
+Practice access and catalog design.
+```
+
+### No semantic layer
+
+```text
+Practice metric definition scenarios.
+```
+
+### Poor communication
+
+```text
+Practice warehouse whiteboard script.
+```
+
+
+## 83. 7-Day Warehouse Study Plan
+
+### Day 1
+
+```text
+Warehouse basics, OLTP vs OLAP, facts, dimensions, grain.
+```
+
+### Day 2
+
+```text
+Star schema, snowflake schema, conformed dimensions, marts.
+```
+
+### Day 3
+
+```text
+SCD Type 1/2, late facts/dimensions, as-of joins.
+```
+
+### Day 4
+
+```text
+Incremental loads, MERGE, partition overwrite, backfills.
+```
+
+### Day 5
+
+```text
+Data quality, reconciliation, semantic layer, governance.
+```
+
+### Day 6
+
+```text
+Performance, partitioning, clustering, aggregates, cost.
+```
+
+### Day 7
+
+```text
+Full warehouse system design mock and weakness repair.
+```
+
+
+## 84. 30-Day Warehouse Study Plan
+
+### Week 1
+
+```text
+Foundation: grain, facts, dimensions, star schema.
+```
+
+### Week 2
+
+```text
+History and loading: SCD, late data, incremental, CDC.
+```
+
+### Week 3
+
+```text
+Trust and performance: DQ, reconciliation, marts, optimization.
+```
+
+### Week 4
+
+```text
+Case studies and timed mocks.
+```
+
+
+## 85. Timed Interview Protocol
+
+### 0-5 minutes
+
+```text
+Clarify use cases, sources, consumers, SLA, metrics.
+```
+
+### 5-12 minutes
+
+```text
+Define grains, facts, dimensions, and high-level architecture.
+```
+
+### 12-22 minutes
+
+```text
+Deep dive into model: star schema, SCD, marts.
+```
+
+### 22-32 minutes
+
+```text
+Discuss incremental loads, late data, idempotency, DQ.
+```
+
+### 32-40 minutes
+
+```text
+Discuss performance, governance, monitoring, cost.
+```
+
+### 40-45 minutes
+
+```text
+Trade-offs and final summary.
+```
+
+
+## 86. Warehouse Whiteboard Template
+
+```text
+Requirements:
+- business questions:
+- consumers:
+- critical metrics:
+- SLA:
+- sources:
+- data volume:
+- history needs:
+- PII/security:
+
+Architecture:
+sources → ingestion → staging → curated facts/dimensions → marts → semantic layer → consumers
+
+Model:
+- fact tables:
+- dimension tables:
+- grain:
+- keys:
+- SCD needs:
+- marts:
+
+Operations:
+- incremental load:
+- idempotency:
+- late data:
+- backfills:
+- DQ:
+- reconciliation:
+- monitoring:
+- governance:
+- performance:
+- cost:
+```
+
+
+## 87. Fact Table Design Template
+
+```text
+Fact table name:
+Business process:
+Grain:
+Primary key:
+Foreign keys:
+Measures:
+Degenerate dimensions:
+Partition key:
+Cluster/sort keys:
+Load strategy:
+Late data strategy:
+DQ checks:
+Consumers:
+```
+
+
+## 88. Dimension Table Design Template
+
+```text
+Dimension name:
+Natural key:
+Surrogate key:
+Attributes:
+SCD type:
+Effective_from:
+Effective_to:
+Is_current:
+Source system:
+Load strategy:
+DQ checks:
+Consumers:
+```
+
+
+## 89. Data Mart Design Template
+
+```text
+Mart name:
+Business owner:
+Consumer:
+Grain:
+Source facts:
+Source dimensions:
+Metrics:
+Dimensions:
+Partition key:
+Refresh frequency:
+Freshness SLA:
+DQ checks:
+Reconciliation:
+Access policy:
+```
+
+
+## 90. Warehouse DQ Checklist Template
+
+```text
+Freshness:
+- latest partition available
+- load completed before SLA
+
+Completeness:
+- expected rows/partitions present
+
+Uniqueness:
+- primary/business key duplicate count = 0
+
+Validity:
+- statuses/enums/ranges valid
+
+Referential integrity:
+- fact foreign keys match dimensions
+
+SCD:
+- one current row per natural key
+- no overlapping intervals
+
+Reconciliation:
+- source and target counts/totals match
+
+Marts:
+- mart totals match base facts
+- one row per mart grain
+```
+
+
+## 91. Mock Set 1: Warehouse Foundation
+
+Problems:
+
+- Explain OLTP vs OLAP.
+- Explain fact vs dimension.
+- Define grain for orders and order_items.
+- Design a star schema for sales.
+- Explain star schema vs snowflake schema.
+
+Expected answer must include:
+
+```text
+business use case
+grain
+facts
+dimensions
+load strategy
+SCD/late data
+DQ
+performance
+governance
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 92. Mock Set 2: History and Loads
+
+Problems:
+
+- Design SCD Type 2 for users.
+- Handle late-arriving facts.
+- Handle late-arriving dimensions.
+- Design incremental load for orders.
+- Design warehouse load from CDC.
+
+Expected answer must include:
+
+```text
+business use case
+grain
+facts
+dimensions
+load strategy
+SCD/late data
+DQ
+performance
+governance
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 93. Mock Set 3: Quality and Performance
+
+Problems:
+
+- Define DQ checks for fact_orders.
+- Reconcile sales mart to source.
+- Optimize slow dashboard queries.
+- Design partitioning and clustering.
+- Control warehouse cost.
+
+Expected answer must include:
+
+```text
+business use case
+grain
+facts
+dimensions
+load strategy
+SCD/late data
+DQ
+performance
+governance
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 94. Mock Set 4: Marts and Metrics
+
+Problems:
+
+- Design daily sales mart.
+- Design customer 360 mart.
+- Design finance reporting mart.
+- Design semantic layer for revenue.
+- Design aggregate tables for BI.
+
+Expected answer must include:
+
+```text
+business use case
+grain
+facts
+dimensions
+load strategy
+SCD/late data
+DQ
+performance
+governance
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 95. Mock Set 5: Full Case Designs
+
+Problems:
+
+- Design e-commerce warehouse.
+- Design finance warehouse.
+- Design product analytics warehouse.
+- Design subscription analytics warehouse.
+- Design ML feature warehouse.
+
+Expected answer must include:
+
+```text
+business use case
+grain
+facts
+dimensions
+load strategy
+SCD/late data
+DQ
+performance
+governance
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 96. Data Warehouse FAQ
+
+### FAQ 1: What is a data warehouse?
+
+```text
+A structured analytical system for trusted business reporting and analysis.
+```
+
+### FAQ 2: What is a fact table?
+
+```text
+A table storing measurable events or states at a defined grain.
+```
+
+### FAQ 3: What is a dimension table?
+
+```text
+A table storing descriptive attributes used to filter/group facts.
+```
+
+### FAQ 4: What is grain?
+
+```text
+The meaning of one row in a table.
+```
+
+### FAQ 5: What is a star schema?
+
+```text
+A fact table connected to denormalized dimensions.
+```
+
+### FAQ 6: What is SCD Type 2?
+
+```text
+A dimension pattern that preserves historical versions using effective dates.
+```
+
+### FAQ 7: When use partition overwrite?
+
+```text
+For date-grained facts or marts where full partitions can be recomputed.
+```
+
+### FAQ 8: When use MERGE?
+
+```text
+For mutable records needing upsert by business key.
+```
+
+### FAQ 9: Why use a semantic layer?
+
+```text
+To define consistent metrics across dashboards and teams.
+```
+
+### FAQ 10: What makes warehouse design strong?
+
+```text
+Clear grain, facts/dimensions, reliable loads, DQ, performance, governance, and trade-offs.
+```
+
+
+## 97. Candidate Self-Review Questions
+
+After every warehouse design, candidate should answer:
+
+```text
+1. What business questions are answered?
+2. Who consumes the warehouse outputs?
+3. What are the sources?
+4. What is the freshness SLA?
+5. What are the critical metrics?
+6. What is the grain of each fact?
+7. What dimensions are needed?
+8. Which dimensions are conformed?
+9. Which dimensions need history?
+10. Which SCD type is used?
+11. What are the natural keys?
+12. What are the surrogate keys?
+13. What marts are needed?
+14. What semantic metrics are defined?
+15. How is data loaded incrementally?
+16. How are writes idempotent?
+17. How are deletes handled?
+18. How are late facts handled?
+19. How are late dimensions handled?
+20. How are backfills handled?
+21. What DQ checks run?
+22. How is reconciliation done?
+23. How are tables partitioned?
+24. How are tables clustered/sorted?
+25. How are dashboard queries optimized?
+26. How is access controlled?
+27. How is PII protected?
+28. How is lineage tracked?
+29. What alerts exist?
+30. What trade-offs were chosen?
+```
+
+If candidate cannot answer these:
+
+```text
+The data warehouse design is not interview-ready.
+```
+
+
+## 98. Final Exit Test
+
+Candidate passes data warehouse system design when they can explain:
+
+```text
+1. OLTP vs OLAP.
+2. Data lake vs warehouse vs lakehouse.
+3. Warehouse layers.
+4. Table grain.
+5. Fact tables.
+6. Dimension tables.
+7. Star schema.
+8. Snowflake schema.
+9. Conformed dimensions.
+10. Surrogate vs natural keys.
+11. Transaction facts.
+12. Periodic snapshot facts.
+13. Accumulating snapshot facts.
+14. Factless facts.
+15. SCD Type 1.
+16. SCD Type 2.
+17. Late-arriving facts.
+18. Late-arriving dimensions.
+19. Fact-to-fact join explosion.
+20. Data marts.
+21. Semantic layer.
+22. Aggregate tables.
+23. Wide tables vs star schema.
+24. ETL vs ELT.
+25. Incremental loading.
+26. MERGE/upsert.
+27. Partition overwrite.
+28. Deduplication.
+29. Delete handling.
+30. Backfills.
+31. Source-to-target reconciliation.
+32. Data quality checks.
+33. Partitioning.
+34. Clustering/sorting.
+35. Query optimization.
+36. Cost optimization.
+37. Workload management.
+38. Freshness/SLA.
+39. Monitoring/alerting.
+40. Metadata/audit tables.
+41. Governance.
+42. Access control and PII.
+43. Catalog/documentation.
+44. Lineage.
+45. Certified datasets.
+46. Case study: e-commerce warehouse.
+47. Case study: finance warehouse.
+48. Case study: customer 360.
+49. Case study: product analytics.
+50. Trade-offs and final summary.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No missing grain.
+No missing facts/dimensions.
+No missing load strategy.
+No missing SCD/late data discussion.
+No missing DQ/reconciliation.
+No missing performance and governance.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate designs a trusted, modeled, query-optimized warehouse with clear business definitions and production operations.
+```
+
+
+## 99. Final Summary
+
+Data warehouse system design is a core Data Engineering interview skill.
+
+The candidate must master:
+
+```text
+OLTP vs OLAP
+data lake vs warehouse vs lakehouse
+business requirements
+table grain
+facts
+dimensions
+star schema
+snowflake schema
+conformed dimensions
+surrogate keys
+natural keys
+transaction facts
+snapshot facts
+accumulating snapshots
+factless facts
+SCD Type 1
+SCD Type 2
+late-arriving facts
+late-arriving dimensions
+data marts
+semantic layer
+aggregate tables
+incremental loads
+MERGE
+partition overwrite
+deduplication
+delete handling
+backfills
+source-to-target reconciliation
+data quality
+partitioning
+clustering
+query optimization
+cost optimization
+monitoring
+governance
+access control
+PII
+catalog
+lineage
+certification
+trade-offs
+```
+
+The mentor must be strict:
+
+```text
+No grain → not interview-ready.
+No facts/dimensions → not interview-ready.
+No SCD discussion → not interview-ready.
+No incremental/idempotent load strategy → not interview-ready.
+No DQ/reconciliation → not interview-ready.
+No performance design → not interview-ready.
+No governance/access control → not interview-ready.
+Only says load data into warehouse → not interview-ready.
+```
+
+Final interview line:
+
+```text
+A production data warehouse must model business processes at clear grains, serve trusted metrics, load reliably, validate correctness, and perform efficiently for consumers.
+```
+
+
+## 100. Additional Mini Scenario Cards
+
+### Mini Scenario 1: Revenue dashboard scans raw orders every refresh
+
+Recommended direction:
+
+```text
+Build aggregate mart/materialized view.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 2: fact_orders has multiple rows per order_id
+
+Recommended direction:
+
+```text
+Fix grain or dedupe and add uniqueness DQ.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 3: Customer 360 revenue is inflated
+
+Recommended direction:
+
+```text
+Aggregate facts to user grain before joining.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 4: User plan changed and past reports changed
+
+Recommended direction:
+
+```text
+Use SCD Type 2 and as-of joins.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 5: Product category typo corrected
+
+Recommended direction:
+
+```text
+SCD Type 1 may be enough.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 6: Order item metrics needed
+
+Recommended direction:
+
+```text
+Use fact_order_items at item grain.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 7: Daily inventory needed
+
+Recommended direction:
+
+```text
+Use periodic snapshot fact.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 8: Order lifecycle duration needed
+
+Recommended direction:
+
+```text
+Use accumulating snapshot fact.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 9: Dimension arrives after fact
+
+Recommended direction:
+
+```text
+Use unknown row or delayed surrogate resolution.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 10: Late payment update affects yesterday
+
+Recommended direction:
+
+```text
+Lookback and partition overwrite/merge.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 11: Source deletes ignored
+
+Recommended direction:
+
+```text
+Define hard/soft delete or SCD end-date behavior.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 12: Backfill duplicates rows
+
+Recommended direction:
+
+```text
+Use idempotent partition overwrite or MERGE.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 13: Finance total mismatch
+
+Recommended direction:
+
+```text
+Reconciliation should block publish.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 14: Dashboard revenue differs by team
+
+Recommended direction:
+
+```text
+Define semantic layer metric.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 15: Warehouse query cost spike
+
+Recommended direction:
+
+```text
+Check partition pruning and aggregate tables.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 16: PII exposed in mart
+
+Recommended direction:
+
+```text
+Mask/tokenize and restrict access.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 17: No table owner
+
+Recommended direction:
+
+```text
+Catalog/governance metadata missing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 18: SCD has overlapping intervals
+
+Recommended direction:
+
+```text
+Add interval validation.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 19: Unbounded COUNT DISTINCT is slow
+
+Recommended direction:
+
+```text
+Pre-aggregate or approximate where acceptable.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 20: Gold table stale
+
+Recommended direction:
+
+```text
+Consumer-facing freshness alert.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 21: Raw staging used by BI
+
+Recommended direction:
+
+```text
+Create certified curated/gold dataset.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 22: Schema change broke pipeline
+
+Recommended direction:
+
+```text
+Schema contract/change management.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 23: Fact and dimension dates mismatch
+
+Recommended direction:
+
+```text
+Clarify business date and timezone.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 24: Order date and ship date both needed
+
+Recommended direction:
+
+```text
+Use role-playing date dimension.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 25: Too many normalized joins in BI
+
+Recommended direction:
+
+```text
+Prefer star schema or wide mart.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 26: Full refresh huge table daily
+
+Recommended direction:
+
+```text
+Use incremental/CDC/partition loading.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 27: Ad hoc users overload ETL compute
+
+Recommended direction:
+
+```text
+Separate workloads/compute pools.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 28: Metric changed without notice
+
+Recommended direction:
+
+```text
+Version semantic definition and notify consumers.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 29: Unknown product IDs in facts
+
+Recommended direction:
+
+```text
+Referential integrity check and late dimension policy.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 30: Unused marts keep growing
+
+Recommended direction:
+
+```text
+Usage monitoring and retention/deprecation.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Which warehouse modeling/loading principle applies.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 101. Quick Reference Cards
+
+### Card 1: Grain
+
+Purpose:
+
+```text
+Meaning of one row.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 2: Fact table
+
+Purpose:
+
+```text
+Measurable business event or state.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 3: Dimension table
+
+Purpose:
+
+```text
+Descriptive attributes for slicing facts.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 4: Star schema
+
+Purpose:
+
+```text
+Fact plus denormalized dimensions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 5: Snowflake schema
+
+Purpose:
+
+```text
+Normalized dimensions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 6: SCD Type 1
+
+Purpose:
+
+```text
+Overwrite dimension changes.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 7: SCD Type 2
+
+Purpose:
+
+```text
+Preserve historical dimension versions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 8: Conformed dimension
+
+Purpose:
+
+```text
+Shared dimension across marts.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 9: Surrogate key
+
+Purpose:
+
+```text
+Warehouse-generated dimension key.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 10: Natural key
+
+Purpose:
+
+```text
+Business/source key.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 11: Data mart
+
+Purpose:
+
+```text
+Consumer-specific output.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 12: Semantic layer
+
+Purpose:
+
+```text
+Consistent metric definitions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 13: Aggregate table
+
+Purpose:
+
+```text
+Precomputed summary.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 14: MERGE
+
+Purpose:
+
+```text
+Upsert mutable records.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 15: Partition overwrite
+
+Purpose:
+
+```text
+Rebuild complete affected partitions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 16: Reconciliation
+
+Purpose:
+
+```text
+Source-target comparison.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 17: Late fact
+
+Purpose:
+
+```text
+Fact arriving after reporting window.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 18: Late dimension
+
+Purpose:
+
+```text
+Dimension arriving after related fact.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 19: As-of join
+
+Purpose:
+
+```text
+Join fact to active dimension version at fact time.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 20: Certified dataset
+
+Purpose:
+
+```text
+Trusted, documented, quality-checked output.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```

@@ -1,0 +1,1328 @@
+# Data Engineering Fundamentals Guide
+
+Generated: 2026-06-06
+
+This guide teaches the Data Engineering fundamentals that candidates must know for interviews.
+
+It is written for **Data Engineering Sensei**, a strict Data Engineering interview mentor. The goal is not to memorize definitions. The goal is to answer interview questions with practical reasoning, examples, trade-offs, and awareness of failure scenarios.
+
+Use this guide for:
+
+- Data Engineering concept interviews
+- system design preparation
+- project deep dives
+- roadmap planning
+- weakness repair
+- mock interview feedback
+
+---
+
+## 1. What Counts as Data Engineering Fundamentals?
+
+Data Engineering fundamentals are the core concepts behind moving, transforming, validating, storing, and serving data reliably.
+
+A Data Engineer should understand:
+
+1. Data sources
+2. Ingestion
+3. ETL vs ELT
+4. Batch vs streaming
+5. Full load vs incremental load
+6. CDC
+7. Idempotency
+8. Backfills
+9. Data quality
+10. Schema evolution
+11. Partitioning
+12. File formats
+13. Data lake
+14. Data warehouse
+15. Orchestration
+16. Monitoring
+17. Failure handling
+18. SLAs
+19. Lineage
+20. Security basics
+21. Cost awareness
+22. Trade-offs
+
+---
+
+## 2. Interview Standard
+
+A candidate is not interview-ready if they can only define terms.
+
+For every fundamental concept, the candidate should be able to explain:
+
+```text
+1. What it means
+2. Why it matters
+3. Where it appears in a pipeline
+4. What can go wrong
+5. How to handle failure
+6. What trade-offs exist
+7. A practical example
+```
+
+Weak answer:
+
+```text
+ETL means extract, transform, load.
+```
+
+Strong answer:
+
+```text
+ETL means data is extracted from sources, transformed before loading, and then stored in a target system. It is useful when the target should receive cleaned, modeled data. In modern warehouses, ELT is also common, where raw data is loaded first and transformations happen inside the warehouse. The choice depends on scale, cost, governance, and processing capability.
+```
+
+---
+
+## 3. Data Sources
+
+Data sources are systems from which pipelines read data.
+
+Common sources:
+
+- OLTP databases
+- application logs
+- event streams
+- APIs
+- flat files
+- third-party SaaS tools
+- message queues
+- object storage
+- spreadsheets
+- IoT devices
+
+### Interview explanation
+
+```text
+Before designing a pipeline, I first identify source systems, data format, volume, update frequency, ownership, and reliability. The source determines ingestion strategy and failure handling.
+```
+
+### Common mistakes
+
+- ignoring source system load
+- assuming all sources are reliable
+- ignoring schema changes
+- ignoring deleted records
+- ignoring late files or delayed APIs
+- not tracking watermarks
+
+### Follow-up questions
+
+1. How frequently does the source update?
+2. Can the source provide incremental changes?
+3. Can records be updated or deleted?
+4. What happens if the source is down?
+5. Who owns the source schema?
+
+---
+
+## 4. Data Ingestion
+
+Data ingestion means bringing data from sources into the data platform.
+
+### Ingestion types
+
+| Type | Example |
+|---|---|
+| Batch file ingestion | daily CSV from vendor |
+| Database extraction | orders table from OLTP |
+| API ingestion | SaaS data sync |
+| Streaming ingestion | clickstream events |
+| CDC ingestion | database change logs |
+
+### Strong answer
+
+```text
+Ingestion should be designed based on source type, volume, latency, and reliability. For daily reporting, batch ingestion may be enough. For low-latency operational metrics, streaming may be needed. For transactional databases, CDC or incremental extraction can reduce source load and improve freshness.
+```
+
+### Common mistakes
+
+- full extracting huge tables every day
+- no retry strategy
+- no duplicate detection
+- no watermark tracking
+- no raw landing layer
+- no schema validation
+
+---
+
+## 5. ETL vs ELT
+
+## 5.1 ETL
+
+ETL means:
+
+```text
+Extract → Transform → Load
+```
+
+Data is transformed before loading into the final target.
+
+### Good for
+
+- strict preprocessing
+- legacy warehouses
+- sensitive data cleaning before storage
+- controlled transformation before serving
+
+### Weak answer
+
+```text
+ETL is extract, transform, load.
+```
+
+### Strong answer
+
+```text
+In ETL, data is transformed before loading into the final target. This can be useful when the target should only contain cleaned or modeled data. The trade-off is that raw data may not be easily available for replay unless we also store it separately.
+```
+
+---
+
+## 5.2 ELT
+
+ELT means:
+
+```text
+Extract → Load → Transform
+```
+
+Raw data is loaded first, then transformed inside the warehouse/lakehouse.
+
+### Good for
+
+- cloud warehouses
+- retaining raw data
+- flexible reprocessing
+- scalable SQL transformation
+- auditability
+
+### Strong answer
+
+```text
+In ELT, raw data is loaded into storage or warehouse first, then transformed later. It is common in cloud data platforms because storage is cheap and warehouses can scale compute. It also helps with replay and debugging.
+```
+
+---
+
+## 5.3 ETL vs ELT Interview Comparison
+
+| Area | ETL | ELT |
+|---|---|---|
+| Transformation timing | Before load | After load |
+| Raw data retention | Not guaranteed | Easier |
+| Cloud warehouse fit | Less common | Common |
+| Reprocessing | Harder if raw not stored | Easier |
+| Governance | controlled before load | needs controls after load |
+| Flexibility | lower | higher |
+
+### Follow-up question
+
+```text
+Which would you choose for a cloud warehouse?
+```
+
+Strong direction:
+
+```text
+Often ELT, because raw data can be loaded cheaply and transformed using scalable warehouse compute. But if sensitive data must be masked before landing, ETL or preprocessing may be required.
+```
+
+---
+
+## 6. Batch Processing
+
+Batch processing handles data in scheduled chunks.
+
+Examples:
+
+- hourly jobs
+- daily reports
+- nightly warehouse loads
+- weekly aggregates
+
+### When batch is good
+
+- reporting latency is hours/days
+- data arrives periodically
+- cost matters
+- simpler operations are preferred
+- exact real-time freshness is not required
+
+### Strong answer
+
+```text
+Batch is simpler and often cheaper than streaming. If business users only need daily dashboards, batch is usually the right choice. It is easier to monitor, retry, and backfill.
+```
+
+### Common mistakes
+
+- using streaming when batch is enough
+- no backfill strategy
+- no partition-based processing
+- no freshness checks
+- no idempotent reruns
+
+---
+
+## 7. Streaming Processing
+
+Streaming processes events continuously or near-real-time.
+
+Examples:
+
+- clickstream
+- fraud detection
+- operational alerts
+- real-time metrics
+- IoT events
+
+### When streaming is needed
+
+- seconds/minutes latency
+- continuous events
+- operational response
+- real-time personalization
+- immediate alerts
+
+### Strong answer
+
+```text
+Streaming is useful when low latency is required, but it adds complexity: duplicates, late events, ordering, checkpointing, replay, and monitoring. I would only choose streaming if the latency requirement justifies it.
+```
+
+### Common mistakes
+
+- saying streaming is always better
+- ignoring late events
+- ignoring duplicates
+- no replay strategy
+- no consumer lag monitoring
+- no idempotency
+
+---
+
+## 8. Full Load vs Incremental Load
+
+## 8.1 Full Load
+
+Full load means reloading all data every run.
+
+### Pros
+
+- simple
+- easier to reason about
+- useful for small tables
+- useful when source cannot provide changes
+
+### Cons
+
+- expensive for large tables
+- slow
+- source system load
+- unnecessary processing
+- harder to scale
+
+### Strong answer
+
+```text
+Full load is acceptable for small reference tables, but for large transactional tables it is inefficient. Incremental loading is usually better when data volume grows.
+```
+
+---
+
+## 8.2 Incremental Load
+
+Incremental load processes only new or changed data.
+
+Common methods:
+
+- updated_at timestamp
+- increasing primary key
+- watermark
+- CDC
+- partition-based load
+
+### Pros
+
+- efficient
+- faster
+- lower source load
+- scalable
+
+### Cons
+
+- more complex
+- must handle late data
+- must handle updates/deletes
+- requires reliable watermark
+- can miss changes if source fields are unreliable
+
+### Strong answer
+
+```text
+Incremental loading is better for large datasets because it only processes changes. But it needs careful watermark tracking, idempotency, and logic for late-arriving updates or deletes.
+```
+
+---
+
+## 9. Watermarks
+
+A watermark tracks what data has already been processed.
+
+Examples:
+
+- latest updated_at timestamp
+- max transaction_id
+- last processed file date
+- stream offset
+
+### Strong answer
+
+```text
+A watermark helps incremental pipelines know where to resume. It must be stored reliably and updated only after successful processing to avoid data loss.
+```
+
+### Common mistakes
+
+- updating watermark before successful load
+- relying on timestamps that can change late
+- not handling duplicate timestamps
+- no retry-safe logic
+- no manual correction path
+
+---
+
+## 10. Change Data Capture
+
+CDC captures inserts, updates, and deletes from source systems.
+
+### Why it matters
+
+CDC helps keep downstream data in sync without full table reloads.
+
+### Strong answer
+
+```text
+CDC captures row-level changes from a source database, including inserts, updates, and deletes. It is useful for near-real-time or efficient incremental pipelines. The design must handle ordering, duplicates, deletes, schema changes, and replay.
+```
+
+### Common mistakes
+
+- ignoring deletes
+- ignoring ordering
+- no offset tracking
+- no idempotent merge
+- assuming CDC is always simple
+- ignoring schema evolution
+
+### Follow-up questions
+
+1. How do you apply updates?
+2. How do you handle deletes?
+3. What if events arrive out of order?
+4. How do you replay CDC events?
+5. How do you handle schema changes?
+
+---
+
+## 11. Idempotency
+
+Idempotency means rerunning the same operation multiple times produces the same final result.
+
+### Why it matters
+
+Pipelines fail. Tasks get retried. Backfills happen. Without idempotency, retries can duplicate or corrupt data.
+
+### Strong answer
+
+```text
+Idempotency is critical because pipeline tasks may be retried. For example, if a job loads transactions for a date, rerunning it should not duplicate rows. I can make it idempotent by deleting and replacing the target partition, using merge/upsert keys, or writing to a staging table before swapping.
+```
+
+### Weak answer
+
+```text
+Idempotency means no duplicates.
+```
+
+Too shallow.
+
+### Common strategies
+
+- overwrite partition
+- merge/upsert by key
+- staging then swap
+- deduplication keys
+- deterministic output paths
+- transaction-safe writes where supported
+
+---
+
+## 12. Backfills
+
+Backfill means reprocessing historical data.
+
+### Why backfills happen
+
+- logic changes
+- bug fix
+- late data
+- missing data
+- new derived metric
+- source correction
+- warehouse rebuild
+
+### Strong answer
+
+```text
+A backfill reruns pipeline logic for historical dates or partitions. Good pipeline design makes backfills safe by retaining raw data, partitioning outputs, making writes idempotent, and monitoring affected ranges.
+```
+
+### Common mistakes
+
+- no raw data retention
+- pipeline only works for today
+- no parameterized date range
+- duplicate data on rerun
+- no validation after backfill
+- no communication to consumers
+
+---
+
+## 13. Reprocessing
+
+Reprocessing is rerunning transformation logic over existing data.
+
+It is related to backfills but can also apply to small corrected ranges or specific datasets.
+
+### Strong answer
+
+```text
+Reprocessing should be controlled and traceable. I would parameterize the run by date or partition, validate output, and track which data was rebuilt.
+```
+
+---
+
+## 14. Retry Strategy
+
+Retries handle temporary failures.
+
+Examples:
+
+- network timeout
+- API rate limit
+- temporary database issue
+- transient cloud service failure
+
+### Strong answer
+
+```text
+Retries are useful for transient failures, but they must be paired with idempotency. Retrying a non-idempotent load can duplicate data.
+```
+
+### Retry best practices
+
+- retry only transient errors
+- use backoff
+- set maximum retry count
+- alert after repeated failure
+- avoid retry storms
+- do not hide persistent data quality failures
+
+---
+
+## 15. Data Quality
+
+Data quality means data is fit for use.
+
+### Dimensions
+
+- completeness
+- uniqueness
+- validity
+- consistency
+- accuracy
+- freshness
+- timeliness
+- integrity
+
+### Common checks
+
+- row count
+- null check
+- duplicate check
+- primary key uniqueness
+- referential integrity
+- accepted values
+- range checks
+- freshness checks
+- schema checks
+- anomaly checks
+
+### Strong answer
+
+```text
+A pipeline is not successful just because the job completed. It must produce trustworthy data. I would validate row counts, required fields, duplicates, freshness, and business rules before publishing curated data.
+```
+
+### Weak answer
+
+```text
+We check if the job ran.
+```
+
+That is pipeline health, not data quality.
+
+---
+
+## 16. Data Validation Placement
+
+Quality checks can happen at multiple layers.
+
+| Layer | Checks |
+|---|---|
+| Raw | file existence, schema, corrupt records |
+| Cleaned | type casting, nulls, duplicates |
+| Curated | business rules, referential integrity, aggregates |
+| Serving | freshness, dashboard metric checks |
+
+### Strong answer
+
+```text
+I would add checks before publishing curated tables. Raw checks catch ingestion issues, cleaned checks catch record-level problems, and curated checks protect business metrics.
+```
+
+---
+
+## 17. Schema Evolution
+
+Schema evolution means data structure changes over time.
+
+Examples:
+
+- new column
+- removed column
+- type change
+- renamed field
+- nested field changes
+- new enum values
+
+### Strong answer
+
+```text
+Schema evolution should be detected and managed. Compatible changes like adding nullable columns may pass. Breaking changes like type changes should alert owners and stop publishing until handled.
+```
+
+### Common mistakes
+
+- assuming schema never changes
+- silently accepting all changes
+- breaking dashboards
+- no owner notification
+- no versioning
+- no quarantine for bad records
+
+---
+
+## 18. Partitioning
+
+Partitioning divides data into physical or logical segments.
+
+Common partition columns:
+
+- date
+- region
+- source
+- tenant
+- business unit
+
+### Strong answer
+
+```text
+Partitioning should match query and processing patterns. For event data, event_date is often useful because most queries filter by date. But high-cardinality partitions like user_id can create too many small files.
+```
+
+### Common mistakes
+
+- partitioning by high-cardinality column
+- not considering late data
+- too many small files
+- partitioning without query pattern
+- wrong date column
+
+---
+
+## 19. File Formats
+
+### CSV
+
+Good:
+
+- simple
+- readable
+- common
+
+Weakness:
+
+- no strong schema
+- inefficient scans
+- parsing issues
+
+### JSON
+
+Good:
+
+- flexible
+- nested data
+- API/events
+
+Weakness:
+
+- schema drift
+- parsing cost
+- inefficient analytics
+
+### Parquet
+
+Good:
+
+- columnar
+- compressed
+- efficient analytics
+- schema support
+
+Weakness:
+
+- not human-readable
+- small files issue
+
+### Avro
+
+Good:
+
+- schema support
+- common for event/streaming
+- schema evolution support
+
+### Strong answer
+
+```text
+For raw ingestion, CSV or JSON may appear from sources. For analytics and large-scale processing, I would usually convert to Parquet because it is columnar, compressed, and efficient for reading selected columns.
+```
+
+---
+
+## 20. Data Lake
+
+A data lake stores raw and processed data, usually in object storage.
+
+### Benefits
+
+- cheap storage
+- flexible formats
+- raw data retention
+- replayability
+- supports multiple consumers
+
+### Risks
+
+- poor governance
+- messy data
+- unclear schema
+- hard discovery
+- data swamp
+
+### Strong answer
+
+```text
+A data lake is useful for retaining raw and processed data at scale, but it needs organization, metadata, access control, and quality checks. Otherwise it becomes a data swamp.
+```
+
+---
+
+## 21. Data Warehouse
+
+A data warehouse stores curated, analytics-ready data.
+
+### Benefits
+
+- SQL analytics
+- reporting
+- dashboards
+- governed metrics
+- business-friendly models
+
+### Risks
+
+- cost
+- poor modeling
+- stale data
+- unclear grain
+- query performance issues
+
+### Strong answer
+
+```text
+A warehouse is for trusted, modeled data used by analysts and dashboards. Tables should have clear grain, ownership, quality checks, and documentation.
+```
+
+---
+
+## 22. Lakehouse
+
+A lakehouse combines object storage flexibility with warehouse-like table management.
+
+Concepts:
+
+- open storage
+- metadata layer
+- transactional tables
+- schema evolution
+- time travel
+- curated tables
+- compute separation
+
+### Strong answer
+
+```text
+A lakehouse tries to combine data lake storage with warehouse-like reliability. It can be useful when teams want open formats, scalable processing, and governed tables on object storage.
+```
+
+---
+
+## 23. OLTP vs OLAP
+
+### OLTP
+
+Online Transaction Processing.
+
+Used for:
+
+- application transactions
+- inserts/updates
+- normalized schemas
+- low-latency operations
+
+Examples:
+
+- orders database
+- payment system
+- user profile database
+
+### OLAP
+
+Online Analytical Processing.
+
+Used for:
+
+- reporting
+- analytics
+- aggregations
+- dashboards
+- denormalized models
+
+Examples:
+
+- data warehouse
+- sales dashboard tables
+- product analytics marts
+
+### Strong answer
+
+```text
+OLTP systems are optimized for transactions and operational consistency. OLAP systems are optimized for analytical queries over large data. Data Engineering often moves data from OLTP sources into OLAP systems for reporting and analytics.
+```
+
+---
+
+## 24. Data Modeling Basics
+
+Core concepts:
+
+- grain
+- fact table
+- dimension table
+- star schema
+- surrogate key
+- SCD Type 1
+- SCD Type 2
+
+### Strong answer
+
+```text
+Before modeling a fact table, I define the grain. For example, one row per order line. Then I identify measurable facts like quantity and revenue, and dimensions like customer, product, and date.
+```
+
+### Common mistake
+
+Building one big table without knowing grain.
+
+---
+
+## 25. Orchestration
+
+Orchestration manages workflow scheduling and dependencies.
+
+Key concepts:
+
+- DAG
+- task
+- dependency
+- schedule
+- retry
+- backfill
+- alert
+- SLA
+
+### Strong answer
+
+```text
+Orchestration ensures pipeline tasks run in the right order, on schedule, with retries and alerts. It also supports backfills and dependency management.
+```
+
+---
+
+## 26. Monitoring
+
+Monitoring tells whether pipelines and data are healthy.
+
+### Pipeline health
+
+- job success/failure
+- runtime
+- retries
+- task failures
+- resource usage
+
+### Data health
+
+- freshness
+- row counts
+- null rates
+- duplicates
+- schema changes
+- anomaly detection
+
+### Strong answer
+
+```text
+I would monitor both pipeline health and data health. A job can succeed but still produce wrong or stale data.
+```
+
+---
+
+## 27. SLAs and Freshness
+
+SLA means service-level agreement or expectation.
+
+For data pipelines, this often means:
+
+- data available by 8 AM
+- dashboard refreshed hourly
+- streaming lag below 5 minutes
+- source-to-target delay under 30 minutes
+
+### Strong answer
+
+```text
+A pipeline SLA defines when data must be available and how fresh it should be. Monitoring should alert if data freshness violates the SLA, not only if the job fails.
+```
+
+---
+
+## 28. Lineage and Auditability
+
+Lineage shows where data came from and how it changed.
+
+Auditability means being able to trace and explain changes.
+
+### Strong answer
+
+```text
+Lineage helps teams understand upstream and downstream dependencies. It is useful for debugging, impact analysis, governance, and trust.
+```
+
+---
+
+## 29. Data Contracts
+
+A data contract defines expectations between producers and consumers.
+
+Includes:
+
+- schema
+- types
+- required fields
+- freshness
+- quality rules
+- ownership
+- change process
+
+### Strong answer
+
+```text
+Data contracts reduce unexpected schema or quality changes. They make producer-consumer expectations explicit.
+```
+
+---
+
+## 30. Security Basics
+
+Data Engineers must understand basic security.
+
+Topics:
+
+- least privilege
+- IAM/RBAC
+- service accounts
+- secrets management
+- encryption
+- PII handling
+- masking
+- audit logs
+- environment separation
+
+### Strong answer
+
+```text
+I would restrict access using least privilege, store secrets in a secret manager, encrypt sensitive data, and apply masking or restricted access for PII.
+```
+
+---
+
+## 31. Cost Awareness
+
+Cost matters in cloud data platforms.
+
+Cost drivers:
+
+- compute time
+- scanned data
+- storage duplication
+- streaming services
+- always-on clusters
+- full refreshes
+- inefficient queries
+- too many small files
+
+### Strong answer
+
+```text
+I would control cost by partitioning large tables, using columnar formats, avoiding unnecessary full scans, using incremental loads, right-sizing compute, and monitoring expensive jobs.
+```
+
+---
+
+## 32. Failure Handling
+
+Pipelines fail for many reasons.
+
+Common failures:
+
+- source unavailable
+- API timeout
+- corrupt file
+- schema change
+- bad data
+- transformation bug
+- warehouse load failure
+- permissions issue
+- resource limit
+- downstream dependency failure
+
+### Strong answer
+
+```text
+I would design failure handling with retries for transient failures, alerts for persistent failures, idempotent reruns, quarantining of bad records, and backfill support for missed data.
+```
+
+---
+
+## 33. Data Engineering Design Checklist
+
+Use this checklist for any pipeline answer:
+
+```text
+Source:
+Data format:
+Volume:
+Frequency:
+Latency:
+Full or incremental:
+Raw storage:
+Transformation:
+Target:
+Data model:
+Quality checks:
+Orchestration:
+Monitoring:
+Failure handling:
+Backfill:
+Security:
+Cost:
+Trade-offs:
+```
+
+If the candidate cannot cover these, the answer is not strong.
+
+---
+
+## 34. Common Interview Questions
+
+### Basic
+
+1. What is ETL?
+2. What is ELT?
+3. What is the difference between batch and streaming?
+4. What is a data warehouse?
+5. What is a data lake?
+6. What is partitioning?
+7. What is data quality?
+8. What is a DAG?
+9. What is a backfill?
+10. What is CDC?
+
+### Medium
+
+1. How would you design an incremental load?
+2. How do you make a pipeline idempotent?
+3. How do you handle schema evolution?
+4. How do you handle late-arriving data?
+5. How do you validate data before publishing?
+6. How do you recover from a failed pipeline?
+7. How do you choose between batch and streaming?
+8. Why use Parquet over CSV?
+9. How do you monitor freshness?
+10. How do you avoid duplicate loads?
+
+### Advanced
+
+1. Design a CDC pipeline.
+2. Design a data quality framework.
+3. Design a backfill strategy for corrupted data.
+4. Design a pipeline with late-arriving events.
+5. Design a multi-source analytics platform.
+6. Explain exactly-once vs at-least-once processing.
+7. Design schema evolution handling.
+8. Design lineage and auditability.
+9. Design cost controls for a warehouse.
+10. Design a pipeline migration from on-prem to cloud.
+
+---
+
+## 35. Weak vs Strong Answers
+
+### Question: What is idempotency?
+
+Weak:
+
+```text
+It means no duplicates.
+```
+
+Strong:
+
+```text
+Idempotency means rerunning the same task produces the same final result. It matters because pipelines retry and backfill. For example, rerunning a daily load should replace or merge the same partition instead of appending duplicates.
+```
+
+### Question: What is a backfill?
+
+Weak:
+
+```text
+Running old data.
+```
+
+Strong:
+
+```text
+A backfill reprocesses historical data for a date range or partition. It is needed when logic changes, data arrives late, or a bug corrupts past output. Safe backfills require raw data retention, parameterized runs, idempotent writes, and validation.
+```
+
+### Question: Batch vs streaming?
+
+Weak:
+
+```text
+Streaming is better because it is real time.
+```
+
+Strong:
+
+```text
+Streaming is useful only when low latency is required. Batch is simpler, cheaper, and easier to operate for daily or hourly reporting. Streaming adds complexity such as duplicates, late events, checkpointing, replay, and consumer lag.
+```
+
+---
+
+## 36. Assessment Rubric
+
+Score Data Engineering fundamentals from 0 to 5.
+
+### Score 0
+
+No meaningful understanding.
+
+### Score 1
+
+Knows terms but cannot explain practical meaning.
+
+### Score 2
+
+Can define basics but fails follow-ups.
+
+### Score 3
+
+Can answer standard questions with some gaps.
+
+### Score 4
+
+Interview-ready for most concept rounds.
+
+### Score 5
+
+Strong practical reasoning across failures, trade-offs, scale, and production scenarios.
+
+---
+
+## 37. Minimum Passing Standard
+
+Candidate must be able to explain:
+
+1. ETL vs ELT
+2. Batch vs streaming
+3. Full load vs incremental load
+4. CDC
+5. Watermarks
+6. Idempotency
+7. Backfills
+8. Data quality checks
+9. Schema evolution
+10. Partitioning
+11. File formats
+12. Data lake vs warehouse
+13. OLTP vs OLAP
+14. Orchestration
+15. Monitoring and SLAs
+16. Failure handling
+
+---
+
+## 38. Strong Candidate Standard
+
+A strong candidate can also explain:
+
+1. Late-arriving data
+2. Duplicate handling
+3. CDC deletes and updates
+4. Exactly-once vs at-least-once basics
+5. Data contracts
+6. Lineage
+7. Auditability
+8. Cost trade-offs
+9. Security and PII handling
+10. Reprocessing strategy
+11. Pipeline migration trade-offs
+12. Operational incident recovery
+
+---
+
+## 39. 7-Day Fundamentals Repair Plan
+
+### Day 1
+
+ETL vs ELT, batch vs streaming, OLTP vs OLAP.
+
+### Day 2
+
+Full load, incremental load, watermarks, CDC.
+
+### Day 3
+
+Idempotency, retries, backfills, reprocessing.
+
+### Day 4
+
+Data quality, validation, freshness, monitoring.
+
+### Day 5
+
+Partitioning, file formats, data lake, warehouse, lakehouse.
+
+### Day 6
+
+Schema evolution, data contracts, lineage, security.
+
+### Day 7
+
+Mock interview: design and explain a reliable daily batch pipeline.
+
+---
+
+## 40. Exit Test
+
+Candidate must answer:
+
+```text
+Design a pipeline that ingests customer transaction data daily from an OLTP database into a cloud warehouse. The pipeline should support incremental loads, validation, retries, idempotency, backfills, monitoring, and reporting.
+```
+
+A passing answer must include:
+
+- source analysis
+- incremental strategy
+- watermark
+- raw landing
+- transformation
+- warehouse target
+- quality checks
+- orchestration
+- retries
+- idempotent writes
+- backfill path
+- monitoring/freshness
+- failure handling
+- security basics
+- cost awareness
+
+---
+
+## 41. Mentor Behavior Rules
+
+When using this guide, the mentor should:
+
+1. Never accept definitions alone.
+2. Ask for real pipeline examples.
+3. Challenge missing failure handling.
+4. Challenge missing data quality.
+5. Ask what happens on rerun.
+6. Ask how late data is handled.
+7. Ask how duplicates are avoided.
+8. Ask how data is monitored.
+9. Ask how backfills work.
+10. Ask how the candidate would explain this in an interview.
+
+Strict correction:
+
+```text
+This is a textbook definition. It is not enough for a Data Engineering interview. Explain where this appears in a real pipeline and what can go wrong.
+```
+
+---
+
+## 42. Final Summary
+
+Data Engineering fundamentals are the foundation beneath tools.
+
+A candidate who memorizes service names but cannot explain idempotency, incremental loads, data quality, backfills, partitioning, monitoring, and failure handling is not interview-ready.
+
+The strongest candidates explain concepts with practical examples and trade-offs.
+
+The weakest candidates only define terms.

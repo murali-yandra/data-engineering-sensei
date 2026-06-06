@@ -1,0 +1,2204 @@
+# FAANG Interview Standards
+
+Generated: 2026-06-06
+
+This file defines the **default FAANG-level Data Engineering interview standard** for **Data Engineering Sensei**.
+
+Use this file when:
+
+- the candidate does not provide target companies
+- the candidate says “train me for top companies”
+- the candidate asks for a strict interview bar
+- the candidate wants realistic readiness scoring
+- the mentor needs a default standard stronger than average company interviews
+- the candidate’s target is unknown, but the preparation should be serious
+
+This file does **not** claim exact current processes for any specific company. Interview processes change. The purpose is to define a high-quality preparation standard that is strict enough for top product-company Data Engineering interviews.
+
+---
+
+## 1. Purpose
+
+The purpose of this file is to prevent vague preparation.
+
+When target companies are not provided, Data Engineering Sensei should not create an easy or generic plan.
+
+Default rule:
+
+```text
+If target companies are missing, train the candidate using FAANG-level Data Engineering interview standards.
+```
+
+This means the mentor should prepare the candidate for stronger-than-average rounds across:
+
+1. SQL
+2. Python
+3. High-ROI DSA
+4. Data Engineering fundamentals
+5. Data modeling
+6. ETL / ELT pipeline design
+7. Data warehouse concepts
+8. Cloud data platforms
+9. Spark / distributed processing basics
+10. Orchestration
+11. Data Engineering system design
+12. Project deep dive
+13. Communication
+14. Behavioral examples with technical depth
+
+---
+
+## 2. What FAANG-Level Means Here
+
+In this repository, **FAANG-level** means:
+
+```text
+A high interview bar where the candidate must show correctness, depth, communication, trade-off reasoning, and follow-up handling.
+```
+
+It does not mean:
+
+- exact company-specific interview leaks
+- guaranteed current interview formats
+- memorized company questions
+- overfitting to one company
+- pretending all top companies ask the same rounds
+
+It means the candidate should be trained to survive interviews where:
+
+- questions are ambiguous
+- follow-ups are strict
+- SQL is medium to hard
+- Python must be clean
+- DSA is at least easy/medium
+- system design requires trade-offs
+- projects must show ownership
+- shallow definitions are not enough
+- communication matters heavily
+
+---
+
+## 3. Default Standard Rule
+
+If the user does not provide target companies:
+
+```text
+Target standard: FAANG-level Data Engineering interview standard.
+```
+
+Mentor response example:
+
+```text
+You did not provide target companies, so I will use FAANG-level Data Engineering standards by default. That means I will not treat basic definitions or shallow answers as interview-ready. You need strong SQL, clean Python, high-ROI DSA, practical Data Engineering fundamentals, system design depth, and project ownership.
+```
+
+---
+
+## 4. What This Standard Is Not
+
+This standard is not a promise.
+
+Do not say:
+
+```text
+Follow this and you will crack FAANG.
+```
+
+Correct framing:
+
+```text
+This standard gives you a strong preparation bar. It improves readiness, but interview outcomes still depend on role fit, resume screen, recruiter process, current hiring needs, competition, communication, and actual interview performance.
+```
+
+---
+
+## 5. High-Level Readiness Bar
+
+A candidate is not FAANG-level ready just because they studied many topics.
+
+They must be able to:
+
+1. Solve medium SQL without major mistakes.
+2. Write clean Python under time pressure.
+3. Solve high-ROI DSA easy/medium problems.
+4. Explain Data Engineering fundamentals with real examples.
+5. Design batch, incremental, CDC, and streaming-style pipelines.
+6. Explain data modeling and warehouse trade-offs.
+7. Discuss data quality, monitoring, failures, and backfills.
+8. Handle system design ambiguity.
+9. Defend real project ownership.
+10. Communicate clearly and concisely.
+11. Admit uncertainty without bluffing.
+12. Recover from mistakes during follow-ups.
+
+---
+
+## 6. FAANG-Level Score Thresholds
+
+Use these as target scores.
+
+| Module | Minimum Target |
+|---|---:|
+| SQL | 4/5 |
+| Python | 4/5 |
+| DSA | 3.5/5 |
+| Data Engineering Fundamentals | 4/5 |
+| ETL / ELT Pipelines | 4/5 |
+| Data Modeling | 3.5/5 |
+| Data Warehouse | 3.5/5 |
+| Cloud Data Platforms | 3/5 |
+| Spark / Distributed Processing | 3/5 |
+| Orchestration | 3/5 |
+| System Design | 4/5 |
+| Project Explanation | 4/5 |
+| Communication | 4/5 |
+
+A candidate can still interview before reaching all these, but the mentor should not call them fully FAANG-interview ready unless mock performance confirms it.
+
+---
+
+## 7. Readiness Verdicts
+
+## 7.1 Not Ready for FAANG-Level Interviews
+
+Use this when:
+
+- SQL is below 3
+- Python is below 3
+- project explanation is weak
+- system design is missing
+- DSA basics are weak
+- candidate cannot handle follow-ups
+- communication is unstructured
+
+Response:
+
+```text
+You are not FAANG-level ready yet. You may still attempt interviews for experience, but the current risk is high. The priority is to repair SQL, Python, project explanation, and Data Engineering fundamentals before heavy system design.
+```
+
+---
+
+## 7.2 FAANG-Prep Ready
+
+Use this when:
+
+- candidate has enough foundation to start serious preparation
+- SQL is at least 3.5
+- Python is at least 3
+- DE fundamentals are at least 3.5
+- project explanation is at least 3.5
+- DSA is at least 2.5 or 3
+- candidate can handle basic follow-ups
+
+Response:
+
+```text
+You are ready to start FAANG-level preparation, but not ready to perform consistently yet. The next stage is pressure testing: timed SQL, Python coding, high-ROI DSA, system design, and project deep dives.
+```
+
+---
+
+## 7.3 FAANG-Interview Ready
+
+Use this carefully.
+
+Requirements:
+
+- SQL 4+
+- Python 4+
+- DSA 3.5+
+- DE fundamentals 4+
+- system design 4+
+- project explanation 4+
+- communication 4+
+- consistent mock interview scores
+- no critical red flags
+
+Response:
+
+```text
+You are close to FAANG-level interview readiness. The remaining risk is consistency under pressure and unexpected follow-ups. Continue timed mocks and weakness repair.
+```
+
+Do not give this verdict based only on self-rating.
+
+---
+
+## 8. Critical Failure Overrides
+
+Even if the weighted score looks good, these gaps block FAANG readiness.
+
+### SQL Below 3
+
+```text
+Cannot be FAANG-level ready.
+```
+
+Reason:
+
+SQL is one of the highest-signal Data Engineering interview skills.
+
+### Project Explanation Below 3
+
+```text
+Cannot be FAANG-level ready.
+```
+
+Reason:
+
+Top-company interviewers will push on ownership, impact, failures, and trade-offs.
+
+### Communication Below 3
+
+```text
+Cannot be FAANG-level ready.
+```
+
+Reason:
+
+A correct answer that cannot be explained clearly will not survive follow-ups.
+
+### System Design Below 3 for Experienced Candidate
+
+```text
+Cannot be FAANG-level ready.
+```
+
+Reason:
+
+Experienced Data Engineers are expected to reason about architecture, scale, reliability, quality, cost, and trade-offs.
+
+### Python Below 3
+
+```text
+Cannot be ready for coding rounds.
+```
+
+Reason:
+
+Even if SQL is strong, Python coding may be tested.
+
+---
+
+## 9. SQL Standard
+
+SQL must be strong.
+
+A FAANG-level Data Engineering candidate should handle:
+
+- joins
+- aggregations
+- CTEs
+- subqueries
+- CASE logic
+- NULL handling
+- date logic
+- window functions
+- ROW_NUMBER
+- RANK
+- DENSE_RANK
+- LAG
+- LEAD
+- running totals
+- moving averages
+- deduplication
+- latest record per group
+- top N per group
+- retention/cohort queries
+- funnel queries
+- gaps and islands basics
+- query optimization basics
+- explaining output grain
+- handling duplicate joins
+- performance reasoning
+
+### SQL Minimum Bar
+
+Candidate must be able to explain:
+
+```text
+Output grain:
+Base table:
+Join strategy:
+Aggregation level:
+Window function logic:
+NULL handling:
+Date boundary:
+Duplicate risk:
+Performance concern:
+```
+
+### SQL Red Flags
+
+- uses DISTINCT to hide duplicate problems
+- cannot define output grain
+- wrong join type
+- wrong GROUP BY level
+- weak window functions
+- ignores NULLs
+- ignores date boundaries
+- cannot explain query logic
+- cannot handle latest-record-per-group
+- cannot handle top-N-per-group
+
+### SQL Strict Feedback Example
+
+```text
+This SQL is not FAANG-level. You got the rough idea, but your output grain is wrong and the join can duplicate revenue. A strong candidate would identify the grain before writing the query and pre-aggregate or deduplicate before joining.
+```
+
+---
+
+## 10. SQL Diagnostic Questions
+
+Use these to test baseline.
+
+### Easy
+
+```text
+Given orders(order_id, customer_id, order_date, amount), return total revenue per customer.
+```
+
+Tests:
+
+- GROUP BY
+- aggregation
+- basic output grain
+
+### Medium
+
+```text
+For each customer, return their latest order.
+```
+
+Tests:
+
+- ROW_NUMBER
+- PARTITION BY
+- ORDER BY
+- tie handling
+
+### Medium+
+
+```text
+Return the top 3 products by revenue in each category.
+```
+
+Tests:
+
+- joins
+- aggregation
+- ranking
+- top N per group
+
+### Harder
+
+```text
+Calculate week-1 retention by signup week.
+```
+
+Tests:
+
+- cohort logic
+- date handling
+- joins
+- aggregation
+- clear business definitions
+
+A candidate who cannot handle the medium questions is not FAANG SQL ready.
+
+---
+
+## 11. Python Standard
+
+Python should be practical, clean, and interview-ready.
+
+A FAANG-level Data Engineering candidate should handle:
+
+- lists
+- dictionaries
+- sets
+- tuples
+- functions
+- sorting
+- custom sort keys
+- string parsing
+- JSON-style records
+- CSV-style records
+- nested dictionaries
+- missing fields
+- malformed records
+- error handling
+- clean code
+- basic testing
+- time complexity
+- space complexity
+- memory-aware processing
+- streaming-style constraints when asked
+
+### Python Minimum Bar
+
+Candidate must be able to:
+
+```text
+1. Clarify input/output.
+2. Choose correct data structures.
+3. Write clean function.
+4. Handle empty/missing/malformed data.
+5. Explain complexity.
+6. Explain edge cases.
+7. Avoid unnecessary O(n²).
+```
+
+### Python Red Flags
+
+- cannot use dict/set properly
+- list membership inside loops causing O(n²)
+- no edge cases
+- poor variable names
+- silent assumptions
+- mutates input without saying so
+- cannot parse nested records
+- no complexity explanation
+- overuses pandas when plain Python is expected
+
+### Python Strict Feedback Example
+
+```text
+This is not coding-round ready. Your solution works only for perfect input and uses repeated list lookup. A top-company interviewer will expect a dictionary or set-based approach and clear edge-case handling.
+```
+
+---
+
+## 12. Python Diagnostic Questions
+
+### Easy
+
+```text
+Given a list of transactions, return total amount per user.
+```
+
+Tests:
+
+- dictionary aggregation
+
+### Medium
+
+```text
+Given event records with event_id and updated_at, deduplicate by event_id and keep the latest record.
+```
+
+Tests:
+
+- hash map
+- tie-breaking
+- record processing
+
+### Medium+
+
+```text
+Given log lines, parse them and return top K services by ERROR count.
+```
+
+Tests:
+
+- string parsing
+- malformed input
+- frequency count
+- top K
+
+### Follow-up
+
+```text
+What if the input is too large to fit in memory?
+```
+
+Tests:
+
+- streaming reasoning
+- memory awareness
+- practical DE thinking
+
+---
+
+## 13. DSA Standard
+
+DSA should be high-ROI, not competitive-programming-heavy by default.
+
+A FAANG-level Data Engineering candidate should be comfortable with:
+
+- arrays
+- strings
+- hash maps
+- sets
+- sorting
+- binary search
+- two pointers
+- sliding window
+- stack
+- queue
+- heap
+- intervals
+- prefix sums
+- BFS
+- DFS
+- graph dependency / topological sort
+
+### DSA Minimum Bar
+
+Candidate should solve common easy/medium patterns and explain:
+
+```text
+Pattern:
+Brute force:
+Optimized approach:
+Data structure:
+Correctness:
+Time complexity:
+Space complexity:
+Edge cases:
+```
+
+### DSA Red Flags
+
+- memorizes solutions without pattern explanation
+- cannot explain time complexity
+- cannot identify hash map problems
+- cannot handle duplicates
+- weak sliding window
+- weak interval logic
+- cannot solve dependency graph basics
+- codes silently
+- no edge cases
+
+### DSA Strict Feedback Example
+
+```text
+This is not FAANG-prep ready. You solved one version by memory, but you cannot explain the pattern. If the interviewer changes the input slightly, this answer will break.
+```
+
+---
+
+## 14. High-ROI LeetCode Standard
+
+Recommended baseline problem set:
+
+| Number | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 1 | Two Sum | Easy | Hash Map |
+| 217 | Contains Duplicate | Easy | Set |
+| 242 | Valid Anagram | Easy | Frequency Map |
+| 49 | Group Anagrams | Medium | Hash Map |
+| 347 | Top K Frequent Elements | Medium | Heap / Bucket |
+| 238 | Product of Array Except Self | Medium | Prefix/Suffix |
+| 3 | Longest Substring Without Repeating Characters | Medium | Sliding Window |
+| 424 | Longest Repeating Character Replacement | Medium | Sliding Window |
+| 125 | Valid Palindrome | Easy | Two Pointers |
+| 15 | 3Sum | Medium | Sorting + Two Pointers |
+| 704 | Binary Search | Easy | Binary Search |
+| 33 | Search in Rotated Sorted Array | Medium | Binary Search |
+| 20 | Valid Parentheses | Easy | Stack |
+| 215 | Kth Largest Element in an Array | Medium | Heap / Quickselect |
+| 56 | Merge Intervals | Medium | Intervals |
+| 200 | Number of Islands | Medium | BFS/DFS |
+| 207 | Course Schedule | Medium | Graph / Topological Sort |
+
+Do not recommend random hard problems before these are stable.
+
+---
+
+## 15. Data Engineering Fundamentals Standard
+
+A FAANG-level candidate should not give textbook definitions only.
+
+They must explain concepts with pipeline examples.
+
+Required concepts:
+
+- ETL vs ELT
+- batch vs streaming
+- full load vs incremental load
+- CDC
+- watermarks
+- idempotency
+- retries
+- backfills
+- reprocessing
+- data quality
+- schema evolution
+- partitioning
+- file formats
+- data lake
+- warehouse
+- lakehouse
+- OLTP vs OLAP
+- SLAs
+- freshness
+- lineage
+- auditability
+- security basics
+- cost awareness
+
+### Fundamentals Minimum Bar
+
+For every concept, candidate should explain:
+
+```text
+Definition:
+Plain-English meaning:
+Pipeline example:
+Failure case:
+Trade-off:
+Interview follow-up:
+```
+
+### Red Flags
+
+- only defines acronyms
+- cannot explain incremental load
+- cannot explain idempotency
+- cannot explain backfills
+- confuses job success with data quality
+- cannot discuss schema evolution
+- cannot discuss failure handling
+- cannot explain batch vs streaming trade-off
+
+### Strict Feedback Example
+
+```text
+This is a memorized definition, not a Data Engineering answer. Explain where this appears in a real pipeline, what can fail, and how you would recover.
+```
+
+---
+
+## 16. ETL / ELT Pipeline Standard
+
+A FAANG-level candidate should design pipelines with reliability.
+
+Pipeline answers must include:
+
+- source analysis
+- data volume
+- data format
+- latency/SLA
+- batch vs streaming choice
+- full vs incremental choice
+- raw landing
+- staging
+- transformation
+- target/load
+- validation
+- idempotency
+- retries
+- backfill
+- monitoring
+- schema evolution
+- duplicate handling
+- security
+- cost
+
+### Pipeline Red Flags
+
+- happy path only
+- no idempotency
+- no backfill
+- no data quality
+- no monitoring
+- no duplicate handling
+- no incremental strategy
+- no schema evolution plan
+- streaming for everything
+- full refresh for huge data without justification
+
+### Strict Feedback Example
+
+```text
+This pipeline answer is below top-company standard. You described the happy path, but ignored idempotency, retries, data quality, monitoring, and backfills. Real pipelines fail. Your design must show how it recovers.
+```
+
+---
+
+## 17. Data Modeling Standard
+
+A FAANG-level candidate should be able to model analytical data clearly.
+
+Required concepts:
+
+- OLTP vs OLAP
+- normalization
+- denormalization
+- star schema
+- snowflake schema
+- fact table
+- dimension table
+- grain
+- surrogate key
+- natural key
+- SCD Type 1
+- SCD Type 2
+- transaction facts
+- periodic snapshots
+- accumulating snapshots
+- bridge tables
+- conformed dimensions
+- metric definitions
+
+### Modeling Minimum Bar
+
+Candidate must define:
+
+```text
+Business process:
+Analytical questions:
+Grain:
+Facts:
+Dimensions:
+Keys:
+History/SCD:
+Metrics:
+Quality checks:
+Trade-offs:
+```
+
+### Red Flags
+
+- no grain
+- one huge table without justification
+- fact/dimension confusion
+- no SCD strategy
+- no metric definitions
+- cannot handle returns/cancellations
+- cannot handle many-to-many
+- cannot explain semi-additive facts
+
+### Strict Feedback Example
+
+```text
+You did not define grain. Without grain, this is not a data model. A top-company interviewer will not accept a list of tables as a modeling answer.
+```
+
+---
+
+## 18. Data Warehouse Standard
+
+A FAANG-level candidate should explain warehouse architecture and operations.
+
+Required concepts:
+
+- warehouse vs database
+- warehouse vs lake
+- warehouse vs lakehouse
+- raw/staging/core/mart layers
+- facts/dimensions
+- grain
+- SCD
+- incremental loads
+- CDC
+- deduplication
+- partitioning
+- clustering/sorting
+- materialized views / aggregates
+- query performance
+- cost control
+- data quality
+- monitoring
+- SLAs
+- security
+- governance
+- backfills
+
+### Warehouse Red Flags
+
+- says warehouse is just a database
+- no loading strategy
+- no grain
+- no quality checks
+- no incremental load
+- no backfill
+- no cost awareness
+- no security
+- cannot explain SCD Type 2
+- cannot discuss performance
+
+### Strict Feedback Example
+
+```text
+This warehouse answer is not strong enough. You named tables, but you did not explain grain, load strategy, freshness SLA, data quality, cost, or backfills.
+```
+
+---
+
+## 19. Cloud Data Platform Standard
+
+FAANG-level cloud knowledge should be concept-first, not service-name-first.
+
+Required concepts:
+
+- object storage
+- warehouse
+- lake/lakehouse
+- batch ingestion
+- streaming ingestion
+- processing layer
+- orchestration
+- query engine
+- file formats
+- partitioning
+- small files problem
+- cost control
+- security
+- IAM/RBAC
+- secrets
+- encryption
+- PII handling
+- governance
+- monitoring
+- schema evolution
+- data contracts
+- disaster recovery
+
+### Cloud Red Flags
+
+- lists AWS/GCP/Azure services without architecture
+- no cost discussion
+- no security discussion
+- no raw storage
+- no replay/backfill
+- streaming for everything
+- no governance
+- no schema evolution
+- no data quality
+
+### Strict Feedback Example
+
+```text
+This is service listing, not cloud data platform design. Explain storage, ingestion, processing, serving, quality, monitoring, failure handling, security, and cost.
+```
+
+---
+
+## 20. Spark / Distributed Processing Standard
+
+The candidate does not always need deep Spark expertise, but should understand distributed processing basics if targeting strong DE roles.
+
+Required concepts:
+
+- driver and executors
+- transformations vs actions
+- lazy evaluation
+- narrow vs wide transformations
+- shuffles
+- joins
+- broadcast joins
+- partitioning
+- repartition vs coalesce
+- caching
+- skew
+- small files
+- file formats
+- Spark SQL / DataFrame basics
+- job performance diagnosis
+
+### Spark Red Flags
+
+- has used Spark but cannot explain shuffles
+- cannot explain lazy evaluation
+- cannot explain partitioning
+- cannot explain why job is slow
+- cannot explain broadcast join
+- cannot explain skew
+- only knows syntax
+
+### Strict Feedback Example
+
+```text
+You know Spark syntax, but not Spark behavior. A strong interviewer will ask why the job is slow, what causes shuffles, and how partitioning affects performance.
+```
+
+---
+
+## 21. Orchestration Standard
+
+Candidate should understand pipeline orchestration.
+
+Required concepts:
+
+- DAG
+- task
+- dependency
+- schedule
+- retries
+- sensors
+- backfills
+- catchup
+- idempotency
+- alerting
+- SLAs
+- parameterization
+- environment separation
+
+### Orchestration Red Flags
+
+- says DAG is just a workflow
+- no retry strategy
+- no idempotency
+- no backfill
+- no alerting
+- no dependency explanation
+- hardcoded dates
+- cannot explain reruns
+
+### Strict Feedback Example
+
+```text
+Your orchestration answer is shallow. A DAG is not just a schedule. Explain dependencies, retries, idempotency, backfills, alerts, and failure recovery.
+```
+
+---
+
+## 22. System Design Standard
+
+System design must be Data Engineering-specific.
+
+The candidate should be able to design:
+
+- daily batch pipeline
+- incremental warehouse pipeline
+- CDC pipeline
+- streaming event pipeline
+- data quality framework
+- cloud data platform
+- data warehouse
+- customer 360
+- clickstream analytics
+- reporting pipeline
+- monitoring/freshness system
+- backfill/reprocessing system
+
+### Required System Design Flow
+
+```text
+1. Clarify business goal
+2. Define functional requirements
+3. Define non-functional requirements
+4. Identify data sources
+5. Estimate data volume
+6. Define latency/SLA
+7. Identify consumers
+8. Choose batch/streaming/CDC
+9. Define storage
+10. Define processing
+11. Define data model
+12. Define orchestration
+13. Define quality checks
+14. Define monitoring
+15. Define failure handling
+16. Define backfill/replay
+17. Discuss security/governance
+18. Discuss cost
+19. Discuss trade-offs
+20. Summarize design
+```
+
+### System Design Red Flags
+
+- jumps to tools
+- no requirements
+- no volume
+- no latency
+- no consumers
+- no quality
+- no monitoring
+- no failure handling
+- no backfill
+- no cost
+- no security
+- no trade-offs
+- no summary
+
+### Strict Feedback Example
+
+```text
+This is not FAANG-level system design. You jumped to Kafka and Spark without clarifying requirements, volume, latency, consumers, data quality, failure handling, backfills, or cost.
+```
+
+---
+
+## 23. Project Deep Dive Standard
+
+Project explanation is a major top-company signal.
+
+The candidate must prove ownership.
+
+Required project explanation:
+
+```text
+Business problem:
+Data sources:
+Data volume:
+Architecture:
+Your responsibility:
+Pipeline flow:
+Transformations:
+Data model:
+Tools and why:
+Data quality:
+Failure handling:
+Monitoring:
+Optimization:
+Impact:
+Trade-offs:
+What you would improve:
+```
+
+### Project Red Flags
+
+- says “we did” but not “I did”
+- no business problem
+- no architecture
+- no exact contribution
+- no data volume
+- no failure handling
+- no data quality
+- no impact
+- cannot defend tool choices
+- cannot answer follow-ups
+- project sounds copied from resume
+
+### Strict Feedback Example
+
+```text
+This project explanation is not top-company ready. I still do not know what you personally owned. Re-answer using: my responsibility was, I built, I debugged, I optimized, and the impact was.
+```
+
+---
+
+## 24. Communication Standard
+
+FAANG-level communication means the candidate can make their thinking visible.
+
+Required communication behaviors:
+
+- restate problem
+- ask clarifying questions
+- structure answer
+- think out loud
+- explain assumptions
+- explain trade-offs
+- mention edge cases
+- handle follow-ups
+- admit uncertainty
+- summarize clearly
+
+### Communication Red Flags
+
+- codes silently
+- rambles
+- gives one-line answers
+- jumps to tools
+- avoids follow-ups
+- bluffs
+- uses wrong terminology
+- cannot summarize
+- gets defensive
+- cannot explain project ownership
+
+### Strict Feedback Example
+
+```text
+Your content has useful pieces, but the communication is not strong enough. You need to answer in a structured way: requirement, approach, trade-off, edge case, summary.
+```
+
+---
+
+## 25. Behavioral Standard
+
+Behavioral interviews for Data Engineering should include technical depth.
+
+Good stories include:
+
+- production incident
+- data quality issue
+- missed SLA
+- stakeholder conflict
+- unclear requirements
+- pipeline optimization
+- schema change problem
+- debugging failure
+- migration challenge
+- ownership under pressure
+
+### Strong Behavioral Structure
+
+```text
+Situation:
+Task:
+Action:
+Technical decision:
+Result:
+Learning:
+```
+
+### Behavioral Red Flags
+
+- generic teamwork answer
+- no technical detail
+- no ownership
+- no measurable or operational impact
+- blames others
+- no learning
+- vague “worked hard” answer
+
+### Strict Feedback Example
+
+```text
+This behavioral answer is too generic. For a Data Engineering interview, add the technical decision, pipeline impact, and what you personally changed.
+```
+
+---
+
+## 26. Round-by-Round Standard
+
+## 26.1 SQL Round
+
+Expected:
+
+- medium business SQL
+- clear approach
+- correct output grain
+- window functions
+- edge cases
+- explanation
+
+Pass bar:
+
+```text
+Candidate solves medium SQL with minor syntax issues allowed, but no major logic/grain mistakes.
+```
+
+Fail bar:
+
+```text
+Candidate cannot define grain, uses wrong joins, or cannot use windows.
+```
+
+---
+
+## 26.2 Python Coding Round
+
+Expected:
+
+- record processing
+- dict/set/list usage
+- clean function
+- edge cases
+- complexity
+
+Pass bar:
+
+```text
+Candidate writes correct, readable Python and explains time/space complexity.
+```
+
+Fail bar:
+
+```text
+Candidate writes only happy-path code, uses inefficient nested loops, or cannot explain logic.
+```
+
+---
+
+## 26.3 DSA Round
+
+Expected:
+
+- easy/medium LeetCode-style problems
+- pattern recognition
+- complexity
+- edge cases
+
+Pass bar:
+
+```text
+Candidate recognizes common patterns and solves with clear explanation.
+```
+
+Fail bar:
+
+```text
+Candidate memorizes, cannot explain, or fails basic hash map/set/sliding window patterns.
+```
+
+---
+
+## 26.4 Data Engineering Fundamentals Round
+
+Expected:
+
+- practical concepts
+- examples
+- failure handling
+- trade-offs
+
+Pass bar:
+
+```text
+Candidate explains concepts using real pipeline examples.
+```
+
+Fail bar:
+
+```text
+Candidate gives only textbook definitions.
+```
+
+---
+
+## 26.5 System Design Round
+
+Expected:
+
+- requirements
+- architecture
+- operations
+- trade-offs
+
+Pass bar:
+
+```text
+Candidate designs a reliable data system with quality, monitoring, failure handling, backfills, cost, and security.
+```
+
+Fail bar:
+
+```text
+Candidate lists tools without explaining design.
+```
+
+---
+
+## 26.6 Project Deep Dive Round
+
+Expected:
+
+- business context
+- technical depth
+- ownership
+- impact
+- follow-up defense
+
+Pass bar:
+
+```text
+Candidate can explain one project deeply for 10-15 minutes and answer follow-ups.
+```
+
+Fail bar:
+
+```text
+Candidate gives vague team-level explanation without personal contribution.
+```
+
+---
+
+## 27. Mock Interview Scoring Standard
+
+Use this scoring table for FAANG-level mock interviews.
+
+| Category | Weight |
+|---|---:|
+| Technical correctness | 30% |
+| Problem-solving approach | 20% |
+| Communication | 20% |
+| Depth and follow-ups | 20% |
+| Readiness under pressure | 10% |
+
+### FAANG-Level Mock Score Interpretation
+
+| Score | Meaning |
+|---:|---|
+| 0.0 - 2.0 | Not ready |
+| 2.1 - 2.9 | High risk |
+| 3.0 - 3.4 | Standard interview possible, not FAANG-ready |
+| 3.5 - 3.9 | FAANG-prep ready |
+| 4.0 - 4.4 | Near FAANG-ready |
+| 4.5 - 5.0 | Strong, but still continue pressure testing |
+
+Do not give 4+ unless follow-ups are handled well.
+
+---
+
+## 28. Final Interview Recommendation Labels
+
+Use these labels after mock interviews.
+
+### Strong Hire
+
+Rare.
+
+Candidate is strong across correctness, communication, follow-ups, and ownership.
+
+### Hire
+
+Candidate meets the bar with minor manageable gaps.
+
+### Leaning Hire
+
+Candidate is promising but has some risk.
+
+### Leaning No Hire
+
+Candidate has serious gaps that may fail the round.
+
+### No Hire
+
+Candidate is not ready for the role level.
+
+### Rule
+
+Do not inflate.
+
+If the candidate misses core requirements, use Leaning No Hire or No Hire.
+
+---
+
+## 29. Strong Hire Standard
+
+Strong Hire requires:
+
+- accurate solution
+- clear reasoning
+- structured communication
+- strong trade-offs
+- handles follow-ups
+- no major gaps
+- project ownership
+- calm under pressure
+
+Example feedback:
+
+```text
+Strong Hire-level answer. You clarified requirements, solved correctly, handled follow-ups, discussed trade-offs, and communicated clearly. The only improvement is adding cost estimation earlier.
+```
+
+---
+
+## 30. Hire Standard
+
+Hire requires:
+
+- correct core answer
+- acceptable communication
+- handles standard follow-ups
+- minor gaps only
+
+Example feedback:
+
+```text
+Hire-level for a standard Data Engineering role. For FAANG-level, you still need deeper failure handling and sharper cost discussion.
+```
+
+---
+
+## 31. Leaning Hire Standard
+
+Use when:
+
+- candidate has good foundation
+- one area is weak
+- follow-ups are partially handled
+- risk is manageable
+
+Example feedback:
+
+```text
+Leaning Hire. Your core design is sound, but you missed schema evolution and backfill. For top-company interviews, that gap is risky.
+```
+
+---
+
+## 32. Leaning No Hire Standard
+
+Use when:
+
+- answer is incomplete
+- important areas are missing
+- candidate needs heavy prompting
+- follow-ups expose gaps
+
+Example feedback:
+
+```text
+Leaning No Hire. The design has a basic pipeline, but misses data quality, monitoring, failure handling, and cost. That is too shallow for this bar.
+```
+
+---
+
+## 33. No Hire Standard
+
+Use when:
+
+- major correctness failure
+- no structure
+- no recovery
+- cannot explain basics
+- cannot solve
+- cannot defend project
+
+Example feedback:
+
+```text
+No Hire for this round. The answer does not meet the minimum bar because it lacks requirements, architecture, quality, monitoring, and failure handling.
+```
+
+---
+
+## 34. Level-Based Expectations
+
+## 34.1 Entry-Level / 0-1 Year
+
+Expected:
+
+- SQL basics to medium
+- Python basics
+- high-ROI easy DSA
+- basic DE concepts
+- one project explanation
+
+Not expected:
+
+- deep system design
+- senior-level architecture
+
+FAANG-level target:
+
+```text
+Strong fundamentals and high learning ability.
+```
+
+---
+
+## 34.2 Junior / 1-2 Years
+
+Expected:
+
+- SQL medium
+- Python record processing
+- easy/medium DSA
+- ETL/ELT basics
+- project clarity
+- basic modeling
+
+FAANG-level target:
+
+```text
+Reliable SQL/Python, clean communication, and strong project ownership for level.
+```
+
+---
+
+## 34.3 Mid-Level / 2-4 Years
+
+Expected:
+
+- strong SQL
+- Python coding
+- DE fundamentals
+- data modeling
+- project ownership
+- basic system design
+- pipeline reliability
+
+FAANG-level target:
+
+```text
+Can own pipelines and reason about quality, failures, performance, and trade-offs.
+```
+
+---
+
+## 34.4 Experienced / 4-7 Years
+
+Expected:
+
+- advanced SQL
+- strong project depth
+- architecture reasoning
+- system design
+- data quality
+- monitoring
+- cost
+- reliability
+- mentoring/ownership examples
+
+FAANG-level target:
+
+```text
+Can design and defend production-grade data systems.
+```
+
+---
+
+## 34.5 Senior / 7+ Years
+
+Expected:
+
+- ambiguous system design
+- platform thinking
+- cross-team trade-offs
+- governance
+- reliability
+- cost optimization
+- deep incident stories
+- leadership communication
+
+FAANG-level target:
+
+```text
+Can lead data platform design under ambiguity and defend strategic trade-offs.
+```
+
+---
+
+## 35. Time-Based Preparation Standards
+
+## 35.1 Less Than 2 Weeks
+
+Reality:
+
+```text
+Full FAANG readiness is unrealistic if major gaps exist.
+```
+
+Focus:
+
+- SQL survival
+- Python basics
+- high-ROI DSA basics
+- project pitch
+- DE fundamentals
+- one system design template
+
+---
+
+## 35.2 One Month
+
+Possible:
+
+- targeted improvement
+- not complete mastery
+
+Focus:
+
+- SQL medium
+- Python record processing
+- DSA high-ROI
+- project deep dive
+- fundamentals
+- basic system design
+
+---
+
+## 35.3 Three Months
+
+Good timeline for serious improvement.
+
+Focus:
+
+- SQL depth
+- Python
+- DSA
+- fundamentals
+- modeling
+- warehouse
+- system design
+- projects
+- mocks
+
+---
+
+## 35.4 Six Months
+
+Strong timeline.
+
+Focus:
+
+- full preparation cycle
+- repeated mocks
+- weakness repair
+- system design depth
+- project polish
+- pressure testing
+
+---
+
+## 36. Weekly Study Hours Standards
+
+### Less Than 5 Hours / Week
+
+FAANG-level readiness will be slow.
+
+Use narrow plan.
+
+### 5-8 Hours / Week
+
+Good for steady preparation.
+
+Use focused modules.
+
+### 8-12 Hours / Week
+
+Strong pace.
+
+Include drills and mocks.
+
+### 12+ Hours / Week
+
+Aggressive preparation possible.
+
+Use daily drills, mocks, and repair loops.
+
+---
+
+## 37. Default FAANG Preparation Priority
+
+If candidate gives no special constraints, use:
+
+1. SQL diagnostic
+2. Python diagnostic
+3. Project deep dive diagnostic
+4. DE fundamentals diagnostic
+5. DSA diagnostic
+6. System design diagnostic
+7. Roadmap based on weakest high-signal gaps
+
+Do not start with Spark/cloud trivia unless those are clearly the weak target.
+
+---
+
+## 38. FAANG-Level Daily Drill Structure
+
+Every serious prep day should include at least one active drill.
+
+Example:
+
+```text
+1. One SQL or Python/DSA drill
+2. One concept explanation
+3. One review or correction
+4. One communication practice
+5. One progress update
+```
+
+For short timelines:
+
+```text
+SQL daily.
+Project explanation every other day.
+Python/DSA alternating.
+Fundamentals quick review daily.
+```
+
+---
+
+## 39. FAANG-Level 4-Week Plan
+
+Use for candidates with decent foundation.
+
+### Week 1: SQL + Python Baseline
+
+Focus:
+
+- SQL joins/windows/deduplication
+- Python dict/set/record processing
+- diagnostics
+- weak area identification
+
+Exit criteria:
+
+- solve medium SQL
+- solve Python record task
+- explain complexity
+
+### Week 2: DSA + Fundamentals
+
+Focus:
+
+- hash map
+- sliding window
+- intervals
+- heap/top K
+- ETL/ELT
+- CDC
+- idempotency
+- backfills
+- data quality
+
+Exit criteria:
+
+- solve high-ROI DSA
+- explain fundamentals with examples
+
+### Week 3: System Design + Modeling
+
+Focus:
+
+- batch pipeline
+- incremental pipeline
+- CDC pipeline
+- data warehouse model
+- data quality framework
+- modeling grain/SCD
+
+Exit criteria:
+
+- design one end-to-end data platform answer
+
+### Week 4: Project Deep Dive + Mocks
+
+Focus:
+
+- project ownership
+- impact
+- follow-up defense
+- mixed mocks
+- weakness repair
+
+Exit criteria:
+
+- score 4/5 in at least one mixed mock
+- no critical red flags
+
+---
+
+## 40. FAANG-Level 12-Week Plan
+
+### Month 1: Core Technical
+
+- SQL foundations to advanced
+- Python record processing
+- high-ROI DSA patterns
+- timed drills
+
+### Month 2: Data Engineering Depth
+
+- ETL/ELT
+- CDC
+- idempotency
+- data quality
+- warehouse
+- modeling
+- cloud platform concepts
+- orchestration
+
+### Month 3: Design and Performance
+
+- system design
+- project deep dive
+- Spark/distributed basics
+- mock interviews
+- weakness repair
+- communication polish
+
+---
+
+## 41. Candidate Diagnostic Flow
+
+Use this before serious FAANG prep.
+
+```text
+Step 1: SQL diagnostic
+Step 2: Python diagnostic
+Step 3: DSA diagnostic
+Step 4: Fundamentals explanation diagnostic
+Step 5: Project deep dive diagnostic
+Step 6: System design diagnostic
+Step 7: Communication review
+Step 8: Roadmap with priorities
+```
+
+Do not rely only on self-rating.
+
+---
+
+## 42. SQL Diagnostic Scoring
+
+| Result | Score |
+|---|---:|
+| Cannot solve joins/aggregation | 1-2 |
+| Solves basic but fails windows | 2 |
+| Solves medium with hints | 3 |
+| Solves medium independently | 4 |
+| Handles hard follow-ups | 5 |
+
+### SQL FAANG readiness
+
+Minimum:
+
+```text
+Consistent 4 on medium SQL.
+```
+
+---
+
+## 43. Python Diagnostic Scoring
+
+| Result | Score |
+|---|---:|
+| Cannot write clean function | 1 |
+| Solves simple loops only | 2 |
+| Solves dict/list tasks with gaps | 3 |
+| Solves record tasks cleanly | 4 |
+| Handles streaming/memory follow-ups | 5 |
+
+### Python FAANG readiness
+
+Minimum:
+
+```text
+Consistent clean Python for data-processing tasks and common DSA patterns.
+```
+
+---
+
+## 44. DSA Diagnostic Scoring
+
+| Result | Score |
+|---|---:|
+| Fails easy problems | 1 |
+| Solves easy with hints | 2 |
+| Solves easy and some medium | 3 |
+| Solves common medium independently | 4 |
+| Handles variations and follow-ups | 5 |
+
+### DSA FAANG readiness
+
+Minimum:
+
+```text
+Reliable easy/medium high-ROI patterns.
+```
+
+---
+
+## 45. System Design Diagnostic Scoring
+
+| Result | Score |
+|---|---:|
+| Lists tools only | 1 |
+| Basic pipeline without ops | 2 |
+| Covers architecture but misses failures | 3 |
+| Covers quality, monitoring, failures, cost | 4 |
+| Handles ambiguity and trade-offs deeply | 5 |
+
+### System Design FAANG readiness
+
+Minimum:
+
+```text
+Consistent 4 for role level.
+```
+
+---
+
+## 46. Project Diagnostic Scoring
+
+| Result | Score |
+|---|---:|
+| Cannot explain project | 1 |
+| Vague team-level answer | 2 |
+| Clear but shallow | 3 |
+| Strong ownership and impact | 4 |
+| Deep defense under follow-ups | 5 |
+
+### Project FAANG readiness
+
+Minimum:
+
+```text
+One strong project deep dive at 4+.
+```
+
+---
+
+## 47. FAANG-Level Follow-Up Expectations
+
+The mentor should ask follow-ups until the answer breaks or proves depth.
+
+Examples:
+
+### SQL
+
+```text
+What if there are duplicate event timestamps?
+What if customer has no orders?
+How would this change if you need top 3 per category?
+How would you optimize this on a large table?
+```
+
+### Python
+
+```text
+What if records are malformed?
+What if input is too large for memory?
+What is the space complexity?
+How would you test this?
+```
+
+### DSA
+
+```text
+Can you reduce space?
+What if input is streamed?
+Why is this pattern correct?
+What edge case breaks this?
+```
+
+### System Design
+
+```text
+What if data arrives late?
+What if the pipeline fails halfway?
+How do you backfill?
+How do you detect bad data?
+How do you control cost?
+```
+
+### Project
+
+```text
+What exactly did you own?
+What broke in production?
+How did you validate output?
+What would you redesign today?
+What was the impact?
+```
+
+---
+
+## 48. FAANG-Level Communication Requirements
+
+Candidate should not ramble.
+
+Use structured answer patterns.
+
+### SQL
+
+```text
+Grain → tables → joins → aggregation/window → edge cases → query
+```
+
+### Python/DSA
+
+```text
+Clarify → brute force → optimized pattern → code → complexity → tests
+```
+
+### System Design
+
+```text
+Requirements → architecture → operations → trade-offs → summary
+```
+
+### Project
+
+```text
+Business problem → architecture → ownership → challenge → impact → improvement
+```
+
+---
+
+## 49. FAANG-Level Red Flags Summary
+
+Critical red flags:
+
+1. SQL grain mistakes.
+2. Weak Python dict/set usage.
+3. DSA memorization without pattern.
+4. No project ownership.
+5. Tool-list system design.
+6. No data quality.
+7. No monitoring.
+8. No failure handling.
+9. No backfill.
+10. No cost discussion.
+11. No security/PII awareness.
+12. Textbook definitions only.
+13. Poor communication.
+14. Bluffing.
+15. Unrealistic self-assessment.
+
+Any critical red flag should lower readiness verdict.
+
+---
+
+## 50. What “Good Enough” Looks Like
+
+Good enough for FAANG-level preparation:
+
+```text
+The candidate can solve medium SQL, write clean Python, solve common DSA patterns, explain pipeline reliability, design a basic data platform, and defend one project with ownership.
+```
+
+Good enough for FAANG-level interview readiness:
+
+```text
+The candidate consistently performs under timed mock interviews, handles follow-ups, explains trade-offs, and has no critical gaps in SQL, Python, fundamentals, project ownership, or system design.
+```
+
+---
+
+## 51. Mentor Behavior Rules
+
+When applying this standard, the mentor must:
+
+1. Default to FAANG-level if target is missing.
+2. Avoid exact company-specific claims unless verified.
+3. Use strict but fair scoring.
+4. Require evidence, not self-rating.
+5. Push SQL and Python early.
+6. Keep DSA high-ROI.
+7. Force project ownership.
+8. Force system design operations.
+9. Penalize missing data quality, monitoring, failure handling, and backfills.
+10. Avoid fake readiness.
+11. Give concrete repair tasks.
+12. Track progress with exit criteria.
+
+---
+
+## 52. Strict Mentor Response Examples
+
+### When candidate asks for roadmap with no target
+
+```text
+You did not specify target companies, so I will train you at FAANG-level by default. That means the bar is high: medium SQL, clean Python, high-ROI DSA, strong project ownership, and system design with quality, monitoring, failures, backfills, cost, and security.
+```
+
+### When SQL is weak
+
+```text
+Your SQL is below the default top-company bar. We are not moving to advanced Spark yet. SQL comes first because it is a high-signal Data Engineering interview skill.
+```
+
+### When project is vague
+
+```text
+This project explanation will not survive top-company follow-ups. I need exact ownership, not team-level description.
+```
+
+### When candidate wants all topics at once
+
+```text
+Trying to cover everything equally is inefficient. For FAANG-level preparation, we prioritize based on interview signal and your weakest areas.
+```
+
+### When candidate is close
+
+```text
+You have the foundation. Now the risk is consistency under pressure. We need timed mocks and follow-up drills, not more passive reading.
+```
+
+---
+
+## 53. Standard Mock Interview Pack
+
+For FAANG-level readiness, candidate should complete:
+
+1. SQL mock 1: joins + aggregation
+2. SQL mock 2: window functions + deduplication
+3. SQL mock 3: retention/cohort or funnel
+4. Python mock 1: record aggregation
+5. Python mock 2: deduplication + top K
+6. DSA mock 1: hash map/sliding window
+7. DSA mock 2: intervals/heap/graph
+8. Fundamentals mock
+9. Project deep dive mock
+10. System design mock: batch pipeline
+11. System design mock: CDC pipeline
+12. System design mock: streaming/event pipeline
+13. Final mixed mock
+
+Candidate should not be marked FAANG-ready before passing multiple mocks.
+
+---
+
+## 54. Pass Criteria for Final Mixed Mock
+
+Candidate must:
+
+- solve SQL correctly
+- explain Python/DSA approach
+- answer fundamentals with examples
+- design a reliable pipeline
+- defend project ownership
+- handle follow-ups
+- communicate clearly
+- avoid bluffing
+- include quality, monitoring, failure, backfill, cost/security where relevant
+
+Minimum final score:
+
+```text
+4/5 average with no critical red flags.
+```
+
+---
+
+## 55. Exit Test
+
+Candidate must pass this final test.
+
+```text
+You are interviewing for a top-company Data Engineering role.
+
+Round 1:
+Solve a SQL question involving joins, aggregation, and window functions.
+
+Round 2:
+Write Python code to deduplicate event records, count event types, and return top K.
+
+Round 3:
+Solve one high-ROI DSA medium problem and explain complexity.
+
+Round 4:
+Explain incremental load, CDC, idempotency, data quality, and backfills with real examples.
+
+Round 5:
+Design a cloud data platform for batch orders and streaming user events.
+
+Round 6:
+Deep dive into one project, including ownership, failures, optimization, and impact.
+```
+
+Passing requires:
+
+- correct technical answers
+- strong communication
+- follow-up handling
+- realistic trade-offs
+- no fake claims
+- no major missing operational concerns
+
+---
+
+## 56. Final Summary
+
+FAANG-level preparation is not about studying more topics randomly.
+
+It is about reaching a high bar in the areas that reveal Data Engineering skill:
+
+- SQL correctness
+- Python coding
+- DSA pattern recognition
+- pipeline reliability
+- data modeling
+- warehouse thinking
+- system design
+- project ownership
+- communication under pressure
+
+The default Data Engineering Sensei standard should be strict because soft preparation creates false confidence.
+
+If the candidate does not provide a target company, train them for this bar by default.

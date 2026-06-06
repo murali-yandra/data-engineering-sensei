@@ -1,0 +1,4187 @@
+# Python Interview Guide for Data Engineers
+
+Generated: 2026-06-06
+
+This guide teaches **Python for Data Engineering interviews**.
+
+It is written for **Data Engineering Sensei**, a strict, no-sugarcoating Data Engineering interview mentor. The goal is not to teach every Python feature. The goal is to make the candidate capable of passing Data Engineering Python rounds where they must process records, parse files/logs, transform nested data, deduplicate events, aggregate metrics, handle edge cases, explain complexity, and write clean production-like code under interview pressure.
+
+Use this guide for:
+
+- Python coding interviews
+- Data Engineering coding screens
+- Python + DSA practice
+- record-processing drills
+- ETL helper logic interviews
+- log parsing questions
+- API/JSON transformation questions
+- mock interview feedback
+- weakness repair
+- roadmap generation
+
+---
+
+## 1. Purpose
+
+Python is commonly tested in Data Engineering interviews because Data Engineers often use Python for:
+
+1. API ingestion.
+2. file parsing.
+3. JSON normalization.
+4. data validation.
+5. orchestration helpers.
+6. ETL/ELT glue code.
+7. log processing.
+8. record aggregation.
+9. deduplication.
+10. data quality checks.
+11. simple pipeline scripts.
+12. automation.
+13. interview-style algorithm problems.
+
+A Data Engineer does not need to know every advanced Python feature.
+
+A Data Engineer must be reliable with:
+
+- lists
+- dictionaries
+- sets
+- tuples
+- loops
+- functions
+- sorting
+- string parsing
+- datetime basics
+- file-like thinking
+- JSON-like records
+- nested data
+- error handling
+- clean function design
+- complexity explanation
+- edge cases
+
+---
+
+## 2. Interview Standard
+
+A Python answer is interview-ready only when the candidate can:
+
+```text
+1. Clarify input and output.
+2. Identify data shape.
+3. Choose suitable data structures.
+4. Explain brute force if useful.
+5. Explain optimized approach.
+6. Write clean Python.
+7. Handle edge cases.
+8. Explain time complexity.
+9. Explain space complexity.
+10. Test with examples.
+11. Handle a follow-up variation.
+```
+
+A weak answer:
+
+```text
+I will loop and do it.
+```
+
+A strong answer:
+
+```text
+The input is a list of transaction dictionaries. I need total amount per user, so this is aggregation by key. I will use a dictionary where key is user_id and value is running total. This is O(n) time and O(u) space where u is number of unique users.
+```
+
+---
+
+## 3. No-Sugarcoating Rule
+
+The mentor must be direct.
+
+Allowed feedback:
+
+```text
+This code only works for the happy path. It is not interview-ready because it fails missing fields and empty input.
+```
+
+```text
+You used list membership inside a loop, so this is O(n²). A Data Engineering coding round expects set or dict lookup here.
+```
+
+```text
+Your variable names hide the meaning. In an interview, readable code matters.
+```
+
+```text
+You are coding silently. Explain your approach before coding.
+```
+
+Not useful:
+
+```text
+Nice try. Keep practicing.
+```
+
+Feedback must identify the issue and give the repair path.
+
+---
+
+## 4. Python Interview Scope for Data Engineers
+
+High priority:
+
+1. Data structures.
+2. Record processing.
+3. Aggregations.
+4. Deduplication.
+5. Top K.
+6. Sorting and tie-breaking.
+7. String parsing.
+8. Nested JSON transformation.
+9. Error handling.
+10. Edge cases.
+11. Complexity.
+12. Clean code.
+
+Medium priority:
+
+1. Object-oriented basics.
+2. Iterators/generators.
+3. datetime parsing.
+4. file handling.
+5. basic testing.
+6. memory-aware processing.
+7. type hints.
+
+Low priority unless target requires it:
+
+1. metaclasses
+2. decorators beyond basic awareness
+3. multiprocessing internals
+4. async internals
+5. deep CPython internals
+6. advanced packaging
+7. obscure standard library trivia
+
+---
+
+## 5. What Interviewers Usually Look For
+
+Interviewers are not only checking whether code runs.
+
+They check:
+
+- Can the candidate understand messy data?
+- Can the candidate choose dict/set/list correctly?
+- Can the candidate process records at the right grain?
+- Can the candidate handle malformed input?
+- Can the candidate explain complexity?
+- Can the candidate avoid O(n²) mistakes?
+- Can the candidate write readable code?
+- Can the candidate reason about memory?
+- Can the candidate adapt when requirements change?
+- Can the candidate communicate clearly?
+
+---
+
+## 6. Python Readiness Levels
+
+## 6.1 Score 0
+
+Candidate cannot write basic Python functions.
+
+Symptoms:
+
+- cannot loop through list
+- cannot use dict
+- cannot define function
+- cannot debug syntax
+- cannot explain code
+
+Action:
+
+```text
+Repair Python basics before interview drills.
+```
+
+---
+
+## 6.2 Score 1
+
+Candidate writes very basic code but needs heavy help.
+
+Symptoms:
+
+- only happy path
+- poor syntax
+- no edge cases
+- no complexity
+- weak data structures
+
+Action:
+
+```text
+Practice lists, dicts, sets, loops, functions.
+```
+
+---
+
+## 6.3 Score 2
+
+Candidate can solve simple tasks but struggles with medium record processing.
+
+Symptoms:
+
+- can aggregate basic data
+- misses missing fields
+- inefficient nested loops
+- weak sorting and tie-breakers
+- weak nested JSON
+
+Action:
+
+```text
+Drill aggregation, deduplication, top K, parsing.
+```
+
+---
+
+## 6.4 Score 3
+
+Candidate is basic-interview ready.
+
+Symptoms:
+
+- solves common tasks
+- code mostly readable
+- complexity mostly correct
+- needs help with follow-ups
+- some edge case misses
+
+Action:
+
+```text
+Timed practice and follow-up variation drills.
+```
+
+---
+
+## 6.5 Score 4
+
+Candidate is strong for standard Data Engineering Python rounds.
+
+Symptoms:
+
+- clean code
+- correct data structures
+- edge cases handled
+- complexity explained
+- handles follow-ups
+
+Action:
+
+```text
+Mock interviews and pressure testing.
+```
+
+---
+
+## 6.6 Score 5
+
+Candidate is strong for top-company Python rounds.
+
+Symptoms:
+
+- solves under pressure
+- communicates clearly
+- handles messy data
+- considers memory and streaming
+- writes maintainable code
+- can explain alternatives
+
+Action:
+
+```text
+Use mixed Python + DSA + Data Engineering follow-ups.
+```
+
+---
+
+## 7. Core Data Structures
+
+A Data Engineering Python candidate must know when to use:
+
+| Structure | Use Case |
+|---|---|
+| list | ordered collection, append, iterate |
+| dict | key-value lookup, grouping, aggregation |
+| set | uniqueness and membership |
+| tuple | immutable grouped values, dict keys |
+| Counter | frequency counting |
+| defaultdict | grouping and aggregation |
+| deque | queue, efficient popleft |
+| heapq | top K and priority |
+| namedtuple/dataclass | structured records when useful |
+
+---
+
+## 8. Lists
+
+Lists are ordered, mutable collections.
+
+Use lists for:
+
+- ordered records
+- output collections
+- appending transformed rows
+- storing sorted values
+- iterating data
+- collecting errors
+
+### Basic operations
+
+```python
+items = []
+items.append("a")
+items.extend(["b", "c"])
+first = items[0]
+last = items[-1]
+length = len(items)
+```
+
+### Interview pitfalls
+
+- using `list.pop(0)` repeatedly
+- using `x in list` inside a loop
+- mutating list while iterating
+- confusing append vs extend
+- not handling empty list
+
+### Complexity
+
+| Operation | Complexity |
+|---|---:|
+| index access | O(1) |
+| append | O(1) amortized |
+| insert at beginning | O(n) |
+| pop from end | O(1) |
+| pop from beginning | O(n) |
+| membership check | O(n) |
+
+### Mentor correction
+
+```text
+You used list membership inside a loop. That makes the solution O(n²). Use a set for membership or a dict for lookup.
+```
+
+---
+
+## 9. Dictionaries
+
+Dictionaries are key-value maps.
+
+Use dicts for:
+
+- aggregation by key
+- lookup
+- grouping
+- deduplication with latest record
+- mapping IDs to records
+- counting
+- joins between small datasets
+- caching
+
+### Basic operations
+
+```python
+counts = {}
+
+counts["click"] = counts.get("click", 0) + 1
+
+if "click" in counts:
+    print(counts["click"])
+```
+
+### Interview explanation
+
+```text
+A dictionary is useful because I need fast lookup by key. Average lookup and insert are O(1).
+```
+
+### Common mistakes
+
+- using wrong key
+- overwriting data accidentally
+- not handling missing key
+- using list when dict is needed
+- no tie-breaker in latest-record logic
+
+---
+
+## 10. Sets
+
+Sets store unique values.
+
+Use sets for:
+
+- deduplication
+- membership checks
+- detecting repeats
+- allowed values validation
+- uniqueness tests
+
+### Basic operations
+
+```python
+seen = set()
+
+for event_id in event_ids:
+    if event_id in seen:
+        return True
+    seen.add(event_id)
+```
+
+### Interview explanation
+
+```text
+A set is enough when I only care whether a value has appeared before, not how many times.
+```
+
+### Common mistakes
+
+- using set when counts are needed
+- losing order when order matters
+- assuming set preserves duplicates
+- storing unhashable objects like dicts directly
+
+---
+
+## 11. Tuples
+
+Tuples are immutable ordered collections.
+
+Use tuples for:
+
+- composite keys
+- returning multiple values
+- dictionary keys
+- grouping related immutable data
+
+### Example
+
+```python
+key = (record["user_id"], record["event_date"])
+counts[key] = counts.get(key, 0) + 1
+```
+
+### Data Engineering use case
+
+Composite grouping key:
+
+```text
+Count events by user_id and event_date.
+```
+
+### Common mistake
+
+Trying to use a list as a dictionary key.
+
+Bad:
+
+```python
+key = [user_id, event_date]
+```
+
+Good:
+
+```python
+key = (user_id, event_date)
+```
+
+---
+
+## 12. Counter
+
+`Counter` is useful for frequency counting.
+
+```python
+from collections import Counter
+
+events = ["click", "view", "click"]
+counts = Counter(events)
+print(counts["click"])
+```
+
+### Top K
+
+```python
+counts.most_common(3)
+```
+
+### Interview note
+
+Using Counter is acceptable, but the candidate must explain the concept.
+
+Strong explanation:
+
+```text
+Counter is a dictionary specialized for counting frequencies.
+```
+
+Weak:
+
+```text
+I just know Counter works.
+```
+
+---
+
+## 13. defaultdict
+
+`defaultdict` reduces missing-key boilerplate.
+
+### Count example
+
+```python
+from collections import defaultdict
+
+counts = defaultdict(int)
+
+for event in events:
+    counts[event] += 1
+```
+
+### Grouping example
+
+```python
+from collections import defaultdict
+
+groups = defaultdict(list)
+
+for record in records:
+    groups[record["user_id"]].append(record)
+```
+
+### Interview note
+
+Candidate should understand the default factory.
+
+---
+
+## 14. deque
+
+Use `deque` for efficient queue operations.
+
+```python
+from collections import deque
+
+queue = deque()
+queue.append("task")
+task = queue.popleft()
+```
+
+Use for:
+
+- BFS
+- task queues
+- stream-like processing
+- level-order traversal
+
+Avoid:
+
+```python
+items.pop(0)
+```
+
+inside loops, because it is O(n).
+
+---
+
+## 15. heapq
+
+Use `heapq` for priority queue and top K.
+
+```python
+import heapq
+
+heap = []
+
+for value in values:
+    heapq.heappush(heap, value)
+
+smallest = heapq.heappop(heap)
+```
+
+Python `heapq` is a min heap.
+
+### Top K largest
+
+```python
+import heapq
+
+def top_k_largest(nums, k):
+    heap = []
+
+    for num in nums:
+        heapq.heappush(heap, num)
+        if len(heap) > k:
+            heapq.heappop(heap)
+
+    return heap
+```
+
+### Common mistakes
+
+- forgetting heapq is min heap
+- using heap when sorting is simpler and acceptable
+- not handling k = 0
+- not explaining O(n log k)
+
+---
+
+## 16. Sorting
+
+Sorting is critical in Python interviews.
+
+### Sort list
+
+```python
+nums.sort()
+```
+
+### Return sorted copy
+
+```python
+sorted_nums = sorted(nums)
+```
+
+### Sort records by field
+
+```python
+records.sort(key=lambda r: r["event_time"])
+```
+
+### Sort by amount descending
+
+```python
+records.sort(key=lambda r: r["amount"], reverse=True)
+```
+
+### Sort by multiple keys
+
+```python
+records.sort(key=lambda r: (r["user_id"], r["event_time"]))
+```
+
+### Sort by count descending and name ascending
+
+```python
+items.sort(key=lambda item: (-item[1], item[0]))
+```
+
+### Interview explanation
+
+```text
+Sorting costs O(n log n), but it gives an ordered structure that can simplify ranking, tie-breaking, interval merging, or chronological processing.
+```
+
+---
+
+## 17. Functions
+
+Python interview code should usually be written as a clean function.
+
+Weak:
+
+```python
+# random script code
+```
+
+Strong:
+
+```python
+def total_by_user(transactions):
+    totals = {}
+
+    for transaction in transactions:
+        user_id = transaction.get("user_id")
+        amount = transaction.get("amount", 0)
+
+        if user_id is None:
+            continue
+
+        totals[user_id] = totals.get(user_id, 0) + amount
+
+    return totals
+```
+
+### Function checklist
+
+```text
+Clear name:
+Clear input:
+Clear output:
+Readable variables:
+No unnecessary global state:
+Handles edge cases:
+Returns result:
+```
+
+---
+
+## 18. Naming Standards
+
+Readable names matter.
+
+Bad:
+
+```python
+def f(x):
+    d = {}
+    for i in x:
+        d[i[0]] = d.get(i[0], 0) + i[1]
+    return d
+```
+
+Better:
+
+```python
+def total_amount_by_user(transactions):
+    totals_by_user = {}
+
+    for transaction in transactions:
+        user_id = transaction["user_id"]
+        amount = transaction["amount"]
+        totals_by_user[user_id] = totals_by_user.get(user_id, 0) + amount
+
+    return totals_by_user
+```
+
+### Mentor correction
+
+```text
+Your logic may work, but the names make the code hard to review. In interviews, clarity matters.
+```
+
+---
+
+## 19. Input and Output Clarification
+
+Before coding, ask or state:
+
+```text
+What is the input type?
+What is each record shape?
+What should the output type be?
+Can input be empty?
+Can fields be missing?
+Can values be null?
+Can there be duplicates?
+How should ties be handled?
+Should output order matter?
+```
+
+Example:
+
+```text
+I assume input is a list of dictionaries with user_id and amount. I will return a dictionary mapping user_id to total amount.
+```
+
+---
+
+## 20. Edge Case Checklist
+
+Always consider:
+
+```text
+Empty input
+Single record
+Missing key
+Null value
+Duplicate IDs
+Negative amount
+Zero amount
+Malformed record
+Ties
+k = 0
+k larger than unique values
+Case sensitivity
+Whitespace
+Invalid timestamp
+Same timestamp tie
+Large input
+Memory constraints
+Output ordering
+```
+
+Not all apply to every problem.
+
+The candidate should know which ones matter.
+
+---
+
+## 21. Complexity Basics
+
+A Python answer is incomplete without complexity.
+
+### Common complexities
+
+| Operation | Complexity |
+|---|---:|
+| loop over n records | O(n) |
+| dict lookup | O(1) average |
+| set membership | O(1) average |
+| list membership | O(n) |
+| sort n records | O(n log n) |
+| heap push/pop | O(log n) |
+| heap of size k per item | O(n log k) |
+| nested loop over n | O(n²) |
+
+### Strong explanation
+
+```text
+Time complexity is O(n) because we scan the records once and dictionary operations are O(1) average. Space complexity is O(u), where u is the number of unique users.
+```
+
+Weak:
+
+```text
+It is O(n).
+```
+
+Too shallow.
+
+---
+
+## 22. Python Coding Round Answer Template
+
+Use this every time.
+
+```text
+## Clarification
+
+Input:
+Output:
+Assumptions:
+Edge cases:
+
+## Approach
+
+This is a [pattern] problem.
+I will use [data structure] because [reason].
+
+## Algorithm
+
+1.
+2.
+3.
+
+## Code
+
+[Python]
+
+## Complexity
+
+Time:
+Space:
+
+## Tests
+
+Case 1:
+Case 2:
+Case 3:
+
+## Follow-ups
+
+[discuss variations]
+```
+
+---
+
+## 23. Pattern: Aggregation by Key
+
+This is one of the most common Data Engineering Python tasks.
+
+### Prompt
+
+```text
+Given transactions, return total amount per user.
+```
+
+### Input
+
+```python
+transactions = [
+    {"user_id": "u1", "amount": 100},
+    {"user_id": "u2", "amount": 50},
+    {"user_id": "u1", "amount": 25},
+]
+```
+
+### Output
+
+```python
+{"u1": 125, "u2": 50}
+```
+
+### Solution
+
+```python
+def total_amount_by_user(transactions):
+    totals = {}
+
+    for transaction in transactions:
+        user_id = transaction.get("user_id")
+        amount = transaction.get("amount", 0)
+
+        if user_id is None:
+            continue
+
+        totals[user_id] = totals.get(user_id, 0) + amount
+
+    return totals
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(u), where u is number of unique users
+```
+
+### Follow-ups
+
+1. What if amount is missing?
+2. What if amount is negative because of refund?
+3. What if user_id is missing?
+4. What if output must be sorted by total amount?
+5. What if input is too large for memory?
+
+---
+
+## 24. Pattern: Group Records by Key
+
+### Prompt
+
+```text
+Group events by user_id.
+```
+
+### Solution
+
+```python
+from collections import defaultdict
+
+def group_events_by_user(events):
+    events_by_user = defaultdict(list)
+
+    for event in events:
+        user_id = event.get("user_id")
+
+        if user_id is None:
+            continue
+
+        events_by_user[user_id].append(event)
+
+    return dict(events_by_user)
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(n)
+```
+
+### Interview explanation
+
+```text
+I use a dictionary from user_id to list of events. Each record is processed once.
+```
+
+---
+
+## 25. Pattern: Frequency Counting
+
+### Prompt
+
+```text
+Count events by event_type.
+```
+
+### Solution with dict
+
+```python
+def count_events_by_type(events):
+    counts = {}
+
+    for event in events:
+        event_type = event.get("event_type")
+
+        if event_type is None:
+            continue
+
+        counts[event_type] = counts.get(event_type, 0) + 1
+
+    return counts
+```
+
+### Solution with Counter
+
+```python
+from collections import Counter
+
+def count_events_by_type(events):
+    return Counter(
+        event["event_type"]
+        for event in events
+        if event.get("event_type") is not None
+    )
+```
+
+### Interview note
+
+Either is fine if candidate can explain it.
+
+---
+
+## 26. Pattern: Deduplicate Records
+
+### Prompt
+
+```text
+Given events with event_id, remove duplicates.
+```
+
+### Simple version
+
+```python
+def dedupe_by_event_id(events):
+    seen = set()
+    deduped = []
+
+    for event in events:
+        event_id = event.get("event_id")
+
+        if event_id is None:
+            continue
+
+        if event_id in seen:
+            continue
+
+        seen.add(event_id)
+        deduped.append(event)
+
+    return deduped
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+### Important question
+
+```text
+If duplicate records differ, which one should be kept?
+```
+
+If requirement does not say, ask.
+
+---
+
+## 27. Pattern: Deduplicate and Keep Latest
+
+### Prompt
+
+```text
+Given events with event_id and updated_at, keep the latest record for each event_id.
+```
+
+### Solution
+
+```python
+def dedupe_keep_latest(events):
+    latest_by_event_id = {}
+
+    for event in events:
+        event_id = event.get("event_id")
+        updated_at = event.get("updated_at")
+
+        if event_id is None or updated_at is None:
+            continue
+
+        current = latest_by_event_id.get(event_id)
+
+        if current is None or updated_at > current["updated_at"]:
+            latest_by_event_id[event_id] = event
+
+    return list(latest_by_event_id.values())
+```
+
+### Complexity
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+### Follow-ups
+
+1. What if timestamps are strings?
+2. What if two records have the same updated_at?
+3. What if event_time and ingestion_time differ?
+4. Should malformed records be skipped or collected separately?
+5. How would this be written in SQL?
+
+### Mentor correction
+
+```text
+You cannot just use a set if the duplicate records differ and you need the latest version. Use a dict keyed by event_id with tie-breaking logic.
+```
+
+---
+
+## 28. Pattern: Top K
+
+### Prompt
+
+```text
+Return top K event types by count.
+```
+
+### Sorting solution
+
+```python
+from collections import Counter
+
+def top_k_event_types(events, k):
+    if k <= 0:
+        return []
+
+    counts = Counter(events)
+
+    sorted_items = sorted(
+        counts.items(),
+        key=lambda item: (-item[1], item[0])
+    )
+
+    return [event_type for event_type, count in sorted_items[:k]]
+```
+
+### Complexity
+
+```text
+Time: O(n + u log u)
+Space: O(u)
+```
+
+where `u` is number of unique event types.
+
+### Heap solution
+
+```python
+from collections import Counter
+import heapq
+
+def top_k_event_types_heap(events, k):
+    if k <= 0:
+        return []
+
+    counts = Counter(events)
+
+    return [
+        event_type
+        for event_type, count in heapq.nlargest(
+            k,
+            counts.items(),
+            key=lambda item: (item[1], item[0])
+        )
+    ]
+```
+
+### Interview trade-off
+
+Sorting is simpler and often acceptable.
+
+Heap is useful when:
+
+```text
+k is much smaller than number of unique items.
+```
+
+### Follow-ups
+
+1. What if ties should be alphabetical?
+2. What if events are records with event_type field?
+3. What if we need top K per day?
+4. What if input is a stream?
+5. How would this be written in SQL?
+
+---
+
+## 29. Pattern: Top K Per Group
+
+### Prompt
+
+```text
+Given event records with event_date and event_type, return top K event types per date.
+```
+
+### Solution
+
+```python
+from collections import defaultdict, Counter
+
+def top_k_event_types_per_date(events, k):
+    if k <= 0:
+        return {}
+
+    counts_by_date = defaultdict(Counter)
+
+    for event in events:
+        event_date = event.get("event_date")
+        event_type = event.get("event_type")
+
+        if event_date is None or event_type is None:
+            continue
+
+        counts_by_date[event_date][event_type] += 1
+
+    result = {}
+
+    for event_date, counts in counts_by_date.items():
+        sorted_items = sorted(
+            counts.items(),
+            key=lambda item: (-item[1], item[0])
+        )
+        result[event_date] = [
+            event_type for event_type, count in sorted_items[:k]
+        ]
+
+    return result
+```
+
+### Complexity
+
+```text
+Time: O(n + sum(u_d log u_d))
+Space: O(total unique date-event_type pairs)
+```
+
+### Common mistakes
+
+- not grouping by date first
+- losing date context
+- no tie handling
+- wrong output shape
+
+---
+
+## 30. Pattern: Parse Logs
+
+### Prompt
+
+```text
+Each log line has format:
+timestamp service level message
+
+Return count of ERROR logs per service.
+```
+
+### Example
+
+```python
+lines = [
+    "2025-01-01T10:00:00 auth INFO login ok",
+    "2025-01-01T10:01:00 billing ERROR payment failed",
+    "2025-01-01T10:02:00 billing ERROR timeout",
+]
+```
+
+### Solution
+
+```python
+from collections import defaultdict
+
+def count_errors_by_service(lines):
+    error_counts = defaultdict(int)
+
+    for line in lines:
+        parts = line.split(" ", 3)
+
+        if len(parts) < 4:
+            continue
+
+        timestamp, service, level, message = parts
+
+        if level == "ERROR":
+            error_counts[service] += 1
+
+    return dict(error_counts)
+```
+
+### Complexity
+
+```text
+Time: O(n * L), where L is line length for splitting
+Space: O(s), where s is number of services with errors
+```
+
+### Follow-ups
+
+1. What if log format changes?
+2. What if level is lowercase?
+3. What if service name contains spaces?
+4. What if logs are huge?
+5. Should malformed lines be skipped or reported?
+
+---
+
+## 31. Pattern: Parse CSV-Like Rows
+
+### Prompt
+
+```text
+Given rows like "user_id,amount,status", return total successful amount per user.
+```
+
+### Simple solution
+
+```python
+def total_success_amount_by_user(rows):
+    totals = {}
+
+    for row in rows:
+        parts = row.split(",")
+
+        if len(parts) != 3:
+            continue
+
+        user_id, amount_text, status = parts
+
+        if status != "SUCCESS":
+            continue
+
+        try:
+            amount = float(amount_text)
+        except ValueError:
+            continue
+
+        totals[user_id] = totals.get(user_id, 0.0) + amount
+
+    return totals
+```
+
+### Interview warning
+
+In real code, use the `csv` module for true CSV because commas can appear inside quoted fields.
+
+### Strong explanation
+
+```text
+For interview simplicity, I can split by comma if the format is guaranteed simple. In production, I would use Python's csv module to handle quoting and escaping.
+```
+
+---
+
+## 32. Pattern: Nested JSON Normalization
+
+### Prompt
+
+```text
+Flatten user events where user info is nested.
+```
+
+### Input
+
+```python
+records = [
+    {
+        "event_id": "e1",
+        "event_type": "click",
+        "user": {
+            "id": "u1",
+            "country": "IN"
+        }
+    }
+]
+```
+
+### Output
+
+```python
+[
+    {
+        "event_id": "e1",
+        "event_type": "click",
+        "user_id": "u1",
+        "user_country": "IN"
+    }
+]
+```
+
+### Solution
+
+```python
+def flatten_events(records):
+    flattened = []
+
+    for record in records:
+        user = record.get("user") or {}
+
+        flattened.append({
+            "event_id": record.get("event_id"),
+            "event_type": record.get("event_type"),
+            "user_id": user.get("id"),
+            "user_country": user.get("country"),
+        })
+
+    return flattened
+```
+
+### Follow-ups
+
+1. What if user is missing?
+2. What if nested keys change?
+3. What if there are arrays inside JSON?
+4. What if schema evolves?
+5. Should null fields be included?
+
+---
+
+## 33. Pattern: Flatten Nested Arrays
+
+### Prompt
+
+```text
+Given orders with items, output one row per order item.
+```
+
+### Input
+
+```python
+orders = [
+    {
+        "order_id": "o1",
+        "customer_id": "c1",
+        "items": [
+            {"product_id": "p1", "quantity": 2},
+            {"product_id": "p2", "quantity": 1}
+        ]
+    }
+]
+```
+
+### Output grain
+
+```text
+One row per order item.
+```
+
+### Solution
+
+```python
+def flatten_order_items(orders):
+    rows = []
+
+    for order in orders:
+        order_id = order.get("order_id")
+        customer_id = order.get("customer_id")
+        items = order.get("items") or []
+
+        for item in items:
+            rows.append({
+                "order_id": order_id,
+                "customer_id": customer_id,
+                "product_id": item.get("product_id"),
+                "quantity": item.get("quantity", 0),
+            })
+
+    return rows
+```
+
+### Interview explanation
+
+```text
+The output grain is one row per order item. An order can contain multiple items, so I use a nested loop to emit one output row for each item.
+```
+
+### Common mistake
+
+Returning one row per order and losing product-level detail.
+
+---
+
+## 34. Pattern: Join Two Lists of Records
+
+### Prompt
+
+```text
+Given users and orders, attach user country to each order.
+```
+
+### Inputs
+
+```python
+users = [
+    {"user_id": "u1", "country": "IN"},
+    {"user_id": "u2", "country": "US"},
+]
+
+orders = [
+    {"order_id": "o1", "user_id": "u1", "amount": 100},
+]
+```
+
+### Solution
+
+```python
+def enrich_orders_with_user_country(orders, users):
+    user_by_id = {
+        user["user_id"]: user
+        for user in users
+        if user.get("user_id") is not None
+    }
+
+    enriched = []
+
+    for order in orders:
+        user_id = order.get("user_id")
+        user = user_by_id.get(user_id)
+
+        enriched_order = dict(order)
+        enriched_order["user_country"] = user.get("country") if user else None
+        enriched.append(enriched_order)
+
+    return enriched
+```
+
+### Complexity
+
+```text
+Time: O(o + u)
+Space: O(u)
+```
+
+### Strong explanation
+
+```text
+I build a lookup dictionary for users so I do not scan users for every order. This avoids O(o * u) nested-loop behavior.
+```
+
+### Follow-ups
+
+1. What if there are duplicate user IDs?
+2. What if user is missing?
+3. What if users list is too large for memory?
+4. Is this inner join or left join behavior?
+5. How would this be done in SQL?
+
+---
+
+## 35. Pattern: Left Join vs Inner Join in Python
+
+### Left join behavior
+
+Keep all orders even if user is missing.
+
+```python
+def left_join_orders_users(orders, users):
+    user_by_id = {user["user_id"]: user for user in users}
+    result = []
+
+    for order in orders:
+        user = user_by_id.get(order.get("user_id"))
+        row = dict(order)
+        row["user_country"] = user.get("country") if user else None
+        result.append(row)
+
+    return result
+```
+
+### Inner join behavior
+
+Keep only orders with matching user.
+
+```python
+def inner_join_orders_users(orders, users):
+    user_by_id = {user["user_id"]: user for user in users}
+    result = []
+
+    for order in orders:
+        user = user_by_id.get(order.get("user_id"))
+
+        if user is None:
+            continue
+
+        row = dict(order)
+        row["user_country"] = user.get("country")
+        result.append(row)
+
+    return result
+```
+
+### Interview point
+
+The candidate should explicitly state join behavior.
+
+---
+
+## 36. Pattern: Validate Required Fields
+
+### Prompt
+
+```text
+Split records into valid and invalid based on required fields.
+```
+
+### Solution
+
+```python
+def split_valid_invalid(records, required_fields):
+    valid_records = []
+    invalid_records = []
+
+    for record in records:
+        missing_fields = [
+            field
+            for field in required_fields
+            if record.get(field) is None
+        ]
+
+        if missing_fields:
+            invalid_records.append({
+                "record": record,
+                "missing_fields": missing_fields,
+            })
+        else:
+            valid_records.append(record)
+
+    return valid_records, invalid_records
+```
+
+### Data Engineering relevance
+
+This maps to:
+
+- data quality checks
+- quarantine records
+- schema validation
+- pipeline gating
+
+### Follow-ups
+
+1. Should empty string count as missing?
+2. Should zero count as missing?
+3. Should invalid records fail the pipeline?
+4. Should invalid records be quarantined?
+5. How do you report validation results?
+
+---
+
+## 37. Pattern: Data Quality Checks
+
+### Prompt
+
+```text
+Given records, check required fields and uniqueness of transaction_id.
+```
+
+### Solution
+
+```python
+def validate_transactions(transactions):
+    errors = []
+    seen_transaction_ids = set()
+
+    for index, transaction in enumerate(transactions):
+        transaction_id = transaction.get("transaction_id")
+        amount = transaction.get("amount")
+
+        if transaction_id is None:
+            errors.append({
+                "index": index,
+                "error": "missing transaction_id",
+            })
+            continue
+
+        if transaction_id in seen_transaction_ids:
+            errors.append({
+                "index": index,
+                "error": "duplicate transaction_id",
+                "transaction_id": transaction_id,
+            })
+        else:
+            seen_transaction_ids.add(transaction_id)
+
+        if amount is None:
+            errors.append({
+                "index": index,
+                "error": "missing amount",
+                "transaction_id": transaction_id,
+            })
+
+    return {
+        "is_valid": len(errors) == 0,
+        "errors": errors,
+    }
+```
+
+### Strong explanation
+
+```text
+I return both a boolean and detailed errors because in pipelines we need to know why validation failed.
+```
+
+---
+
+## 38. Pattern: Record Hashing / Change Detection
+
+### Prompt
+
+```text
+Detect changed records by comparing selected fields.
+```
+
+### Simple solution
+
+```python
+def record_signature(record, fields):
+    return tuple(record.get(field) for field in fields)
+
+def find_changed_records(old_records, new_records, key_field, compare_fields):
+    old_by_key = {
+        record[key_field]: record
+        for record in old_records
+        if record.get(key_field) is not None
+    }
+
+    changed = []
+
+    for new_record in new_records:
+        key = new_record.get(key_field)
+
+        if key is None:
+            continue
+
+        old_record = old_by_key.get(key)
+
+        if old_record is None:
+            changed.append(new_record)
+            continue
+
+        if record_signature(old_record, compare_fields) != record_signature(new_record, compare_fields):
+            changed.append(new_record)
+
+    return changed
+```
+
+### Interview relevance
+
+This maps to:
+
+- incremental changes
+- SCD detection
+- CDC-like comparison
+- data quality drift
+
+---
+
+## 39. Pattern: SCD Type 2 Helper Logic
+
+Python interviews may ask simple versioning logic.
+
+### Prompt
+
+```text
+Given current dimension records and incoming records, identify inserts and changed records.
+```
+
+### Simplified solution
+
+```python
+def identify_scd2_changes(current_records, incoming_records, key_field, tracked_fields):
+    current_by_key = {
+        record[key_field]: record
+        for record in current_records
+        if record.get(key_field) is not None and record.get("is_current") is True
+    }
+
+    new_versions = []
+
+    for incoming in incoming_records:
+        key = incoming.get(key_field)
+
+        if key is None:
+            continue
+
+        current = current_by_key.get(key)
+
+        if current is None:
+            new_versions.append(incoming)
+            continue
+
+        current_signature = tuple(current.get(field) for field in tracked_fields)
+        incoming_signature = tuple(incoming.get(field) for field in tracked_fields)
+
+        if current_signature != incoming_signature:
+            new_versions.append(incoming)
+
+    return new_versions
+```
+
+### Interview explanation
+
+```text
+For SCD Type 2, I compare tracked attributes against the current version. If they changed, I create a new version rather than overwriting history.
+```
+
+---
+
+## 40. Pattern: Window-Like Processing
+
+Python can simulate simple window logic.
+
+### Prompt
+
+```text
+Given user events sorted by event_time, count sessions where gap > 30 minutes starts a new session.
+```
+
+### Simplified solution
+
+```python
+from datetime import datetime, timedelta
+
+def parse_iso_timestamp(value):
+    return datetime.fromisoformat(value)
+
+def assign_sessions(events, gap_minutes=30):
+    events_sorted = sorted(
+        events,
+        key=lambda event: (event.get("user_id"), event.get("event_time"))
+    )
+
+    last_time_by_user = {}
+    session_number_by_user = {}
+    output = []
+
+    gap = timedelta(minutes=gap_minutes)
+
+    for event in events_sorted:
+        user_id = event.get("user_id")
+        event_time_text = event.get("event_time")
+
+        if user_id is None or event_time_text is None:
+            continue
+
+        event_time = parse_iso_timestamp(event_time_text)
+        last_time = last_time_by_user.get(user_id)
+
+        if last_time is None or event_time - last_time > gap:
+            session_number_by_user[user_id] = session_number_by_user.get(user_id, 0) + 1
+
+        last_time_by_user[user_id] = event_time
+
+        enriched = dict(event)
+        enriched["session_number"] = session_number_by_user[user_id]
+        output.append(enriched)
+
+    return output
+```
+
+### Interview concepts
+
+- sorting by user and time
+- maintaining state by user
+- gap threshold
+- output enrichment
+
+---
+
+## 41. String Cleaning and Normalization
+
+Data Engineering often requires normalization.
+
+### Example
+
+```python
+def normalize_text(value):
+    if value is None:
+        return None
+
+    return " ".join(value.strip().lower().split())
+```
+
+### Use cases
+
+- merchant normalization
+- event type cleanup
+- country names
+- service names
+- user input
+- CSV values
+
+### Follow-ups
+
+1. Should punctuation be removed?
+2. Should accents be normalized?
+3. Should case be preserved?
+4. How do you handle nulls?
+5. How do you test this?
+
+---
+
+## 42. Datetime Basics
+
+Python datetime questions often appear in data tasks.
+
+### Parse ISO timestamp
+
+```python
+from datetime import datetime
+
+timestamp = datetime.fromisoformat("2025-01-01T10:00:00")
+```
+
+### Date extraction
+
+```python
+event_date = timestamp.date().isoformat()
+```
+
+### Time difference
+
+```python
+delta = end_time - start_time
+seconds = delta.total_seconds()
+```
+
+### Interview warnings
+
+- timezone matters
+- string comparison only works safely for consistent ISO formats
+- invalid timestamps should be handled
+- business date may differ from UTC date
+
+### Mentor correction
+
+```text
+You compared timestamp strings without stating format assumptions. That may work for consistent ISO strings, but you should mention the assumption or parse to datetime.
+```
+
+---
+
+## 43. Handling Missing Fields
+
+Use `.get()` when fields may be missing.
+
+```python
+user_id = record.get("user_id")
+```
+
+But do not blindly hide bad data.
+
+### Skip strategy
+
+```python
+if user_id is None:
+    continue
+```
+
+### Quarantine strategy
+
+```python
+if user_id is None:
+    invalid_records.append(record)
+    continue
+```
+
+### Fail-fast strategy
+
+```python
+if user_id is None:
+    raise ValueError("user_id is required")
+```
+
+### Strong answer
+
+```text
+The right behavior depends on whether missing user_id is critical. For a required primary key, I would usually fail or quarantine rather than silently skip.
+```
+
+---
+
+## 44. Error Handling
+
+Use `try/except` for expected parse errors.
+
+### Example
+
+```python
+def parse_amount(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+```
+
+### Interview warning
+
+Do not catch all exceptions blindly.
+
+Bad:
+
+```python
+try:
+    ...
+except:
+    pass
+```
+
+Better:
+
+```python
+try:
+    amount = float(value)
+except (TypeError, ValueError):
+    invalid_records.append(value)
+```
+
+### Strong explanation
+
+```text
+I catch only expected parsing errors. Unexpected errors should not be silently swallowed.
+```
+
+---
+
+## 45. Mutability
+
+Python objects like lists and dicts are mutable.
+
+### Example problem
+
+```python
+row = order
+row["country"] = "IN"
+```
+
+This modifies the original order dict.
+
+Safer:
+
+```python
+row = dict(order)
+row["country"] = "IN"
+```
+
+### Interview explanation
+
+```text
+I copy the record before adding fields so I do not mutate the input unexpectedly.
+```
+
+### Mentor correction
+
+```text
+You modified the input. That may be acceptable, but you must state it. If input mutation is not allowed, this is a bug.
+```
+
+---
+
+## 46. Copying
+
+### Shallow copy
+
+```python
+new_record = dict(record)
+```
+
+or:
+
+```python
+new_record = record.copy()
+```
+
+Shallow copy does not deeply copy nested objects.
+
+### Deep copy
+
+```python
+import copy
+
+new_record = copy.deepcopy(record)
+```
+
+Use only when needed.
+
+### Interview note
+
+For most record-enrichment tasks, shallow copy is enough if nested structures are not modified.
+
+---
+
+## 47. Comprehensions
+
+Comprehensions can be clean but should not reduce readability.
+
+### List comprehension
+
+```python
+user_ids = [record["user_id"] for record in records if record.get("user_id")]
+```
+
+### Dict comprehension
+
+```python
+user_by_id = {
+    user["user_id"]: user
+    for user in users
+    if user.get("user_id") is not None
+}
+```
+
+### Set comprehension
+
+```python
+unique_event_types = {
+    event["event_type"]
+    for event in events
+    if event.get("event_type") is not None
+}
+```
+
+### Mentor rule
+
+Use comprehensions for simple transformations.
+
+Avoid unreadable nested comprehensions in interviews.
+
+---
+
+## 48. Generators and Memory
+
+Generators produce values lazily.
+
+### Example
+
+```python
+def valid_records(records):
+    for record in records:
+        if record.get("user_id") is not None:
+            yield record
+```
+
+### Use cases
+
+- large input
+- streaming processing
+- memory-aware transformations
+- pipeline-style processing
+
+### Strong answer
+
+```text
+If the input is too large to fit in memory, I would process records iteratively and avoid building large intermediate lists unless needed.
+```
+
+---
+
+## 49. File Handling Basics
+
+Interviewers may ask file-like tasks.
+
+### Read file safely
+
+```python
+def count_lines(path):
+    count = 0
+
+    with open(path, "r", encoding="utf-8") as file:
+        for line in file:
+            count += 1
+
+    return count
+```
+
+### Why `with`?
+
+```text
+It ensures the file is closed even if an error occurs.
+```
+
+### Interview note
+
+For coding screens, they often provide lines as a list. Still know file iteration basics.
+
+---
+
+## 50. JSON Basics
+
+### Parse JSON string
+
+```python
+import json
+
+record = json.loads('{"user_id": "u1", "amount": 100}')
+```
+
+### Convert to JSON string
+
+```python
+text = json.dumps(record)
+```
+
+### Common issues
+
+- invalid JSON
+- missing fields
+- nested data
+- arrays
+- schema drift
+- null values
+
+### Strong answer
+
+```text
+For JSON ingestion, I would parse safely, validate required fields, and handle schema changes intentionally.
+```
+
+---
+
+## 51. CSV Module Awareness
+
+For real CSV, use `csv`.
+
+```python
+import csv
+
+def read_csv_rows(path):
+    with open(path, "r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+        return list(reader)
+```
+
+### Interview point
+
+Simple `split(",")` is acceptable only if format is guaranteed simple.
+
+Strong explanation:
+
+```text
+In production, I would use the csv module because simple split fails for quoted commas.
+```
+
+---
+
+## 52. Avoid Overusing Pandas
+
+Pandas is useful, but many interviews test Python data structures.
+
+If interviewer asks for plain Python, do not use pandas.
+
+### Mentor correction
+
+```text
+Pandas may solve this quickly, but this interview is testing Python fundamentals. Show the dict/list/set approach first.
+```
+
+### When pandas is acceptable
+
+- interviewer allows it
+- task is explicitly dataframe-oriented
+- role expects pandas
+- follow-up asks for pandas version
+
+---
+
+## 53. Clean Code Standards
+
+Python interview code should be:
+
+- simple
+- readable
+- correct
+- edge-case aware
+- not overengineered
+- not too clever
+- modular if needed
+- named clearly
+
+### Bad signs
+
+- one-letter variables everywhere
+- hidden assumptions
+- huge nested logic
+- repeated code
+- no helper function when parsing repeats
+- catching all exceptions
+- modifying input unintentionally
+- no return value
+- no tests
+
+---
+
+## 54. Testing in Interviews
+
+After coding, test manually.
+
+### Example
+
+For aggregation:
+
+```python
+transactions = [
+    {"user_id": "u1", "amount": 100},
+    {"user_id": "u2", "amount": 50},
+    {"user_id": "u1", "amount": 25},
+]
+```
+
+Expected:
+
+```python
+{"u1": 125, "u2": 50}
+```
+
+### Test categories
+
+```text
+Normal case:
+Empty input:
+Duplicate key:
+Missing field:
+Tie:
+Invalid value:
+```
+
+### Strong communication
+
+```text
+I will test one normal case, one empty input, and one missing-field case because those are likely edge cases for this function.
+```
+
+---
+
+## 55. Common Python Interview Mistakes
+
+## 55.1 Using List Instead of Dict or Set
+
+Bad:
+
+```python
+seen = []
+
+for event_id in event_ids:
+    if event_id in seen:
+        return True
+    seen.append(event_id)
+```
+
+This is O(n²).
+
+Good:
+
+```python
+seen = set()
+
+for event_id in event_ids:
+    if event_id in seen:
+        return True
+    seen.add(event_id)
+```
+
+---
+
+## 55.2 Nested Loop Join
+
+Bad:
+
+```python
+for order in orders:
+    for user in users:
+        if order["user_id"] == user["user_id"]:
+            ...
+```
+
+This is O(o * u).
+
+Good:
+
+```python
+user_by_id = {user["user_id"]: user for user in users}
+```
+
+---
+
+## 55.3 No Edge Cases
+
+Weak answer:
+
+```text
+It works for the sample.
+```
+
+Strong answer:
+
+```text
+I will also check empty input, missing fields, duplicate IDs, and tie cases.
+```
+
+---
+
+## 55.4 Silent Failure
+
+Bad:
+
+```python
+try:
+    amount = float(value)
+except:
+    pass
+```
+
+Better:
+
+```python
+try:
+    amount = float(value)
+except (TypeError, ValueError):
+    invalid_records.append(record)
+    continue
+```
+
+---
+
+## 55.5 Unclear Output Order
+
+If output order matters, say how it is determined.
+
+Example:
+
+```python
+return sorted(result, key=lambda row: row["user_id"])
+```
+
+If output order does not matter, state that.
+
+---
+
+## 55.6 Mutating Input
+
+Candidate should mention whether input mutation is allowed.
+
+Bad:
+
+```python
+for record in records:
+    record["processed"] = True
+```
+
+Better:
+
+```python
+processed = dict(record)
+processed["processed"] = True
+```
+
+---
+
+## 56. Interview Communication for Python
+
+Strong Python candidates think out loud.
+
+### Before coding
+
+```text
+The input is a list of dictionaries. I need to group by user_id, so a dictionary is the right structure. I will skip records missing user_id, but in production I might quarantine them.
+```
+
+### During coding
+
+```text
+I am using .get because fields may be missing. I am storing totals by user_id.
+```
+
+### After coding
+
+```text
+This is O(n) time and O(u) space. Edge cases are empty input, missing user_id, missing amount, and negative amount.
+```
+
+---
+
+## 57. Python + SQL Connection
+
+Many Python tasks map to SQL.
+
+| Python Task | SQL Equivalent |
+|---|---|
+| dict aggregation | GROUP BY |
+| frequency count | COUNT(*) GROUP BY |
+| dedupe latest | ROW_NUMBER() PARTITION BY |
+| top K | ORDER BY metric DESC LIMIT |
+| join with lookup dict | JOIN |
+| left join behavior | LEFT JOIN |
+| filter records | WHERE |
+| group records | GROUP BY |
+| sort records | ORDER BY |
+| cumulative state | window functions |
+
+### Mentor follow-up
+
+Ask:
+
+```text
+How would you solve the same task in SQL?
+```
+
+This tests Data Engineering thinking across languages.
+
+---
+
+## 58. Python + DSA Connection
+
+Python data-processing tasks often use DSA patterns.
+
+| Python Task | DSA Pattern |
+|---|---|
+| duplicate detection | set |
+| aggregate by key | hash map |
+| top K | heap / sorting |
+| merge time windows | intervals |
+| parse nested expression | stack |
+| dependency validation | graph / topological sort |
+| rolling sequence | sliding window |
+| sorted lookup | binary search |
+
+---
+
+## 59. Problem Bank: Easy
+
+## 59.1 Count Events
+
+```text
+Given a list of event type strings, return count per event type.
+```
+
+Expected:
+
+- dict or Counter
+- O(n)
+- handles empty input
+
+---
+
+## 59.2 Unique Users
+
+```text
+Given event records, return number of unique users.
+```
+
+Expected:
+
+- set
+- skip missing user_id or discuss invalid records
+
+---
+
+## 59.3 Filter Successful Transactions
+
+```text
+Given transactions, return only those with status = "SUCCESS".
+```
+
+Expected:
+
+- list output
+- clear filtering
+- missing status behavior
+
+---
+
+## 59.4 Normalize Service Names
+
+```text
+Given service names, strip whitespace and lowercase them.
+```
+
+Expected:
+
+- string normalization
+- None handling
+
+---
+
+## 59.5 Parse Simple Logs
+
+```text
+Given log lines, count ERROR lines.
+```
+
+Expected:
+
+- split
+- malformed handling
+- count
+
+---
+
+## 60. Problem Bank: Medium
+
+## 60.1 Deduplicate Latest Records
+
+```text
+Given records with id and updated_at, keep latest record per id.
+```
+
+Expected:
+
+- dict
+- tie-breaker
+- timestamp assumptions
+
+---
+
+## 60.2 Top K Error Services
+
+```text
+Given logs, return top K services by ERROR count.
+```
+
+Expected:
+
+- parse logs
+- count
+- sort/heap
+- tie handling
+
+---
+
+## 60.3 Join Users and Orders
+
+```text
+Given users and orders, enrich orders with country.
+```
+
+Expected:
+
+- dict lookup
+- left vs inner join behavior
+- missing user handling
+
+---
+
+## 60.4 Flatten Orders
+
+```text
+Given orders with nested items, output one row per item.
+```
+
+Expected:
+
+- nested loops
+- output grain
+- missing items
+
+---
+
+## 60.5 Validate Transactions
+
+```text
+Validate that transaction_id exists and is unique, and amount is non-null.
+```
+
+Expected:
+
+- set
+- error collection
+- validation output
+
+---
+
+## 60.6 Top K Per Date
+
+```text
+Given events with date and type, return top K event types per date.
+```
+
+Expected:
+
+- nested dict/Counter
+- sorting
+- tie handling
+
+---
+
+## 61. Problem Bank: Advanced
+
+## 61.1 Sessionization
+
+```text
+Given events with user_id and event_time, assign session IDs when gap > 30 minutes.
+```
+
+Expected:
+
+- sort by user/time
+- state per user
+- datetime handling
+
+---
+
+## 61.2 DAG Cycle Detection
+
+```text
+Given tasks and dependencies, determine whether workflow has a cycle.
+```
+
+Expected:
+
+- graph
+- topological sort
+- queue
+- in-degree
+
+---
+
+## 61.3 Streaming Top K
+
+```text
+Events arrive one by one. Maintain top K event types so far.
+```
+
+Expected:
+
+- Counter
+- heap trade-offs
+- memory discussion
+
+---
+
+## 61.4 Incremental Change Detection
+
+```text
+Given old and new records, identify inserted and changed records by key.
+```
+
+Expected:
+
+- dict lookup
+- compare fields
+- output categories
+
+---
+
+## 61.5 Data Quality Summary
+
+```text
+Given records and validation rules, return counts of each validation failure type.
+```
+
+Expected:
+
+- validation logic
+- error aggregation
+- clean output
+
+---
+
+## 62. Full Worked Example: Deduplicate + Count + Top K
+
+### Prompt
+
+```text
+You receive event records:
+[
+  {"event_id": "e1", "event_type": "click", "event_time": "2025-01-01T10:00:00"},
+  {"event_id": "e1", "event_type": "view", "event_time": "2025-01-01T10:05:00"},
+  {"event_id": "e2", "event_type": "click", "event_time": "2025-01-01T10:10:00"}
+]
+
+Deduplicate by event_id keeping latest event_time.
+Then return top K event types by count.
+Tie-break alphabetically.
+```
+
+### Approach
+
+```text
+1. Use dict event_id → latest event.
+2. Count event_type after deduplication.
+3. Sort by count descending and event_type ascending.
+4. Return first K event types.
+```
+
+### Code
+
+```python
+from collections import Counter
+from datetime import datetime
+
+def parse_time(value):
+    return datetime.fromisoformat(value)
+
+def top_k_event_types_after_dedup(events, k):
+    if k <= 0:
+        return []
+
+    latest_by_event_id = {}
+    invalid_records = []
+
+    for event in events:
+        event_id = event.get("event_id")
+        event_time_text = event.get("event_time")
+
+        if event_id is None or event_time_text is None:
+            invalid_records.append(event)
+            continue
+
+        try:
+            event_time = parse_time(event_time_text)
+        except ValueError:
+            invalid_records.append(event)
+            continue
+
+        current = latest_by_event_id.get(event_id)
+
+        if current is None or event_time > current["_parsed_event_time"]:
+            enriched = dict(event)
+            enriched["_parsed_event_time"] = event_time
+            latest_by_event_id[event_id] = enriched
+
+    event_type_counts = Counter()
+
+    for event in latest_by_event_id.values():
+        event_type = event.get("event_type")
+
+        if event_type is not None:
+            event_type_counts[event_type] += 1
+
+    sorted_items = sorted(
+        event_type_counts.items(),
+        key=lambda item: (-item[1], item[0])
+    )
+
+    return [event_type for event_type, count in sorted_items[:k]]
+```
+
+### Complexity
+
+```text
+Let n be number of events and u be number of unique event IDs.
+Deduplication is O(n).
+Counting is O(u).
+Sorting event types is O(t log t), where t is number of unique event types.
+Space is O(u + t).
+```
+
+### Interview follow-ups
+
+1. What if event_time ties?
+2. What if invalid records should fail the pipeline?
+3. What if input is too large for memory?
+4. What if we need top K per day?
+5. How would this be done in SQL?
+
+---
+
+## 63. Full Worked Example: API Pagination Aggregation
+
+### Prompt
+
+```text
+You receive pages of API responses. Each page contains transaction records.
+Return total amount per user across all pages.
+```
+
+### Input shape
+
+```python
+pages = [
+    [
+        {"user_id": "u1", "amount": "100.5"},
+        {"user_id": "u2", "amount": "50"}
+    ],
+    [
+        {"user_id": "u1", "amount": "25"}
+    ]
+]
+```
+
+### Code
+
+```python
+def total_amount_by_user_from_pages(pages):
+    totals = {}
+    invalid_records = []
+
+    for page in pages:
+        for transaction in page:
+            user_id = transaction.get("user_id")
+            amount_text = transaction.get("amount")
+
+            if user_id is None or amount_text is None:
+                invalid_records.append(transaction)
+                continue
+
+            try:
+                amount = float(amount_text)
+            except (TypeError, ValueError):
+                invalid_records.append(transaction)
+                continue
+
+            totals[user_id] = totals.get(user_id, 0.0) + amount
+
+    return {
+        "totals": totals,
+        "invalid_count": len(invalid_records),
+    }
+```
+
+### Strong explanation
+
+```text
+This simulates API pagination. I process one page at a time, which is better for memory than flattening all pages first.
+```
+
+---
+
+## 64. Full Worked Example: Detect Missing Required Files
+
+### Prompt
+
+```text
+Given expected file names and actual arrived file names, return missing files.
+```
+
+### Code
+
+```python
+def find_missing_files(expected_files, arrived_files):
+    arrived = set(arrived_files)
+    missing = []
+
+    for file_name in expected_files:
+        if file_name not in arrived:
+            missing.append(file_name)
+
+    return missing
+```
+
+### Complexity
+
+```text
+Time: O(e + a)
+Space: O(a)
+```
+
+### Data Engineering relevance
+
+This maps to file ingestion pipelines and vendor feeds.
+
+---
+
+## 65. Full Worked Example: Processed File Manifest
+
+### Prompt
+
+```text
+Given files and a processed manifest, return files that should be processed.
+```
+
+### Code
+
+```python
+def files_to_process(incoming_files, processed_manifest):
+    processed_keys = {
+        (entry["file_name"], entry.get("checksum"))
+        for entry in processed_manifest
+        if entry.get("file_name") is not None
+    }
+
+    result = []
+
+    for file_info in incoming_files:
+        key = (file_info.get("file_name"), file_info.get("checksum"))
+
+        if key not in processed_keys:
+            result.append(file_info)
+
+    return result
+```
+
+### Strong explanation
+
+```text
+Using both file name and checksum helps detect corrected resend files.
+```
+
+---
+
+## 66. Full Worked Example: Data Reconciliation
+
+### Prompt
+
+```text
+Compare source and target counts by date. Return dates where counts differ.
+```
+
+### Code
+
+```python
+def find_count_mismatches(source_counts, target_counts):
+    all_dates = set(source_counts) | set(target_counts)
+    mismatches = []
+
+    for event_date in sorted(all_dates):
+        source_count = source_counts.get(event_date, 0)
+        target_count = target_counts.get(event_date, 0)
+
+        if source_count != target_count:
+            mismatches.append({
+                "date": event_date,
+                "source_count": source_count,
+                "target_count": target_count,
+                "difference": source_count - target_count,
+            })
+
+    return mismatches
+```
+
+### Data Engineering relevance
+
+This maps to data quality reconciliation.
+
+---
+
+## 67. Full Worked Example: Latest Status Per Order
+
+### Prompt
+
+```text
+Given order status events, return latest status for each order.
+```
+
+### Code
+
+```python
+def latest_status_by_order(events):
+    latest_by_order = {}
+
+    for event in events:
+        order_id = event.get("order_id")
+        status_time = event.get("status_time")
+
+        if order_id is None or status_time is None:
+            continue
+
+        current = latest_by_order.get(order_id)
+
+        if current is None or status_time > current["status_time"]:
+            latest_by_order[order_id] = event
+
+    return {
+        order_id: event["status"]
+        for order_id, event in latest_by_order.items()
+        if event.get("status") is not None
+    }
+```
+
+### Follow-ups
+
+1. What if timestamps are not ISO strings?
+2. What if two statuses have same time?
+3. Should cancelled override shipped?
+4. How would this be done in SQL?
+
+---
+
+## 68. Full Worked Example: Merge Time Intervals
+
+### Prompt
+
+```text
+Merge overlapping pipeline run windows.
+```
+
+### Code
+
+```python
+def merge_intervals(intervals):
+    if not intervals:
+        return []
+
+    intervals_sorted = sorted(intervals, key=lambda interval: interval[0])
+    merged = [list(intervals_sorted[0])]
+
+    for start, end in intervals_sorted[1:]:
+        last = merged[-1]
+
+        if start <= last[1]:
+            last[1] = max(last[1], end)
+        else:
+            merged.append([start, end])
+
+    return merged
+```
+
+### Interview explanation
+
+```text
+Sorting by start time makes overlapping intervals adjacent. Then one pass is enough to merge.
+```
+
+### Follow-ups
+
+1. Are endpoints inclusive?
+2. What if intervals are per pipeline_id?
+3. How do you find gaps?
+4. How do you calculate total covered time?
+
+---
+
+## 69. Full Worked Example: DAG Dependency Validation
+
+### Prompt
+
+```text
+Given tasks and dependencies, return whether all tasks can run.
+Each pair [task, dependency] means task depends on dependency.
+```
+
+### Code
+
+```python
+from collections import defaultdict, deque
+
+def can_run_all_tasks(tasks, dependencies):
+    graph = defaultdict(list)
+    indegree = {task: 0 for task in tasks}
+
+    for task, dependency in dependencies:
+        graph[dependency].append(task)
+
+        if task not in indegree:
+            indegree[task] = 0
+
+        if dependency not in indegree:
+            indegree[dependency] = 0
+
+        indegree[task] += 1
+
+    queue = deque([
+        task for task, degree in indegree.items()
+        if degree == 0
+    ])
+
+    processed_count = 0
+
+    while queue:
+        task = queue.popleft()
+        processed_count += 1
+
+        for downstream_task in graph[task]:
+            indegree[downstream_task] -= 1
+
+            if indegree[downstream_task] == 0:
+                queue.append(downstream_task)
+
+    return processed_count == len(indegree)
+```
+
+### Strong explanation
+
+```text
+This is topological sort. If there is a cycle, some tasks will never reach zero indegree.
+```
+
+### Data Engineering relevance
+
+This maps to Airflow DAG dependency validation.
+
+---
+
+## 70. Memory-Aware Processing
+
+Interviewers may ask:
+
+```text
+What if the input is too large for memory?
+```
+
+Strong answer:
+
+```text
+I would avoid loading everything at once. I would process records line by line or page by page, keep only necessary state such as counts, and write intermediate results if state becomes too large.
+```
+
+### Examples
+
+For aggregation:
+
+```text
+Need memory proportional to number of unique keys.
+```
+
+For deduplication:
+
+```text
+Need memory for seen IDs unless external storage or partitioning is used.
+```
+
+For top K:
+
+```text
+Can maintain heap of size K after counting, but exact top K still needs counts for unique keys.
+```
+
+---
+
+## 71. Streaming Considerations
+
+For streaming input:
+
+- process one record at a time
+- maintain state
+- checkpoint state if needed
+- handle duplicates
+- handle late events
+- think about memory growth
+- define windowing if required
+- output incrementally or periodically
+
+### Strong answer
+
+```text
+If records arrive continuously, I need to define whether results are global or windowed. For global counts, state grows with unique keys. For windowed counts, I can expire old state.
+```
+
+---
+
+## 72. Handling Large Unique Key Counts
+
+Aggregation by key may become memory-heavy.
+
+Options:
+
+1. Partition by key and process chunks.
+2. Use external storage.
+3. Use database/warehouse.
+4. Use approximate algorithms if acceptable.
+5. Use distributed processing.
+6. Spill intermediate results to disk.
+7. Process per date or partition.
+
+### Interview explanation
+
+```text
+A dictionary approach is fine for moderate data, but if unique keys are too large for memory, I would partition or move aggregation to a database/distributed system.
+```
+
+---
+
+## 73. When to Use Plain Python vs SQL vs Spark
+
+### Plain Python
+
+Good for:
+
+- small to medium data
+- API ingestion
+- parsing
+- validation
+- orchestration helpers
+- interview coding tasks
+
+### SQL
+
+Good for:
+
+- warehouse transformations
+- aggregations
+- joins
+- deduplication
+- reporting logic
+
+### Spark
+
+Good for:
+
+- large-scale distributed processing
+- heavy joins
+- large files
+- big event logs
+- distributed aggregations
+
+### Strong answer
+
+```text
+I would use Python for ingestion and custom parsing, SQL for warehouse transformations, and Spark when data volume requires distributed compute.
+```
+
+---
+
+## 74. Python Interview Rubric
+
+Score from 0 to 5.
+
+### Correctness
+
+- Does the code solve the problem?
+- Does it handle all requirements?
+- Does it produce expected output?
+
+### Data Structure Choice
+
+- Uses dict/set/list appropriately?
+- Avoids inefficient nested loops?
+- Uses heap/deque when needed?
+
+### Edge Cases
+
+- Empty input?
+- Missing fields?
+- Duplicates?
+- Invalid values?
+- Ties?
+- Output order?
+
+### Code Quality
+
+- Clear function?
+- Readable names?
+- No unnecessary complexity?
+- No unsafe mutation?
+- Good helper functions?
+
+### Complexity
+
+- Time correct?
+- Space correct?
+- Explained clearly?
+
+### Communication
+
+- Clarified assumptions?
+- Explained approach before code?
+- Thought out loud?
+- Handled follow-up?
+
+---
+
+## 75. Python Score Labels
+
+### Score 0
+
+No meaningful solution.
+
+### Score 1
+
+Very weak attempt.
+
+### Score 2
+
+Partial solution; fails important cases.
+
+### Score 3
+
+Basic interview acceptable; needs polish.
+
+### Score 4
+
+Interview-ready for standard DE Python rounds.
+
+### Score 5
+
+Strong; top-company coding-round ready.
+
+---
+
+## 76. Common Feedback Templates
+
+### Inefficient lookup
+
+```text
+Your solution is O(n²) because you repeatedly scan a list. Use a dictionary or set to make lookup O(1) average.
+```
+
+### Missing edge cases
+
+```text
+Your solution handles the sample but not real interview edge cases. Add empty input, missing fields, duplicates, and tie handling where relevant.
+```
+
+### No complexity
+
+```text
+The code may be correct, but the answer is incomplete without time and space complexity.
+```
+
+### Vague explanation
+
+```text
+You are explaining what the code does line by line, but not the approach. State the pattern and data structure first.
+```
+
+### Overengineering
+
+```text
+This solution is more complex than needed. Use a simple dictionary aggregation unless the follow-up requires more.
+```
+
+### Mutating input
+
+```text
+You modified input records. That may be allowed, but you must say it. Safer interview code usually copies records before enrichment.
+```
+
+---
+
+## 77. 7-Day Python Repair Plan
+
+### Day 1: Lists, dicts, sets
+
+Drills:
+
+```text
+Count events by type.
+Return unique users.
+Detect duplicate transaction IDs.
+```
+
+Exit:
+
+```text
+Candidate explains dict vs set.
+```
+
+---
+
+### Day 2: Aggregation and grouping
+
+Drills:
+
+```text
+Total amount per user.
+Group events by user.
+Count events by date and type.
+```
+
+Exit:
+
+```text
+Candidate uses defaultdict or dict correctly.
+```
+
+---
+
+### Day 3: Deduplication
+
+Drills:
+
+```text
+Deduplicate event IDs.
+Keep latest event by updated_at.
+Validate unique transaction_id.
+```
+
+Exit:
+
+```text
+Candidate handles duplicates and tie cases.
+```
+
+---
+
+### Day 4: Sorting and Top K
+
+Drills:
+
+```text
+Top K event types.
+Top K users by amount.
+Top K event types per day.
+```
+
+Exit:
+
+```text
+Candidate explains sorting and tie-breaking.
+```
+
+---
+
+### Day 5: Parsing
+
+Drills:
+
+```text
+Parse log lines.
+Parse CSV-like rows.
+Normalize strings.
+```
+
+Exit:
+
+```text
+Candidate handles malformed input.
+```
+
+---
+
+### Day 6: Nested records
+
+Drills:
+
+```text
+Flatten nested user events.
+Flatten order items.
+Join users and orders.
+```
+
+Exit:
+
+```text
+Candidate explains output grain.
+```
+
+---
+
+### Day 7: Mock interview
+
+Prompt:
+
+```text
+Deduplicate event records, count event types, and return top K with tie-breaking.
+```
+
+Exit:
+
+```text
+Candidate scores at least 4/5.
+```
+
+---
+
+## 78. 30-Day Python Plan
+
+### Week 1: Core Python
+
+- lists
+- dicts
+- sets
+- loops
+- functions
+- complexity
+
+Practice:
+
+- count events
+- unique users
+- duplicate IDs
+- total by user
+
+---
+
+### Week 2: Data Processing
+
+- grouping
+- deduplication
+- latest record
+- top K
+- sorting
+- tie-breakers
+
+Practice:
+
+- dedupe latest
+- top K per group
+- join records
+
+---
+
+### Week 3: Parsing and Validation
+
+- strings
+- logs
+- CSV-like rows
+- JSON-like records
+- missing fields
+- validation results
+
+Practice:
+
+- parse logs
+- validate transactions
+- flatten JSON
+
+---
+
+### Week 4: Interview Pressure
+
+- timed mocks
+- follow-ups
+- memory constraints
+- SQL mapping
+- DSA mapping
+- project-related Python explanation
+
+Practice:
+
+- mixed coding mocks
+- record-processing systems
+- DAG dependency validation
+
+---
+
+## 79. Mock Interview 1: Basic Aggregation
+
+### Prompt
+
+```text
+Given transactions with user_id, amount, and status, return total successful amount per user.
+```
+
+### Candidate should clarify
+
+1. What statuses count?
+2. Are amounts numeric or strings?
+3. Can amount be missing?
+4. Can user_id be missing?
+5. Should output be sorted?
+
+### Expected approach
+
+- iterate transactions
+- filter status
+- parse amount
+- aggregate by user_id
+- handle invalid records
+
+### Follow-ups
+
+1. Return invalid record count.
+2. Sort users by total descending.
+3. Return top K users.
+4. Write SQL equivalent.
+
+---
+
+## 80. Mock Interview 2: Deduplication
+
+### Prompt
+
+```text
+Given event records with event_id, event_time, and ingestion_time, remove duplicates by event_id. Keep the record with latest event_time. If event_time ties, keep latest ingestion_time.
+```
+
+### Expected approach
+
+- dict keyed by event_id
+- compare tuple `(event_time, ingestion_time)`
+- handle missing IDs/times
+- return list
+
+### Follow-ups
+
+1. What if timestamps are invalid?
+2. Should output order matter?
+3. How would you collect invalid records?
+4. How would you do this in SQL?
+
+---
+
+## 81. Mock Interview 3: Top K Logs
+
+### Prompt
+
+```text
+Given log lines, return top K services by ERROR count. If counts tie, sort service alphabetically.
+```
+
+### Expected approach
+
+- parse lines
+- filter ERROR
+- count by service
+- sort by `(-count, service)`
+- handle malformed lines
+
+### Follow-ups
+
+1. What if logs are huge?
+2. What if log level is lowercase?
+3. What if service names contain spaces?
+4. How would you stream this?
+
+---
+
+## 82. Mock Interview 4: Nested Orders
+
+### Prompt
+
+```text
+Given orders with nested items, return revenue per product.
+```
+
+### Expected approach
+
+- nested loop
+- output grain: item
+- compute quantity * unit_price
+- aggregate by product_id
+
+### Code idea
+
+```python
+def revenue_by_product(orders):
+    revenue = {}
+
+    for order in orders:
+        for item in order.get("items") or []:
+            product_id = item.get("product_id")
+            quantity = item.get("quantity", 0)
+            unit_price = item.get("unit_price", 0)
+
+            if product_id is None:
+                continue
+
+            revenue[product_id] = revenue.get(product_id, 0) + quantity * unit_price
+
+    return revenue
+```
+
+### Follow-ups
+
+1. What if items is missing?
+2. What if quantity is string?
+3. What if order has discount?
+4. What is the output grain?
+
+---
+
+## 83. Mock Interview 5: DAG Dependencies
+
+### Prompt
+
+```text
+Given pipeline tasks and dependency pairs, return a valid execution order or empty list if there is a cycle.
+```
+
+### Expected approach
+
+- graph
+- indegree
+- queue
+- topological sort
+
+### Follow-ups
+
+1. What if task names are strings?
+2. What if multiple valid orders exist?
+3. How does this map to Airflow?
+4. How do you detect which tasks are in cycle?
+
+---
+
+## 84. Python for Project Deep Dives
+
+Candidates should be able to explain Python used in their projects.
+
+Strong project explanation includes:
+
+```text
+Where Python was used:
+Why Python was chosen:
+What data it processed:
+What edge cases were handled:
+How errors were logged:
+How retries worked:
+How data quality was validated:
+How performance was improved:
+How code was tested:
+```
+
+Weak:
+
+```text
+I used Python scripts for ETL.
+```
+
+Strong:
+
+```text
+I wrote Python ingestion scripts that called paginated APIs, handled rate limits and retries, stored raw responses, normalized nested JSON into staging tables, and logged invalid records for review.
+```
+
+---
+
+## 85. Python in ETL/ELT Pipelines
+
+Python is often used for:
+
+- extraction scripts
+- API clients
+- file readers
+- custom transformations
+- validation checks
+- orchestration tasks
+- metadata management
+- backfill helpers
+
+Interviewers may ask:
+
+```text
+How did your Python job avoid duplicate loads?
+How did it handle API failure?
+How did it process large files?
+How did it validate data?
+How did it log errors?
+How did it manage secrets?
+```
+
+Prepare answers.
+
+---
+
+## 86. Security in Python Scripts
+
+Interview-aware security points:
+
+- do not hardcode credentials
+- use environment variables or secret manager
+- avoid logging PII
+- use least-privilege service accounts
+- validate external inputs
+- handle tokens securely
+- rotate credentials
+
+Strong answer:
+
+```text
+I would not store API keys in code. I would use a secret manager or environment-based configuration and avoid logging sensitive fields.
+```
+
+---
+
+## 87. Python Performance Basics
+
+Performance issues in interview code often come from:
+
+- nested loops
+- repeated list membership
+- sorting unnecessarily
+- building huge intermediate lists
+- parsing same value repeatedly
+- not using dict lookup
+- not streaming large files
+- inefficient string concatenation
+
+### Strong answer
+
+```text
+The biggest improvement is avoiding repeated scans by building a dictionary lookup once.
+```
+
+---
+
+## 88. Python Type Hints
+
+Type hints can improve clarity.
+
+```python
+from typing import Any
+
+def total_by_user(transactions: list[dict[str, Any]]) -> dict[str, float]:
+    totals: dict[str, float] = {}
+
+    for transaction in transactions:
+        user_id = transaction.get("user_id")
+        amount = transaction.get("amount", 0)
+
+        if user_id is None:
+            continue
+
+        totals[str(user_id)] = totals.get(str(user_id), 0.0) + float(amount)
+
+    return totals
+```
+
+### Interview note
+
+Type hints are nice but not required unless expected. Correct logic matters more.
+
+---
+
+## 89. Dataclasses
+
+Dataclasses can structure records, but dictionaries are usually simpler for interviews.
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Transaction:
+    user_id: str
+    amount: float
+```
+
+Use only if it helps.
+
+Do not overcomplicate simple coding questions.
+
+---
+
+## 90. Object-Oriented Python Basics
+
+Some interviews may ask basic OOP.
+
+Know:
+
+- class
+- object
+- method
+- constructor
+- instance variable
+- inheritance basics
+- composition
+- when not to use OOP
+
+### Simple example
+
+```python
+class RunningCounter:
+    def __init__(self):
+        self.counts = {}
+
+    def add(self, key):
+        self.counts[key] = self.counts.get(key, 0) + 1
+
+    def get(self, key):
+        return self.counts.get(key, 0)
+```
+
+### Interview note
+
+For most DE coding tasks, functions are enough.
+
+---
+
+## 91. Python Imports Worth Knowing
+
+High-value imports:
+
+```python
+from collections import Counter, defaultdict, deque
+import heapq
+import json
+import csv
+from datetime import datetime, timedelta
+```
+
+Optional:
+
+```python
+from dataclasses import dataclass
+from typing import Any
+```
+
+Do not import heavy libraries unless allowed.
+
+---
+
+## 92. What Not to Do in Python Interviews
+
+Avoid:
+
+1. Starting code without clarifying.
+2. Coding silently.
+3. Using pandas when plain Python is expected.
+4. Writing one huge unreadable function.
+5. Ignoring missing fields.
+6. Ignoring duplicates.
+7. Ignoring ties.
+8. Using O(n²) nested loops unnecessarily.
+9. Using list membership for large lookup.
+10. Catching all exceptions silently.
+11. Mutating input without saying.
+12. Skipping complexity.
+13. Skipping tests.
+14. Overengineering with classes.
+15. Bluffing about performance.
+
+---
+
+## 93. Python Interview Red Flags
+
+Flag strongly:
+
+- cannot use dict
+- cannot use set
+- cannot explain O(n)
+- cannot parse simple records
+- cannot aggregate by key
+- cannot deduplicate records
+- cannot handle missing fields
+- cannot sort with key
+- cannot explain top K
+- cannot write clean function
+- cannot test edge cases
+- cannot adapt to follow-up
+- cannot explain code without reading line by line
+
+---
+
+## 94. Python Review Checklist
+
+When reviewing a solution, check:
+
+```text
+Problem restated:
+Input/output clarified:
+Data shape understood:
+Correct data structure:
+Correct algorithm:
+Readable code:
+No unnecessary nested loops:
+Missing fields handled:
+Duplicates handled:
+Ties handled:
+Malformed records considered:
+Output order clarified:
+Input mutation avoided or stated:
+Time complexity:
+Space complexity:
+Tests included:
+Follow-up handled:
+```
+
+---
+
+## 95. Python Minimum Passing Standard
+
+Candidate must be able to:
+
+1. Write a clean function.
+2. Use dict for aggregation.
+3. Use set for uniqueness.
+4. Use sorting with key.
+5. Use Counter/defaultdict when appropriate.
+6. Parse simple strings/logs.
+7. Process list of dictionaries.
+8. Flatten nested records.
+9. Deduplicate records by key.
+10. Keep latest record by timestamp.
+11. Return top K with tie-breaking.
+12. Handle missing/malformed records.
+13. Explain time and space complexity.
+14. Test edge cases.
+15. Explain SQL equivalent for common tasks.
+
+---
+
+## 96. Strong Candidate Standard
+
+A strong candidate can also:
+
+1. Handle streaming/memory follow-ups.
+2. Design validation output structures.
+3. Discuss invalid record quarantine.
+4. Compare Python vs SQL vs Spark.
+5. Explain idempotency in Python scripts.
+6. Handle nested arrays and output grain.
+7. Build lookup joins efficiently.
+8. Explain topological sort for task dependencies.
+9. Write readable, maintainable code under pressure.
+10. Connect code to real ETL/ELT project work.
+
+---
+
+## 97. Python Exit Test
+
+Candidate must solve this problem.
+
+### Prompt
+
+```text
+You receive raw event records as dictionaries.
+
+Each record may contain:
+event_id
+user_id
+event_type
+event_time
+ingestion_time
+metadata
+
+Tasks:
+1. Validate that event_id, event_type, and event_time exist.
+2. Split invalid records into a separate list with error reason.
+3. Deduplicate valid records by event_id.
+4. Keep latest event_time; if event_time ties, keep latest ingestion_time.
+5. Count deduplicated events by event_type.
+6. Return top K event types by count.
+7. Tie-break event_type alphabetically.
+8. Explain time and space complexity.
+```
+
+### Passing answer must include:
+
+```text
+Clear function:
+Validation:
+Invalid record collection:
+Timestamp comparison:
+Deduplication dictionary:
+Frequency counting:
+Top K sorting or heap:
+Tie handling:
+Edge cases:
+Complexity:
+Tests:
+```
+
+### Fail conditions
+
+Candidate fails if:
+
+- no validation
+- no deduplication
+- wrong latest logic
+- missing tie handling
+- no complexity
+- code only handles happy path
+- code is unreadable
+- no explanation
+
+---
+
+## 98. Final Summary
+
+Python for Data Engineering interviews is not about obscure language trivia.
+
+It is about being reliable with real data tasks:
+
+- aggregate records
+- group records
+- deduplicate records
+- keep latest records
+- parse logs
+- flatten nested JSON
+- join lists efficiently
+- validate data
+- return top K
+- handle edge cases
+- explain complexity
+- communicate clearly
+
+The strongest candidates write simple, correct, readable Python and explain why the chosen data structure fits.
+
+The weakest candidates write happy-path scripts, use inefficient nested loops, ignore missing data, and cannot explain complexity.
+
+Data Engineering Sensei should train Python as practical interview engineering, not syntax memorization.

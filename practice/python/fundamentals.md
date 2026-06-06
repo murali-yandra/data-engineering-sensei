@@ -1,0 +1,6274 @@
+# Python Fundamentals Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/python/fundamentals.md
+```
+
+This guide teaches and drills **Python fundamentals for Data Engineering interviews**.
+
+This is not a generic Python course. It is an interview-focused guide for candidates who need to write clean Python under pressure, explain language behavior, handle data structures correctly, process records safely, reason about complexity, and connect Python fundamentals to Data Engineering tasks.
+
+Python fundamentals are high-ROI because Data Engineering interviews often test:
+
+- variables and data types
+- strings
+- lists
+- tuples
+- sets
+- dictionaries
+- mutability
+- references
+- loops
+- functions
+- default arguments
+- comprehensions
+- sorting
+- lambda/key functions
+- exception handling
+- iterators
+- generators
+- context managers
+- file-safe patterns
+- date/time basics
+- Decimal for money
+- regex basics
+- collections module
+- typing hints
+- simple classes
+- clean code structure
+- testable functions
+- time and space complexity
+- practical ETL-style transformations
+
+Use this guide with:
+
+- `docs/python-interview-guide.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/etl-elt-pipelines-guide.md`
+- `docs/error-handling-playbook.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/python-drill-mode.md`
+- `modes/data-engineering-fundamentals-mode.md`
+- `modes/interview-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `practice/python/data-scripting.md`
+- `practice/python/files-json-csv.md`
+- `practice/python/api-processing.md`
+- `practice/dsa/arrays-strings.md`
+- `practice/dsa/hashmaps.md`
+- `practice/dsa/sorting-binary-search.md`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering interview standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at Python fundamentals used in Data Engineering interviews.
+
+The candidate should learn to answer:
+
+```text
+How do Python variables and references work?
+What is mutable and immutable?
+When should I use list, tuple, set, or dictionary?
+How do I loop cleanly?
+How do I write testable functions?
+How do default arguments work?
+How do list/dict/set comprehensions work?
+How do I sort records by one or more keys?
+How do I count/group records?
+How do I avoid common Python bugs?
+How do I handle exceptions properly?
+How do I write generators for memory-safe processing?
+How do context managers work?
+How do I parse and transform records?
+How do I explain time and space complexity?
+How do Python fundamentals map to ETL, API ingestion, file processing, and data pipelines?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+write clean Python without overcomplication
+choose the right built-in data structure
+explain mutability and references
+avoid mutable default argument bugs
+use dictionary/set operations confidently
+use Counter/defaultdict correctly
+use sorted with key functions
+write readable comprehensions
+handle bad input intentionally
+write generators for streaming data
+use context managers
+structure code into pure/testable functions
+explain complexity
+connect each Python construct to practical Data Engineering work
+```
+
+
+## 2. Why Python Fundamentals Matter for Data Engineers
+
+Python is used heavily in Data Engineering for:
+
+```text
+ETL scripts
+ELT orchestration helpers
+Airflow DAG utilities
+API ingestion
+file parsing
+CSV/JSON/JSONL processing
+schema validation
+data-quality checks
+log processing
+pipeline monitoring scripts
+data reconciliation
+backfills
+migration scripts
+Spark/PySpark driver-side logic
+cloud automation
+SQL generation
+test utilities
+```
+
+Interviewers test fundamentals because they show whether the candidate can:
+
+```text
+write reliable code
+reason about data structures
+handle dirty data
+avoid memory issues
+debug edge cases
+explain trade-offs
+produce maintainable pipeline code
+```
+
+Weak answer:
+
+```text
+I know Python syntax.
+```
+
+Strong answer:
+
+```text
+I can use Python data structures and language features to write safe, readable, memory-aware data-processing code.
+```
+
+
+## 3. Core Mental Model
+
+Python fundamentals for Data Engineering are about three things:
+
+```text
+1. Represent data correctly.
+2. Transform data safely.
+3. Process data efficiently.
+```
+
+Most interview tasks are combinations of:
+
+```text
+read records
+validate fields
+transform fields
+group by key
+deduplicate
+sort
+filter
+aggregate
+write output
+handle invalid data
+explain complexity
+```
+
+Core interview line:
+
+```text
+I choose Python structures based on access pattern: list for ordered sequences, dict for key-based lookup, set for membership/deduplication, tuple for immutable grouped values, and generators for memory-safe streaming.
+```
+
+
+## 4. Python Vocabulary
+
+Important terms:
+
+```text
+Variable:
+A name bound to an object.
+
+Object:
+A value in memory, such as list, dict, int, string.
+
+Reference:
+A variable points to an object, not a copied value by default.
+
+Mutable:
+Object can be changed after creation. Example: list, dict, set.
+
+Immutable:
+Object cannot be changed after creation. Example: int, float, str, tuple.
+
+Iterable:
+Object you can loop over.
+
+Iterator:
+Object that produces next values one by one.
+
+Generator:
+Function or expression that lazily yields values.
+
+Function:
+Reusable block of code with inputs and output.
+
+Argument:
+Value passed into a function.
+
+Parameter:
+Name used inside function definition.
+
+Exception:
+Error condition represented as object.
+
+Context manager:
+Object used with `with`, usually for safe resource management.
+
+Comprehension:
+Compact syntax to build list/dict/set.
+
+Hashable:
+Can be used as dictionary key or set element.
+
+Truthiness:
+How values behave in boolean context.
+
+Side effect:
+Function changes external state or mutates input.
+
+Pure function:
+Function output depends only on inputs and does not mutate external state.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for Python fundamentals interview answers:
+
+```text
+1. Restate the task.
+2. Clarify input and output.
+3. Clarify edge cases:
+   - empty input
+   - missing fields
+   - duplicates
+   - invalid values
+   - large input
+4. Choose data structures.
+5. Explain why each structure fits.
+6. Write clean functions.
+7. Handle invalid input intentionally.
+8. Avoid unnecessary mutation.
+9. Explain time complexity.
+10. Explain space complexity.
+11. Mention production improvements when relevant.
+```
+
+Short version:
+
+```text
+Input:
+Data structure:
+Algorithm:
+Edge cases:
+Complexity:
+DE connection:
+```
+
+Strict rule:
+
+```text
+No Python answer is strong if the candidate cannot explain why they chose list, dict, set, tuple, Counter, defaultdict, or generator.
+```
+
+
+## 6. Scoring Rubric
+
+Score each Python fundamentals attempt from 0 to 5.
+
+### Score 0
+
+No meaningful Python answer.
+
+### Score 1
+
+Very basic syntax only. Cannot reason about structures or edge cases.
+
+### Score 2
+
+Works for clean small input but fails edge cases or mutability issues.
+
+### Score 3
+
+Mostly correct but weak explanation, complexity, or production safety.
+
+### Score 4
+
+Interview-ready. Clean code, correct data structures, edge cases, and complexity.
+
+### Score 5
+
+Strong. Explains trade-offs, mutability, memory, testability, generators, and Data Engineering relevance clearly.
+
+Do not give 4+ if:
+
+```text
+candidate cannot explain mutability
+candidate uses list membership when set is needed for O(1)
+candidate uses nested loops where dictionary lookup is expected
+candidate uses mutable default arguments
+candidate catches exceptions with bare except
+candidate mutates input unexpectedly
+candidate cannot explain sorted key
+candidate cannot explain generator benefit
+candidate ignores missing fields
+candidate cannot explain complexity
+candidate writes one huge untestable block
+```
+
+
+## 7. Python Data Types Overview
+
+Core built-in data types:
+
+| Type | Example | Mutable? | Common DE Use |
+|---|---|---:|---|
+| int | `10` | No | counts, IDs |
+| float | `10.5` | No | approximate metrics |
+| Decimal | `Decimal("10.5")` | No | money/exact decimal |
+| str | `"abc"` | No | fields, paths, tokens |
+| bool | `True` | No | flags |
+| NoneType | `None` | No | missing value |
+| list | `[1, 2]` | Yes | ordered records |
+| tuple | `(1, 2)` | No | fixed grouped values |
+| dict | `{"id": 1}` | Yes | records, lookups |
+| set | `{1, 2}` | Yes | uniqueness, membership |
+| frozenset | `frozenset([1])` | No | immutable set key |
+```
+
+Interview line:
+
+```text
+I choose the type based on whether I need order, uniqueness, key lookup, mutability, or hashability.
+```
+
+
+## 8. Variables and References
+
+Python variables are names bound to objects.
+
+```python
+a = [1, 2, 3]
+b = a
+b.append(4)
+
+print(a)  # [1, 2, 3, 4]
+```
+
+Why:
+
+```text
+a and b reference the same list object.
+```
+
+Copy when needed:
+
+```python
+a = [1, 2, 3]
+b = list(a)
+b.append(4)
+
+print(a)  # [1, 2, 3]
+print(b)  # [1, 2, 3, 4]
+```
+
+For dictionaries:
+
+```python
+original = {"id": 1, "status": "raw"}
+copy = dict(original)
+copy["status"] = "clean"
+```
+
+Interview line:
+
+```text
+Assignment does not copy mutable objects; it creates another reference to the same object.
+```
+
+
+## 9. Mutability
+
+Mutable objects can change in place.
+
+Mutable:
+
+```text
+list
+dict
+set
+bytearray
+```
+
+Immutable:
+
+```text
+int
+float
+bool
+str
+tuple
+frozenset
+None
+```
+
+Example:
+
+```python
+items = [1, 2]
+items.append(3)
+```
+
+String example:
+
+```python
+name = "data"
+name = name.upper()
+```
+
+The original string was not changed. A new string was created.
+
+Common interview bug:
+
+```python
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+```
+
+Problem:
+
+```text
+The same default list is reused across calls.
+```
+
+Correct:
+
+```python
+def add_item(item, items=None):
+    if items is None:
+        items = []
+
+    items.append(item)
+    return items
+```
+
+Interview line:
+
+```text
+Mutable default arguments are evaluated once at function definition time, so I use None and create the list inside the function.
+```
+
+
+## 10. Truthiness
+
+Python values have truthiness.
+
+Falsy values:
+
+```text
+False
+None
+0
+0.0
+""
+[]
+{}
+set()
+tuple()
+```
+
+Truthy values:
+
+```text
+non-empty strings
+non-empty lists
+non-empty dicts
+non-zero numbers
+most objects
+```
+
+Example:
+
+```python
+if records:
+    process(records)
+```
+
+Caution:
+
+```python
+if amount:
+    ...
+```
+
+This treats `0` as missing.
+
+Better:
+
+```python
+if amount is not None:
+    ...
+```
+
+Data Engineering warning:
+
+```text
+0 can be a valid metric value. Do not treat it as missing accidentally.
+```
+
+Interview line:
+
+```text
+For required numeric fields, I check `is None` instead of truthiness so zero is not rejected.
+```
+
+
+## 11. None Handling
+
+Use `is None`, not `== None`.
+
+Good:
+
+```python
+if value is None:
+    ...
+```
+
+Bad:
+
+```python
+if value == None:
+    ...
+```
+
+Why:
+
+```text
+None is a singleton. `is None` checks identity and is the Python convention.
+```
+
+Missing field example:
+
+```python
+amount = row.get("amount")
+
+if amount is None:
+    errors.append("missing_amount")
+```
+
+Empty string normalization:
+
+```python
+def empty_to_none(value):
+    if value == "":
+        return None
+
+    return value
+```
+
+Interview line:
+
+```text
+I distinguish missing values from valid falsy values like 0 or False.
+```
+
+
+## 12. Strings
+
+Strings are immutable sequences of characters.
+
+Useful operations:
+
+```python
+text.strip()
+text.lower()
+text.upper()
+text.replace(" ", "_")
+text.split(",")
+"-".join(parts)
+text.startswith("abc")
+text.endswith(".csv")
+"abc" in text
+```
+
+Common DE examples:
+
+```python
+def normalize_status(status):
+    if status is None:
+        return None
+
+    return status.strip().upper()
+```
+
+Splitting safely:
+
+```python
+key, value = token.split("=", 1)
+```
+
+Why `maxsplit=1`:
+
+```text
+Preserves values that contain `=`.
+```
+
+Example:
+
+```python
+"message=a=b".split("=", 1)
+# ["message", "a=b"]
+```
+
+Interview line:
+
+```text
+For log-style key-value parsing, I split on the first equals only.
+```
+
+
+## 13. String Formatting
+
+Use f-strings for readable formatting.
+
+```python
+name = "orders"
+date = "2026-01-01"
+path = f"data/{name}/event_date={date}/data.jsonl"
+```
+
+Format numbers:
+
+```python
+ratio = 0.12345
+text = f"{ratio:.2%}"  # 12.35%
+```
+
+Format with alignment:
+
+```python
+f"{count:04d}"  # 0007
+```
+
+Avoid building SQL unsafely:
+
+```python
+query = f"SELECT * FROM users WHERE name = '{name}'"
+```
+
+For database execution, use parameterized queries.
+
+Interview line:
+
+```text
+F-strings are fine for logs and paths, but not for injecting untrusted values into SQL.
+```
+
+
+## 14. Lists
+
+Lists are ordered and mutable.
+
+Common operations:
+
+```python
+items = []
+items.append("a")
+items.extend(["b", "c"])
+last = items.pop()
+first = items[0]
+length = len(items)
+```
+
+Use list when:
+
+```text
+order matters
+duplicates are allowed
+you need indexed access
+you need to collect output records
+```
+
+Avoid for queue front removal:
+
+```python
+items.pop(0)
+```
+
+Why:
+
+```text
+O(n), because all elements shift.
+```
+
+Use `collections.deque` for queue.
+
+Interview line:
+
+```text
+List is good for ordered collections and stack-like append/pop from the end, but not for frequent pop from the front.
+```
+
+
+## 15. List Slicing
+
+Slicing:
+
+```python
+items[start:end]
+items[:3]
+items[3:]
+items[-1]
+items[::-1]
+```
+
+Example:
+
+```python
+records[:10]  # first 10 records
+records[-5:]  # last 5 records
+```
+
+Caution:
+
+```text
+Slicing creates a new list, so it costs memory proportional to slice size.
+```
+
+For large data:
+
+```python
+for record in records:
+    ...
+```
+
+or use iterators/generators.
+
+Interview line:
+
+```text
+List slicing is convenient but creates a copy, so I avoid large slices in memory-sensitive code.
+```
+
+
+## 16. Tuples
+
+Tuples are ordered and immutable.
+
+Use tuple when:
+
+```text
+fixed group of values
+dictionary key
+set element
+returning multiple values
+sorting key
+```
+
+Example:
+
+```python
+key = (row["customer_id"], row["event_date"])
+```
+
+Returning multiple values:
+
+```python
+def split_counts(rows):
+    return valid_count, invalid_count
+```
+
+Tuple unpacking:
+
+```python
+valid_count, invalid_count = split_counts(rows)
+```
+
+Interview line:
+
+```text
+A tuple is useful when I need an immutable grouped key, such as `(customer_id, event_date)`.
+```
+
+
+## 17. Dictionaries
+
+Dictionaries map keys to values.
+
+```python
+record = {
+    "id": "1",
+    "amount": 100,
+}
+
+record["id"]
+record.get("currency")
+record.get("currency", "INR")
+record["status"] = "SUCCESS"
+```
+
+Use dict when:
+
+```text
+key-based lookup
+record representation
+group-by aggregation
+dedupe by ID
+mapping old values to normalized values
+```
+
+Membership:
+
+```python
+if "id" in record:
+    ...
+```
+
+Common DE example:
+
+```python
+latest_by_id = {}
+
+for row in rows:
+    latest_by_id[row["id"]] = row
+```
+
+Average complexity:
+
+```text
+lookup: O(1)
+insert: O(1)
+delete: O(1)
+```
+
+Interview line:
+
+```text
+A dictionary is ideal when I need fast lookup by key, such as deduplicating records by ID.
+```
+
+
+## 18. Dictionary get vs Direct Indexing
+
+Direct indexing:
+
+```python
+record["id"]
+```
+
+Raises `KeyError` if missing.
+
+Safe access:
+
+```python
+record.get("id")
+record.get("currency", "UNKNOWN")
+```
+
+Use direct indexing when:
+
+```text
+field is guaranteed and missing should fail fast
+```
+
+Use `.get()` when:
+
+```text
+field is optional or raw data may be dirty
+```
+
+Example:
+
+```python
+def validate_required(record):
+    errors = []
+
+    if not record.get("id"):
+        errors.append("missing_id")
+
+    return errors
+```
+
+Caution:
+
+```text
+`not record.get("amount")` treats 0 as missing.
+Use `record.get("amount") is None` for numeric fields.
+```
+
+Interview line:
+
+```text
+For raw data, I use `.get()` and validate explicitly instead of allowing random KeyErrors.
+```
+
+
+## 19. Sets
+
+Sets store unique hashable values.
+
+```python
+ids = set()
+ids.add("a")
+ids.add("b")
+"a" in ids
+```
+
+Use set when:
+
+```text
+deduplication
+fast membership checks
+set difference
+set intersection
+unique values
+```
+
+Operations:
+
+```python
+source_ids - target_ids
+source_ids & target_ids
+source_ids | target_ids
+source_ids ^ target_ids
+```
+
+Complexity:
+
+```text
+membership: O(1) average
+add: O(1) average
+```
+
+Data Engineering examples:
+
+```text
+find duplicate IDs
+compare source and target keys
+find missing partitions
+track processed files
+```
+
+Interview line:
+
+```text
+I use a set for membership checks because `x in set` is O(1) average, while `x in list` is O(n).
+```
+
+
+## 20. Hashability
+
+Dictionary keys and set elements must be hashable.
+
+Hashable examples:
+
+```text
+int
+str
+tuple of hashable values
+frozenset
+```
+
+Not hashable:
+
+```text
+list
+dict
+set
+```
+
+Example:
+
+```python
+key = (customer_id, event_date)
+groups[key] = total
+```
+
+Bad:
+
+```python
+key = [customer_id, event_date]
+groups[key] = total  # TypeError
+```
+
+Why:
+
+```text
+Mutable objects cannot safely be hash keys because their value can change.
+```
+
+Interview line:
+
+```text
+For composite dictionary keys, I use tuples because they are immutable and hashable.
+```
+
+
+## 21. Control Flow
+
+Basic control flow:
+
+```python
+if condition:
+    ...
+elif other_condition:
+    ...
+else:
+    ...
+```
+
+Use clear conditions:
+
+```python
+if amount is None:
+    errors.append("missing_amount")
+elif amount < 0:
+    errors.append("negative_amount")
+```
+
+Avoid deeply nested logic when possible.
+
+Instead of:
+
+```python
+if row:
+    if row.get("id"):
+        if row.get("amount") is not None:
+            process(row)
+```
+
+Prefer early returns:
+
+```python
+def validate(row):
+    errors = []
+
+    if not row:
+        errors.append("empty_row")
+        return errors
+
+    if not row.get("id"):
+        errors.append("missing_id")
+
+    if row.get("amount") is None:
+        errors.append("missing_amount")
+
+    return errors
+```
+
+Interview line:
+
+```text
+Early validation keeps code readable and reduces nested conditions.
+```
+
+
+## 22. Loops
+
+For loop:
+
+```python
+for record in records:
+    process(record)
+```
+
+With index:
+
+```python
+for index, record in enumerate(records):
+    ...
+```
+
+Start at 1:
+
+```python
+for row_number, row in enumerate(rows, start=1):
+    ...
+```
+
+Loop over dict:
+
+```python
+for key, value in mapping.items():
+    ...
+```
+
+Loop with break:
+
+```python
+for record in records:
+    if record.get("id") == target_id:
+        found = record
+        break
+```
+
+Loop with continue:
+
+```python
+for record in records:
+    if not record.get("id"):
+        continue
+
+    process(record)
+```
+
+Interview line:
+
+```text
+I use enumerate when I need row numbers for error reporting.
+```
+
+
+## 23. Range
+
+`range` creates an iterable sequence of integers.
+
+```python
+for i in range(5):
+    print(i)  # 0 to 4
+```
+
+Start and end:
+
+```python
+for i in range(1, 6):
+    print(i)  # 1 to 5
+```
+
+Step:
+
+```python
+for i in range(0, 10, 2):
+    print(i)  # 0, 2, 4, 6, 8
+```
+
+Reverse:
+
+```python
+for i in range(len(items) - 1, -1, -1):
+    ...
+```
+
+Interview line:
+
+```text
+Use direct iteration when possible; use range only when indices are actually needed.
+```
+
+
+## 24. Functions
+
+Functions make code reusable and testable.
+
+```python
+def normalize_currency(value):
+    if value is None:
+        return None
+
+    return value.strip().upper()
+```
+
+Good function properties:
+
+```text
+small
+clear name
+single responsibility
+explicit inputs
+explicit output
+minimal side effects
+easy to test
+```
+
+Bad:
+
+```python
+def process():
+    # reads file, transforms, writes DB, logs, sends email, mutates globals
+```
+
+Better:
+
+```python
+def transform_row(row):
+    ...
+
+def validate_row(row):
+    ...
+
+def process_rows(rows):
+    ...
+```
+
+Interview line:
+
+```text
+I separate transformation and validation into pure functions so they can be unit tested without file or database dependencies.
+```
+
+
+## 25. Function Arguments
+
+Types of arguments:
+
+```text
+positional arguments
+keyword arguments
+default arguments
+*args
+**kwargs
+```
+
+Example:
+
+```python
+def build_path(base_dir, table_name, event_date=None):
+    if event_date:
+        return f"{base_dir}/{table_name}/event_date={event_date}/data.jsonl"
+
+    return f"{base_dir}/{table_name}/data.jsonl"
+```
+
+Call:
+
+```python
+build_path("data", "orders")
+build_path(base_dir="data", table_name="orders", event_date="2026-01-01")
+```
+
+Interview line:
+
+```text
+I use keyword arguments for readability when functions have multiple parameters of similar type.
+```
+
+
+## 26. Default Argument Pitfall
+
+Bad:
+
+```python
+def collect_error(error, errors=[]):
+    errors.append(error)
+    return errors
+```
+
+Problem:
+
+```text
+The same list is reused every time the function is called.
+```
+
+Correct:
+
+```python
+def collect_error(error, errors=None):
+    if errors is None:
+        errors = []
+
+    errors.append(error)
+    return errors
+```
+
+Another example:
+
+```python
+def add_metadata(row, metadata=None):
+    if metadata is None:
+        metadata = {}
+
+    output = dict(row)
+    output.update(metadata)
+    return output
+```
+
+Interview line:
+
+```text
+I avoid mutable default arguments because defaults are evaluated once when the function is defined.
+```
+
+
+## 27. Return Values
+
+Return a single value:
+
+```python
+def is_valid(row):
+    return bool(row.get("id"))
+```
+
+Return multiple values with tuple:
+
+```python
+def split_valid_invalid(rows):
+    return valid_rows, invalid_rows
+```
+
+Return structured dictionary:
+
+```python
+def process_rows(rows):
+    return {
+        "valid_count": valid_count,
+        "invalid_count": invalid_count,
+    }
+```
+
+Guideline:
+
+```text
+Use tuple for small fixed multiple values.
+Use dict/dataclass for named summary outputs.
+```
+
+Interview line:
+
+```text
+For summaries, I prefer returning a dictionary with named counts so the result is self-explanatory.
+```
+
+
+## 28. Scope
+
+Variables defined inside functions are local.
+
+```python
+def process():
+    count = 0
+    count += 1
+    return count
+```
+
+Avoid unnecessary globals:
+
+```python
+total = 0
+
+def process(row):
+    global total
+    total += 1
+```
+
+Better:
+
+```python
+def process_rows(rows):
+    total = 0
+
+    for row in rows:
+        total += 1
+
+    return total
+```
+
+Interview line:
+
+```text
+I avoid global mutable state because it makes code harder to test and debug.
+```
+
+
+## 29. Comprehensions
+
+List comprehension:
+
+```python
+ids = [row["id"] for row in rows if row.get("id")]
+```
+
+Set comprehension:
+
+```python
+unique_ids = {row["id"] for row in rows if row.get("id")}
+```
+
+Dict comprehension:
+
+```python
+by_id = {row["id"]: row for row in rows if row.get("id")}
+```
+
+Use comprehensions when:
+
+```text
+logic is simple and readable
+```
+
+Avoid when:
+
+```text
+complex validation
+multiple side effects
+try/except per item
+deep nested conditions
+```
+
+Interview line:
+
+```text
+Comprehensions are good for simple transformations, but for complex validation I prefer explicit loops for readability.
+```
+
+
+## 30. Sorting
+
+Sort a list:
+
+```python
+values = sorted(values)
+```
+
+Sort records by key:
+
+```python
+rows_sorted = sorted(rows, key=lambda row: row["created_at"])
+```
+
+Sort by multiple keys:
+
+```python
+rows_sorted = sorted(
+    rows,
+    key=lambda row: (row["customer_id"], row["created_at"], row["id"]),
+)
+```
+
+Descending:
+
+```python
+rows_sorted = sorted(rows, key=lambda row: row["amount"], reverse=True)
+```
+
+Mixed direction:
+
+```python
+rows_sorted = sorted(rows, key=lambda row: (-row["amount"], row["id"]))
+```
+
+In-place sort:
+
+```python
+rows.sort(key=lambda row: row["id"])
+```
+
+Difference:
+
+```text
+sorted() returns new list.
+list.sort() mutates existing list.
+```
+
+Interview line:
+
+```text
+I make sorting tie-breakers explicit so output is deterministic.
+```
+
+
+## 31. Lambda and Key Functions
+
+Lambda is an anonymous function.
+
+```python
+key=lambda row: row["amount"]
+```
+
+Equivalent named function:
+
+```python
+def amount_key(row):
+    return row["amount"]
+```
+
+Use named function when logic is complex:
+
+```python
+def transaction_sort_key(row):
+    return (
+        row.get("customer_id") or "",
+        row.get("created_at") or "",
+        row.get("transaction_id") or "",
+    )
+
+rows = sorted(rows, key=transaction_sort_key)
+```
+
+Interview line:
+
+```text
+I use lambda for simple keys, but named key functions for readability when sorting logic is complex.
+```
+
+
+## 32. Exceptions
+
+Exceptions represent errors.
+
+Common exceptions:
+
+```text
+ValueError
+KeyError
+TypeError
+FileNotFoundError
+json.JSONDecodeError
+decimal.InvalidOperation
+```
+
+Raise an exception:
+
+```python
+if not path.exists():
+    raise FileNotFoundError(path)
+```
+
+Catch specific exception:
+
+```python
+try:
+    amount = Decimal(value)
+except InvalidOperation:
+    amount = None
+```
+
+Avoid:
+
+```python
+try:
+    ...
+except:
+    pass
+```
+
+Why:
+
+```text
+bare except hides bugs and catches unexpected system exits.
+```
+
+Interview line:
+
+```text
+I catch specific exceptions and preserve enough context to debug the bad record.
+```
+
+
+## 33. Try Except Else Finally
+
+Pattern:
+
+```python
+try:
+    result = risky_operation()
+except ValueError as exc:
+    handle_error(exc)
+else:
+    handle_success(result)
+finally:
+    cleanup()
+```
+
+Use cases:
+
+```text
+try: parse
+except: invalid record
+else: process valid parsed result
+finally: close resource if not using with
+```
+
+Usually for files:
+
+```text
+Use with-statement instead of finally close.
+```
+
+Data Engineering example:
+
+```python
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+```
+
+Interview line:
+
+```text
+I use try/except around the smallest risky operation, not around the entire pipeline.
+```
+
+
+## 34. Custom Exceptions
+
+Custom exceptions can make error categories clearer.
+
+```python
+class ValidationError(Exception):
+    pass
+
+class SchemaError(Exception):
+    pass
+```
+
+Example:
+
+```python
+def require_fields(row, fields):
+    missing = [field for field in fields if row.get(field) in (None, "")]
+
+    if missing:
+        raise ValidationError(f"Missing fields: {missing}")
+```
+
+Caution:
+
+```text
+For row-level validation, returning error lists is often better than raising for every bad row.
+```
+
+Interview line:
+
+```text
+I use exceptions for unexpected or file-level failures, and error lists for expected row-level validation failures.
+```
+
+
+## 35. Iterables and Iterators
+
+Iterable:
+
+```text
+Object you can loop over.
+```
+
+Examples:
+
+```text
+list
+tuple
+dict
+set
+string
+file object
+generator
+```
+
+Iterator:
+
+```text
+Object that returns next item when `next()` is called.
+```
+
+Example:
+
+```python
+items = iter([1, 2, 3])
+next(items)  # 1
+next(items)  # 2
+```
+
+File objects are iterable:
+
+```python
+with open("file.txt") as file:
+    for line in file:
+        ...
+```
+
+Interview line:
+
+```text
+Understanding iterables helps write memory-safe data processing code.
+```
+
+
+## 36. Generators
+
+Generator function uses `yield`.
+
+```python
+def read_ids(rows):
+    for row in rows:
+        record_id = row.get("id")
+
+        if record_id:
+            yield record_id
+```
+
+Use:
+
+```python
+for record_id in read_ids(rows):
+    ...
+```
+
+Why generators matter:
+
+```text
+lazy evaluation
+memory efficient
+streaming large files
+pipeline-friendly
+```
+
+Generator expression:
+
+```python
+ids = (row["id"] for row in rows if row.get("id"))
+```
+
+Interview line:
+
+```text
+I use generators when I want to process records one at a time without holding all output in memory.
+```
+
+
+## 37. Generator vs List
+
+List:
+
+```python
+ids = [row["id"] for row in rows]
+```
+
+Creates all values immediately.
+
+Generator:
+
+```python
+ids = (row["id"] for row in rows)
+```
+
+Creates values lazily.
+
+When to use list:
+
+```text
+need indexing
+need length
+need multiple passes
+small data
+```
+
+When to use generator:
+
+```text
+large data
+single pass
+streaming
+memory safety
+```
+
+Caution:
+
+```text
+Generators can be consumed only once.
+```
+
+Example:
+
+```python
+ids = (row["id"] for row in rows)
+list(ids)  # works
+list(ids)  # empty
+```
+
+Interview line:
+
+```text
+Generators are memory-efficient but single-use, so I convert to list only when I truly need materialization.
+```
+
+
+## 38. Context Managers
+
+Context managers manage resources.
+
+File example:
+
+```python
+with open("input.txt", "r", encoding="utf-8") as file:
+    data = file.read()
+```
+
+Why:
+
+```text
+resource setup
+safe cleanup
+works even if exception occurs
+```
+
+Custom context manager is less commonly needed in interviews, but know the idea.
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def managed_resource():
+    print("setup")
+    try:
+        yield
+    finally:
+        print("cleanup")
+```
+
+Data Engineering examples:
+
+```text
+file handles
+database connections
+temporary files
+locks
+sessions
+```
+
+Interview line:
+
+```text
+I use context managers for resources that must be closed or cleaned up reliably.
+```
+
+
+## 39. Collections Module
+
+Useful `collections` tools:
+
+```text
+Counter:
+Frequency counting.
+
+defaultdict:
+Group/aggregate without repeated key checks.
+
+deque:
+Queue and efficient popleft.
+
+namedtuple:
+Lightweight immutable records, less common now.
+
+OrderedDict:
+Mostly unnecessary in modern Python for insertion order, but still has special methods.
+```
+
+Interview line:
+
+```text
+The collections module gives interview-friendly tools for counting, grouping, queues, and efficient data processing.
+```
+
+
+## 40. Counter
+
+Counter counts frequencies.
+
+```python
+from collections import Counter
+
+event_counts = Counter()
+
+for row in rows:
+    event_type = row.get("event_type")
+
+    if event_type:
+        event_counts[event_type] += 1
+```
+
+Top N:
+
+```python
+event_counts.most_common(5)
+```
+
+Build from iterable:
+
+```python
+Counter(row["status"] for row in rows if row.get("status"))
+```
+
+Data Engineering use:
+
+```text
+count errors by type
+count records by status
+count duplicates by ID
+top event types
+```
+
+Interview line:
+
+```text
+Counter is the cleanest structure when the task is frequency counting.
+```
+
+
+## 41. defaultdict
+
+defaultdict supplies a default value for missing keys.
+
+```python
+from collections import defaultdict
+
+totals = defaultdict(int)
+
+for row in rows:
+    customer_id = row["customer_id"]
+    totals[customer_id] += row["amount"]
+```
+
+Group rows:
+
+```python
+groups = defaultdict(list)
+
+for row in rows:
+    groups[row["customer_id"]].append(row)
+```
+
+Use when:
+
+```text
+grouping
+aggregation
+building lists by key
+building nested structures
+```
+
+Interview line:
+
+```text
+defaultdict avoids repetitive `if key not in dict` logic for group-by style tasks.
+```
+
+
+## 42. deque
+
+deque supports efficient operations at both ends.
+
+```python
+from collections import deque
+
+queue = deque()
+queue.append("job1")
+queue.append("job2")
+first = queue.popleft()
+```
+
+Use for:
+
+```text
+queues
+BFS
+recent windows
+sliding windows
+rate counters
+```
+
+Avoid:
+
+```python
+list.pop(0)
+```
+
+Why:
+
+```text
+list.pop(0) is O(n), deque.popleft() is O(1).
+```
+
+Interview line:
+
+```text
+For queue behavior in Python, I use deque instead of list.
+```
+
+
+## 43. Dataclasses
+
+Dataclasses create simple structured objects.
+
+```python
+from dataclasses import dataclass
+from decimal import Decimal
+
+@dataclass
+class Transaction:
+    transaction_id: str
+    customer_id: str
+    amount: Decimal
+    currency: str
+```
+
+Use:
+
+```python
+txn = Transaction("t1", "c1", Decimal("10.50"), "INR")
+```
+
+When useful:
+
+```text
+structured internal representation
+clear fields
+type hints
+simple domain objects
+```
+
+When dict is enough:
+
+```text
+raw records
+dynamic schemas
+simple interview transformations
+JSON-like data
+```
+
+Interview line:
+
+```text
+For raw semi-structured data, dictionaries are flexible; for well-defined internal objects, dataclasses can improve clarity.
+```
+
+
+## 44. Type Hints
+
+Type hints improve readability.
+
+```python
+from typing import Iterable
+
+def count_records(rows: Iterable[dict]) -> int:
+    count = 0
+
+    for _ in rows:
+        count += 1
+
+    return count
+```
+
+Modern style:
+
+```python
+def normalize_status(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    return value.strip().upper()
+```
+
+Benefits:
+
+```text
+readability
+editor support
+static checking
+better function contracts
+```
+
+Caution:
+
+```text
+Type hints are not runtime validation by default.
+```
+
+Interview line:
+
+```text
+I use type hints to communicate intent, but I still validate external data at runtime.
+```
+
+
+## 45. Modules and Imports
+
+Import modules at top of file.
+
+```python
+import csv
+import json
+from pathlib import Path
+from collections import Counter, defaultdict
+```
+
+Avoid wildcard imports:
+
+```python
+from module import *
+```
+
+Why:
+
+```text
+unclear names
+namespace pollution
+harder debugging
+```
+
+Group imports:
+
+```text
+standard library
+third-party libraries
+local modules
+```
+
+Interview line:
+
+```text
+Clear imports make scripts easier to read and maintain.
+```
+
+
+## 46. Date and Time Basics
+
+Use `datetime`.
+
+```python
+from datetime import datetime, timezone
+
+def parse_iso_timestamp(value):
+    if not value:
+        return None
+
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+```
+
+Normalize UTC:
+
+```python
+def to_utc_iso(dt):
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    return dt.astimezone(timezone.utc).isoformat()
+```
+
+Common DE warning:
+
+```text
+Avoid naive datetimes when comparing timestamps from different systems.
+```
+
+Interview line:
+
+```text
+For pipelines, I prefer timezone-aware UTC timestamps.
+```
+
+
+## 47. Decimal for Money
+
+Do not use float for money.
+
+Bad:
+
+```python
+0.1 + 0.2
+# 0.30000000000000004
+```
+
+Use Decimal:
+
+```python
+from decimal import Decimal, InvalidOperation
+
+def parse_decimal(value):
+    if value in (None, ""):
+        return None
+
+    try:
+        return Decimal(str(value))
+    except InvalidOperation:
+        return None
+```
+
+Data Engineering use:
+
+```text
+payment data
+billing data
+financial reconciliation
+exact decimal fields
+```
+
+Interview line:
+
+```text
+For money or exact decimal fields, I use Decimal instead of float.
+```
+
+
+## 48. Regex Basics
+
+Use `re` for pattern matching.
+
+```python
+import re
+
+pattern = re.compile(r"^[A-Z]{3}$")
+
+def is_currency_code(value):
+    if value is None:
+        return False
+
+    return bool(pattern.match(value))
+```
+
+Extract from string:
+
+```python
+match = re.search(r"event_id=(\w+)", line)
+
+if match:
+    event_id = match.group(1)
+```
+
+Caution:
+
+```text
+Do not overuse regex when simple string operations are enough.
+```
+
+Interview line:
+
+```text
+I use regex for structured patterns, but simple split/strip/startswith is clearer for simple cases.
+```
+
+
+## 49. Logging Basics
+
+Use logging for scripts.
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+```
+
+Example:
+
+```python
+logger.info("processed_records=%s invalid_records=%s", valid_count, invalid_count)
+```
+
+Avoid logging:
+
+```text
+secrets
+tokens
+full PII-heavy records
+huge payloads
+```
+
+Interview line:
+
+```text
+I log counts and context so pipeline behavior can be debugged without exposing sensitive data.
+```
+
+
+## 50. argparse Basics
+
+Use argparse for command-line scripts.
+
+```python
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--invalid-output")
+    return parser.parse_args()
+```
+
+Main pattern:
+
+```python
+def main():
+    args = parse_args()
+    run(input_path=args.input, output_path=args.output)
+
+if __name__ == "__main__":
+    main()
+```
+
+Interview line:
+
+```text
+argparse makes a script configurable without changing code.
+```
+
+
+## 51. Clean Code Structure
+
+Good script structure:
+
+```python
+def read_rows(path):
+    ...
+
+def transform_row(row):
+    ...
+
+def validate_row(row):
+    ...
+
+def write_rows(path, rows):
+    ...
+
+def run(input_path, output_path):
+    ...
+
+def main():
+    ...
+```
+
+Bad:
+
+```python
+# 300 lines inside if __name__ == "__main__"
+```
+
+Why structure matters:
+
+```text
+testable
+readable
+reusable
+debuggable
+easier to review
+```
+
+Interview line:
+
+```text
+I separate parsing, transformation, validation, and writing so each part can be tested independently.
+```
+
+
+## 52. Time and Space Complexity
+
+Common Python operation complexities:
+
+| Operation | Average Complexity |
+|---|---:|
+| list append | O(1) amortized |
+| list pop end | O(1) |
+| list pop front | O(n) |
+| list membership | O(n) |
+| dict lookup | O(1) |
+| dict insert | O(1) |
+| set membership | O(1) |
+| sorting | O(n log n) |
+| Counter counting | O(n) |
+| grouping with dict | O(n) |
+| reading file line by line | O(n) time, O(1) extra memory |
+| building list of all records | O(n) memory |
+
+Interview line:
+
+```text
+I explain complexity in terms of number of records and number of unique keys.
+```
+
+
+## 53. Common Python Interview Mistakes
+
+Common mistakes:
+
+```text
+mutable default arguments
+using list for membership checks on large data
+using list.pop(0) for queue
+using bare except
+silently ignoring bad records
+mutating input unexpectedly
+not copying dictionaries before enrichment
+using float for money
+using truthiness for numeric required fields
+manual CSV splitting
+reading huge files into memory
+not preserving row numbers
+not explaining complexity
+writing one giant function
+overusing comprehensions until unreadable
+sorting without tie-breaker
+assuming dictionary order matters for business logic
+using recursion for deeply nested data without considering depth
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. The code may pass the sample, but it has a mutable default argument and will behave incorrectly across multiple calls.
+```
+
+
+## 54. Coding Problem: Normalize Records
+
+Problem:
+
+```text
+Given raw user records, normalize:
+- id as user_id
+- email lowercase/stripped
+- status uppercase/stripped
+Skip records missing id.
+```
+
+Solution:
+
+```python
+def normalize_user_records(records):
+    output = []
+
+    for record in records:
+        user_id = record.get("id")
+
+        if not user_id:
+            continue
+
+        email = record.get("email")
+        status = record.get("status")
+
+        output.append({
+            "user_id": user_id,
+            "email": email.strip().lower() if email else None,
+            "status": status.strip().upper() if status else None,
+        })
+
+    return output
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(n) for output
+```
+
+Data Engineering connection:
+
+```text
+Basic raw-to-clean record transformation.
+```
+
+
+## 55. Coding Problem: Count Records by Status
+
+Problem:
+
+```text
+Given records with status, return counts by normalized status.
+```
+
+Solution:
+
+```python
+from collections import Counter
+
+def count_by_status(records):
+    counts = Counter()
+
+    for record in records:
+        status = record.get("status")
+
+        if not status:
+            counts["UNKNOWN"] += 1
+            continue
+
+        counts[status.strip().upper()] += 1
+
+    return dict(counts)
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u), unique statuses
+```
+
+Interview point:
+
+```text
+Counter is the right tool for frequency counting.
+```
+
+
+## 56. Coding Problem: Deduplicate IDs
+
+Problem:
+
+```text
+Given records with id, return records keeping first occurrence of each id.
+```
+
+Solution:
+
+```python
+def dedupe_keep_first(records):
+    seen = set()
+    output = []
+
+    for record in records:
+        record_id = record.get("id")
+
+        if not record_id:
+            continue
+
+        if record_id in seen:
+            continue
+
+        seen.add(record_id)
+        output.append(record)
+
+    return output
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u), unique ids
+```
+
+Interview point:
+
+```text
+A set gives O(1) average membership checks.
+```
+
+
+## 57. Coding Problem: Keep Latest by ID
+
+Problem:
+
+```text
+Given records with id and updated_at, keep latest record per id.
+Assume updated_at is consistent ISO string.
+```
+
+Solution:
+
+```python
+def latest_by_id(records):
+    latest = {}
+
+    for record in records:
+        record_id = record.get("id")
+        updated_at = record.get("updated_at")
+
+        if not record_id or not updated_at:
+            continue
+
+        existing = latest.get(record_id)
+
+        if existing is None or updated_at > existing["updated_at"]:
+            latest[record_id] = record
+
+    return list(latest.values())
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+Follow-up:
+
+```text
+Parse timestamps to timezone-aware datetime for safer comparison.
+```
+
+
+## 58. Coding Problem: Group Totals by Customer
+
+Problem:
+
+```text
+Given transactions, return total amount by customer_id.
+```
+
+Solution:
+
+```python
+from collections import defaultdict
+from decimal import Decimal
+
+def total_by_customer(transactions):
+    totals = defaultdict(Decimal)
+
+    for txn in transactions:
+        customer_id = txn.get("customer_id")
+        amount = txn.get("amount")
+
+        if not customer_id or amount is None:
+            continue
+
+        totals[customer_id] += Decimal(str(amount))
+
+    return dict(totals)
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+Interview point:
+
+```text
+defaultdict is natural for group-by aggregation.
+```
+
+
+## 59. Coding Problem: Sort Records by Multiple Fields
+
+Problem:
+
+```text
+Sort records by customer_id ascending, created_at ascending, amount descending.
+```
+
+Solution:
+
+```python
+def sort_transactions(records):
+    return sorted(
+        records,
+        key=lambda row: (
+            row.get("customer_id") or "",
+            row.get("created_at") or "",
+            -row.get("amount", 0),
+        ),
+    )
+```
+
+Caution:
+
+```text
+This assumes amount is numeric.
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n) for sorted output
+```
+
+Interview point:
+
+```text
+Use tuple sort keys for multiple fields.
+```
+
+
+## 60. Coding Problem: Split Valid and Invalid
+
+Problem:
+
+```text
+Split rows into valid and invalid.
+Valid rows require id and non-null amount.
+```
+
+Solution:
+
+```python
+def validate_amount_row(row):
+    errors = []
+
+    if not row.get("id"):
+        errors.append("missing_id")
+
+    if row.get("amount") is None:
+        errors.append("missing_amount")
+
+    return errors
+
+def split_valid_invalid(rows):
+    valid = []
+    invalid = []
+
+    for index, row in enumerate(rows, start=1):
+        errors = validate_amount_row(row)
+
+        if errors:
+            invalid.append({
+                "row_number": index,
+                "row": row,
+                "errors": errors,
+            })
+        else:
+            valid.append(row)
+
+    return valid, invalid
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(n)
+```
+
+Interview point:
+
+```text
+Return invalid records with reasons instead of silently dropping them.
+```
+
+
+## 61. Coding Problem: Safe Nested Access
+
+Problem:
+
+```text
+Extract customer country from nested record.
+```
+
+Solution:
+
+```python
+def get_nested(record, path, default=None):
+    current = record
+
+    for key in path:
+        if not isinstance(current, dict):
+            return default
+
+        current = current.get(key)
+
+        if current is None:
+            return default
+
+    return current
+
+def extract_customer_country(record):
+    return get_nested(record, ["customer", "address", "country"])
+```
+
+Complexity:
+
+```text
+Time: O(depth)
+Space: O(1)
+```
+
+Data Engineering connection:
+
+```text
+Nested API JSON flattening.
+```
+
+
+## 62. Coding Problem: Flatten Records
+
+Problem:
+
+```text
+Flatten order records into explicit output fields.
+```
+
+Solution:
+
+```python
+def flatten_order(order):
+    return {
+        "order_id": order.get("id"),
+        "customer_id": get_nested(order, ["customer", "id"]),
+        "customer_email": get_nested(order, ["customer", "email"]),
+        "shipping_country": get_nested(order, ["shipping", "country"]),
+        "total_amount": order.get("total_amount"),
+    }
+```
+
+Interview point:
+
+```text
+Explicit flattening is clearer and safer than generic flattening for warehouse schemas.
+```
+
+
+## 63. Coding Problem: Generator for Valid Rows
+
+Problem:
+
+```text
+Yield only valid rows from an iterable.
+```
+
+Solution:
+
+```python
+def iter_valid_rows(rows, validate_fn):
+    for row in rows:
+        errors = validate_fn(row)
+
+        if not errors:
+            yield row
+```
+
+Usage:
+
+```python
+for row in iter_valid_rows(rows, validate_amount_row):
+    process(row)
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(1) extra
+```
+
+Interview point:
+
+```text
+Generators are useful when valid rows should be streamed instead of materialized.
+```
+
+
+## 64. Coding Problem: Batch Iterator
+
+Problem:
+
+```text
+Create batches of size k from an iterable.
+```
+
+Solution:
+
+```python
+def batched(iterable, batch_size):
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+
+    batch = []
+
+    for item in iterable:
+        batch.append(item)
+
+        if len(batch) >= batch_size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(batch_size)
+```
+
+Data Engineering connection:
+
+```text
+Batch API writes, database inserts, file processing chunks.
+```
+
+
+## 65. Coding Problem: Parse Key-Value Log Line
+
+Problem:
+
+```text
+Parse:
+"2026-01-01T10:00:00Z INFO service=orders event=created id=123"
+```
+
+Solution:
+
+```python
+def parse_key_value_log(line):
+    parts = line.strip().split()
+
+    if len(parts) < 2:
+        return None
+
+    record = {
+        "timestamp": parts[0],
+        "level": parts[1],
+    }
+
+    for token in parts[2:]:
+        if "=" not in token:
+            continue
+
+        key, value = token.split("=", 1)
+        record[key] = value
+
+    return record
+```
+
+Complexity:
+
+```text
+Time: O(tokens)
+Space: O(tokens)
+```
+
+Interview point:
+
+```text
+Use split("=", 1) so values containing equals are preserved.
+```
+
+
+## 66. Coding Problem: Find Missing IDs
+
+Problem:
+
+```text
+Given expected_ids and actual_ids, return missing IDs sorted.
+```
+
+Solution:
+
+```python
+def find_missing_ids(expected_ids, actual_ids):
+    expected = set(expected_ids)
+    actual = set(actual_ids)
+
+    return sorted(expected - actual)
+```
+
+Complexity:
+
+```text
+Time: O(n + m + k log k)
+Space: O(n + m)
+```
+
+Data Engineering connection:
+
+```text
+Source-target reconciliation.
+```
+
+
+## 67. Coding Problem: Merge Dictionaries Safely
+
+Problem:
+
+```text
+Add metadata fields to each record without mutating original records.
+```
+
+Solution:
+
+```python
+def add_metadata(records, metadata):
+    output = []
+
+    for record in records:
+        enriched = dict(record)
+        enriched.update(metadata)
+        output.append(enriched)
+
+    return output
+```
+
+Why copy:
+
+```text
+Avoid mutating input records unexpectedly.
+```
+
+Interview line:
+
+```text
+I copy the dictionary before enrichment if the caller may still need the original record unchanged.
+```
+
+
+## 68. Coding Problem: Build Index by ID
+
+Problem:
+
+```text
+Build dictionary mapping id to record.
+If duplicate id appears, keep latest occurrence.
+```
+
+Solution:
+
+```python
+def index_by_id(records):
+    index = {}
+
+    for record in records:
+        record_id = record.get("id")
+
+        if record_id:
+            index[record_id] = record
+
+    return index
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+Follow-up:
+
+```text
+Detect duplicates instead of overwriting.
+```
+
+
+## 69. Coding Problem: Detect Duplicates
+
+Problem:
+
+```text
+Return duplicate IDs and counts.
+```
+
+Solution:
+
+```python
+from collections import Counter
+
+def duplicate_counts(records):
+    counts = Counter()
+
+    for record in records:
+        record_id = record.get("id")
+
+        if record_id:
+            counts[record_id] += 1
+
+    return {
+        record_id: count
+        for record_id, count in counts.items()
+        if count > 1
+    }
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(u)
+```
+
+
+## 70. Coding Problem: Normalize Column Names
+
+Problem:
+
+```text
+Convert column names to lowercase snake_case.
+```
+
+Solution:
+
+```python
+import re
+
+def normalize_column_name(name):
+    name = name.strip()
+    name = re.sub(r"[^0-9a-zA-Z]+", "_", name)
+    name = re.sub(r"_+", "_", name)
+    return name.strip("_").lower()
+```
+
+Examples:
+
+```python
+normalize_column_name("Customer ID")  # customer_id
+normalize_column_name("Amount($)")    # amount
+```
+
+Data Engineering connection:
+
+```text
+Stable column names for warehouse tables.
+```
+
+
+## 71. Coding Problem: Apply Mapping
+
+Problem:
+
+```text
+Map source fields to target fields using config.
+```
+
+Solution:
+
+```python
+def map_fields(record, field_map):
+    output = {}
+
+    for source_field, target_field in field_map.items():
+        output[target_field] = record.get(source_field)
+
+    return output
+```
+
+Example:
+
+```python
+field_map = {
+    "id": "transaction_id",
+    "cust": "customer_id",
+    "amt": "amount",
+}
+```
+
+Interview point:
+
+```text
+Config-driven mapping is useful for similar vendor files, but validation must still be explicit.
+```
+
+
+## 72. Coding Problem: Top N Values
+
+Problem:
+
+```text
+Return top N records by amount.
+```
+
+Simple solution:
+
+```python
+def top_n_by_amount(records, n):
+    return sorted(
+        records,
+        key=lambda row: row.get("amount", 0),
+        reverse=True,
+    )[:n]
+```
+
+Complexity:
+
+```text
+Time: O(n log n)
+Space: O(n)
+```
+
+Heap solution for large n small k:
+
+```python
+import heapq
+
+def top_n_by_amount_heap(records, n):
+    return heapq.nlargest(n, records, key=lambda row: row.get("amount", 0))
+```
+
+Interview point:
+
+```text
+For simple interviews sorted is fine; for large data and small N, heap is more efficient.
+```
+
+
+## 73. Coding Problem: Safe Parse Int
+
+Problem:
+
+```text
+Parse integer safely. Return None for invalid values.
+```
+
+Solution:
+
+```python
+def parse_int(value):
+    if value in (None, ""):
+        return None
+
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+```
+
+Interview point:
+
+```text
+Bad numeric input should become validation error, not silently become zero.
+```
+
+
+## 74. Coding Problem: Invalid Rate Threshold
+
+Problem:
+
+```text
+Fail if invalid ratio is above threshold.
+```
+
+Solution:
+
+```python
+def enforce_invalid_ratio(valid_count, invalid_count, max_invalid_ratio=0.05):
+    total = valid_count + invalid_count
+
+    if total == 0:
+        return
+
+    ratio = invalid_count / total
+
+    if ratio > max_invalid_ratio:
+        raise RuntimeError(f"Invalid ratio too high: {ratio:.2%}")
+```
+
+Interview point:
+
+```text
+A few bad rows can be dead-lettered, but high invalid rate likely means schema/source failure.
+```
+
+
+## 75. Coding Problem: Summary Metrics
+
+Problem:
+
+```text
+Return summary metrics for processed records.
+```
+
+Solution:
+
+```python
+def build_summary(records):
+    total = 0
+    missing_id = 0
+    valid = 0
+
+    for record in records:
+        total += 1
+
+        if not record.get("id"):
+            missing_id += 1
+        else:
+            valid += 1
+
+    return {
+        "total_records": total,
+        "valid_records": valid,
+        "missing_id_records": missing_id,
+    }
+```
+
+Complexity:
+
+```text
+Time: O(n)
+Space: O(1)
+```
+
+
+## 76. Coding Problem: Pure Transform Pipeline
+
+Problem:
+
+```text
+Create testable pipeline functions for transform and validate.
+```
+
+Solution:
+
+```python
+def transform_raw_transaction(raw):
+    return {
+        "transaction_id": raw.get("id"),
+        "customer_id": raw.get("customer_id"),
+        "amount": parse_decimal(raw.get("amount")),
+        "currency": normalize_currency(raw.get("currency")),
+    }
+
+def normalize_currency(value):
+    if value is None:
+        return None
+
+    return value.strip().upper()
+
+def validate_clean_transaction(row):
+    errors = []
+
+    if not row.get("transaction_id"):
+        errors.append("missing_transaction_id")
+
+    if row.get("amount") is None:
+        errors.append("invalid_amount")
+
+    return errors
+```
+
+Interview point:
+
+```text
+Pure functions are easy to test and reuse inside file/API/pipeline code.
+```
+
+
+## 77. Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Need fast membership check for processed IDs.
+2. Need ordered records with duplicates.
+3. Need key-value record representation.
+4. Need immutable composite key customer_id + date.
+5. Need count by event_type.
+6. Need group rows by customer_id.
+7. Need queue with popleft.
+8. Need avoid loading large output list.
+9. Need sort rows by two fields.
+10. Need safely parse amount string.
+11. Need treat 0 as valid amount.
+12. Need avoid mutating input record.
+13. Need handle missing nested customer.address.country.
+14. Need split rows into valid and invalid.
+15. Need fail if too many invalid rows.
+16. Need avoid default list shared across function calls.
+17. Need read file safely.
+18. Need line numbers while looping.
+19. Need top 10 records.
+20. Need parse key=value log tokens.
+```
+
+Expected classification:
+
+```text
+1. set
+2. list
+3. dict
+4. tuple
+5. Counter
+6. defaultdict(list)
+7. deque
+8. generator
+9. sorted with tuple key
+10. Decimal/int parser with try/except
+11. check is None, not truthiness
+12. dict copy
+13. get_nested helper
+14. validation split
+15. invalid ratio threshold
+16. use None default
+17. context manager
+18. enumerate
+19. sorted or heapq
+20. split("=", 1)
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed Python fundamentals mocks.
+```
+
+
+## 78. High-ROI Python Fundamentals Topics
+
+Practice these first.
+
+| Topic | What Candidate Must Explain |
+|---|---|
+| mutability | list/dict/set vs str/tuple/int |
+| references | assignment does not copy |
+| list | ordered collection |
+| dict | O(1) average lookup |
+| set | O(1) average membership |
+| tuple | immutable composite keys |
+| Counter | frequency counting |
+| defaultdict | grouping and aggregation |
+| deque | queue and popleft |
+| comprehensions | readable simple transforms |
+| sorting | key functions and tie-breakers |
+| functions | testable units |
+| default arguments | avoid mutable defaults |
+| exceptions | catch specific errors |
+| generators | streaming and memory |
+| context managers | safe resources |
+| None handling | distinguish missing from zero |
+| Decimal | exact money values |
+| datetime | timezone-aware timestamps |
+| logging | operational visibility |
+
+
+## 79. Practice Ladder
+
+### Level 1: Types and control flow
+
+```text
+variables
+truthiness
+None
+strings
+lists
+loops
+functions
+```
+
+Exit:
+
+```text
+Candidate writes clean basic Python and handles missing values.
+```
+
+### Level 2: Core data structures
+
+```text
+dict
+set
+tuple
+Counter
+defaultdict
+deque
+```
+
+Exit:
+
+```text
+Candidate chooses correct structure by access pattern.
+```
+
+### Level 3: Transformation patterns
+
+```text
+normalization
+validation
+dedupe
+grouping
+sorting
+nested access
+```
+
+Exit:
+
+```text
+Candidate solves common record-processing tasks.
+```
+
+### Level 4: Robust Python
+
+```text
+exceptions
+generators
+context managers
+typing
+dataclasses
+Decimal
+datetime
+regex
+```
+
+Exit:
+
+```text
+Candidate writes safe and maintainable scripts.
+```
+
+### Level 5: Data Engineering application
+
+```text
+clean ETL functions
+invalid record handling
+batching
+summary metrics
+idempotency awareness
+testable structure
+```
+
+Exit:
+
+```text
+Candidate connects Python fundamentals to production pipeline behavior.
+```
+
+
+## 80. 7-Day Python Fundamentals Plan
+
+### Day 1: Types and mutability
+
+Problems:
+
+```text
+Explain references.
+Fix mutable default argument.
+Copy dictionary before enrichment.
+Handle None vs zero.
+Normalize strings.
+```
+
+Focus:
+
+```text
+mutability
+truthiness
+references
+```
+
+### Day 2: Lists, tuples, sets, dicts
+
+Problems:
+
+```text
+Deduplicate IDs.
+Find missing IDs.
+Build index by ID.
+Use tuple composite key.
+Compare source/target sets.
+```
+
+Focus:
+
+```text
+data structure selection
+complexity
+```
+
+### Day 3: Functions and clean code
+
+Problems:
+
+```text
+Write transform function.
+Write validate function.
+Split valid/invalid rows.
+Build summary metrics.
+Refactor giant script into functions.
+```
+
+Focus:
+
+```text
+testability
+single responsibility
+```
+
+### Day 4: Collections and sorting
+
+Problems:
+
+```text
+Count records by status.
+Group totals by customer.
+Detect duplicate counts.
+Sort records by multiple fields.
+Top N records.
+```
+
+Focus:
+
+```text
+Counter
+defaultdict
+sorted key
+heap basics
+```
+
+### Day 5: Robustness
+
+Problems:
+
+```text
+Safe parse int.
+Safe parse Decimal.
+Catch specific exceptions.
+Use invalid threshold.
+Parse key-value logs.
+```
+
+Focus:
+
+```text
+bad input
+error handling
+```
+
+### Day 6: Iteration and memory
+
+Problems:
+
+```text
+Write generator for valid rows.
+Write batch iterator.
+Use context manager.
+Explain generator vs list.
+Process records streaming.
+```
+
+Focus:
+
+```text
+generators
+iterators
+memory
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run Mock Set 3 or 4.
+Review mistakes.
+Repair weakest topic.
+Update progress.
+```
+
+
+## 81. 30-Day Python Fundamentals Plan
+
+### Week 1: Basic syntax and types
+
+Focus:
+
+```text
+strings
+lists
+dicts
+sets
+tuples
+truthiness
+None
+mutability
+references
+```
+
+Exit:
+
+```text
+Candidate avoids basic Python bugs and explains data types.
+```
+
+### Week 2: Functions and data structures
+
+Focus:
+
+```text
+functions
+default args
+Counter
+defaultdict
+deque
+sorting
+comprehensions
+```
+
+Exit:
+
+```text
+Candidate solves common record tasks cleanly.
+```
+
+### Week 3: Robust processing
+
+Focus:
+
+```text
+exceptions
+generators
+context managers
+Decimal
+datetime
+regex
+logging
+typing
+```
+
+Exit:
+
+```text
+Candidate writes safe pipeline-friendly Python.
+```
+
+### Week 4: Interview application
+
+Focus:
+
+```text
+validation
+dedupe
+grouping
+flattening
+batching
+summary metrics
+mock interviews
+production reasoning
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 82. Mock Set 1: Basic Python
+
+Problems:
+
+```text
+1. Explain mutable vs immutable with examples.
+2. Fix a mutable default argument bug.
+3. Normalize string fields.
+4. Handle None vs zero correctly.
+5. Copy records before enrichment.
+```
+
+Expected skills:
+
+```text
+mutability
+references
+truthiness
+clean functions
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate can explain why the bug happens.
+```
+
+
+## 83. Mock Set 2: Data Structures
+
+Problems:
+
+```text
+1. Deduplicate records by ID.
+2. Count records by status.
+3. Group totals by customer.
+4. Find missing IDs.
+5. Sort records by multiple fields.
+```
+
+Expected skills:
+
+```text
+set
+dict
+Counter
+defaultdict
+sorted
+complexity
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains why each data structure fits.
+```
+
+
+## 84. Mock Set 3: Robust Data Processing
+
+Problems:
+
+```text
+1. Split valid and invalid records.
+2. Safe parse Decimal amount.
+3. Safe nested access.
+4. Batch iterator.
+5. Invalid-rate threshold.
+```
+
+Expected skills:
+
+```text
+validation
+exceptions
+Decimal
+generators
+bad-data handling
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate avoids silent bad-row dropping.
+```
+
+
+## 85. Mock Set 4: Data Engineering Python
+
+Problems:
+
+```text
+1. Transform raw transactions.
+2. Keep latest transaction per ID.
+3. Build summary metrics.
+4. Parse key-value log lines.
+5. Design testable ETL function structure.
+```
+
+Expected skills:
+
+```text
+record transformation
+deduplication
+summary aggregation
+log parsing
+clean code
+DE relevance
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate connects code to pipeline behavior.
+```
+
+
+## 86. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Simple fundamentals problem
+
+```text
+10-15 minutes
+```
+
+### Medium record-processing problem
+
+```text
+20-35 minutes
+```
+
+### Robust pipeline-style problem
+
+```text
+35-45 minutes
+```
+
+Per coding drill:
+
+```text
+Minute 0-3:
+Clarify input/output and edge cases.
+
+Minute 3-6:
+Choose data structures.
+
+Minute 6-20:
+Code clean functions.
+
+Minute 20-30:
+Add validation and edge cases.
+
+Minute 30-35:
+Explain complexity and DE connection.
+```
+
+If candidate cannot explain chosen structure:
+
+```text
+Stop and run pattern classification drill.
+```
+
+
+## 87. Review Checklist
+
+Review Python fundamentals answers using:
+
+```text
+1. Did candidate clarify input and output?
+2. Did candidate choose correct data structures?
+3. Did candidate explain mutability/reference behavior when relevant?
+4. Did candidate avoid mutable default arguments?
+5. Did candidate handle None vs falsy values correctly?
+6. Did candidate avoid unexpected input mutation?
+7. Did candidate use set/dict for membership/lookup?
+8. Did candidate use Counter/defaultdict where helpful?
+9. Did candidate write readable functions?
+10. Did candidate avoid overcomplicated comprehensions?
+11. Did candidate catch specific exceptions?
+12. Did candidate avoid bare except?
+13. Did candidate use generators when memory matters?
+14. Did candidate use context managers for resources?
+15. Did candidate handle missing fields?
+16. Did candidate return invalid records with reasons when needed?
+17. Did candidate sort deterministically?
+18. Did candidate explain time complexity?
+19. Did candidate explain space complexity?
+20. Did candidate connect solution to DE pipelines?
+```
+
+Verdict examples:
+
+```text
+Works on sample but wrong structure.
+Correct logic but mutates input unexpectedly.
+Good transform but missing validation.
+Good code but no complexity.
+Good Python but weak DE connection.
+Interview-ready.
+Strong.
+```
+
+
+## 88. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Mutability confusion | Reference/copy drills |
+| Mutable default bug | Default argument repair |
+| List membership on large data | Set membership drills |
+| Wrong dictionary usage | Lookup/index-by-key drills |
+| Cannot group/count | Counter/defaultdict drills |
+| Sort key confusion | Multi-field sorting drills |
+| None vs zero bug | Truthiness drills |
+| Mutates input unexpectedly | Copy/enrichment drills |
+| Bare except | Specific exception drills |
+| No validation | Valid/invalid split drills |
+| Memory-heavy lists | Generator drills |
+| Queue with list.pop(0) | deque drills |
+| Unreadable comprehension | Refactor to loop drills |
+| No complexity explanation | Big-O operation drills |
+| No DE connection | ETL scenario drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 89. Communication Scripts
+
+### Data structure script
+
+```text
+I use a dictionary here because I need fast lookup by ID. This reduces repeated search from O(n) per lookup to O(1) average.
+```
+
+### Set script
+
+```text
+I use a set because I only need uniqueness and membership checks, not ordering or duplicates.
+```
+
+### Counter script
+
+```text
+This is a frequency-count problem, so Counter is the cleanest option.
+```
+
+### defaultdict script
+
+```text
+This is a group-by aggregation, so defaultdict lets me update each key without checking whether it already exists.
+```
+
+### Generator script
+
+```text
+I use a generator because the data can be large and I only need to process one record at a time.
+```
+
+### Validation script
+
+```text
+I separate validation from transformation so invalid records can be captured with clear reasons.
+```
+
+### Mutability script
+
+```text
+I copy the dictionary before modifying it because assignment would otherwise keep a reference to the same object.
+```
+
+### DE script
+
+```text
+This pattern maps to common data pipeline tasks like deduplication, aggregation, validation, raw-to-clean transformation, and reconciliation.
+```
+
+
+## 90. Candidate Self-Review Questions
+
+After every Python fundamentals problem, candidate should answer:
+
+```text
+1. What is the input?
+2. What is the output?
+3. What data structure did I choose?
+4. Why that structure?
+5. Is input mutated?
+6. Are missing values handled?
+7. Are zero/False valid values?
+8. Are duplicates possible?
+9. Is order important?
+10. Do I need sorting?
+11. Can this be streamed?
+12. Is a generator better than a list?
+13. What exceptions can happen?
+14. What is time complexity?
+15. What is space complexity?
+16. How would I test this?
+17. What Data Engineering scenario uses this?
+```
+
+If candidate cannot answer these:
+
+```text
+The Python solution is not interview-ready.
+```
+
+
+## 91. Maintenance Drills
+
+After completing Python fundamentals, maintain skill with:
+
+```text
+1 mutability/default argument drill per week
+1 dict/set/Counter/defaultdict drill per week
+1 sorting/comprehension drill per week
+1 generator/context-manager drill every 2 weeks
+1 validation/dedup/grouping drill every week
+1 full DE Python mock every month
+```
+
+Maintenance rotation:
+
+```text
+Week 1: mutability + dictionary lookup
+Week 2: Counter/defaultdict + sorting
+Week 3: validation + generators
+Week 4: ETL-style transformation mock
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed topic.
+```
+
+
+## 92. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# Python Fundamentals Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Topic | Score | Time | Mistake | Next Action
+
+## Topic Scores
+
+Variables/references:
+Mutability:
+Truthiness/None:
+Strings:
+Lists:
+Tuples:
+Dictionaries:
+Sets:
+Hashability:
+Loops:
+Functions:
+Default arguments:
+Comprehensions:
+Sorting:
+Exceptions:
+Generators:
+Context managers:
+Counter:
+defaultdict:
+deque:
+Dataclasses:
+Type hints:
+Datetime:
+Decimal:
+Regex:
+Logging:
+argparse:
+Validation:
+Deduplication:
+Grouping:
+Nested access:
+Complexity:
+DE connection:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 93. Final Exit Test
+
+Candidate passes Python fundamentals when they can solve/explain:
+
+```text
+1. Variables and references.
+2. Mutable vs immutable.
+3. Mutable default argument bug.
+4. Truthiness and None handling.
+5. String normalization.
+6. List operations and slicing.
+7. Tuple composite keys.
+8. Dictionary lookup and get.
+9. Set membership and set difference.
+10. Hashability.
+11. Loops and enumerate.
+12. Functions and clean return values.
+13. Comprehensions.
+14. Sorting with key and tie-breakers.
+15. Specific exception handling.
+16. Generators.
+17. Context managers.
+18. Counter frequency counts.
+19. defaultdict grouping.
+20. deque queue usage.
+21. Dataclass basics.
+22. Type hints.
+23. Decimal parsing.
+24. Datetime parsing.
+25. Regex basics.
+26. Logging basics.
+27. argparse basics.
+28. Normalize records.
+29. Count by status.
+30. Deduplicate IDs.
+31. Keep latest by ID.
+32. Group totals by customer.
+33. Split valid and invalid rows.
+34. Safe nested access.
+35. Batch iterator.
+36. Parse key-value logs.
+37. Explain time and space complexity.
+38. Connect Python constructs to Data Engineering pipelines.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No mutable default bugs.
+No None/zero confusion.
+No wrong data structure choice.
+No silent bad-data handling.
+No missing complexity explanation.
+Can connect Python fundamentals to DE interview tasks.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate explains trade-offs, memory, mutability, streaming, testability, and production relevance under pressure.
+```
+
+
+## 94. Final Summary
+
+Python fundamentals are the base layer for Data Engineering interviews.
+
+They map directly to:
+
+```text
+ETL scripts
+API ingestion
+CSV/JSON processing
+data validation
+deduplication
+aggregation
+file processing
+pipeline utilities
+log parsing
+data quality checks
+reconciliation
+backfills
+orchestration helpers
+```
+
+The candidate must master:
+
+```text
+variables and references
+mutability
+truthiness
+None handling
+strings
+lists
+tuples
+dictionaries
+sets
+hashability
+loops
+functions
+default arguments
+comprehensions
+sorting
+exceptions
+generators
+context managers
+Counter
+defaultdict
+deque
+dataclasses
+type hints
+datetime
+Decimal
+regex
+logging
+argparse
+clean code structure
+complexity
+Data Engineering applications
+```
+
+The mentor must be strict:
+
+```text
+Mutable default argument → not interview-ready.
+Wrong data structure → not interview-ready.
+No bad-input handling → not interview-ready.
+No complexity explanation → not interview-ready.
+No DE connection → not interview-ready.
+```
+
+The goal is not to memorize Python syntax.
+
+The goal is to use Python fundamentals to write reliable, readable, efficient, interview-ready Data Engineering code.
+
+
+## 95. Problem Card Appendix
+
+### Card 1: Normalize Records
+
+Topic:
+
+```text
+strings + dict
+```
+
+Core idea:
+
+```text
+Clean raw fields and rename keys.
+```
+
+Data Engineering connection:
+
+```text
+Raw-to-clean transformation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Count by Status
+
+Topic:
+
+```text
+Counter
+```
+
+Core idea:
+
+```text
+Frequency count normalized statuses.
+```
+
+Data Engineering connection:
+
+```text
+Data-quality metrics.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Deduplicate IDs
+
+Topic:
+
+```text
+set
+```
+
+Core idea:
+
+```text
+Keep first record per ID.
+```
+
+Data Engineering connection:
+
+```text
+Remove duplicate events.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Keep Latest by ID
+
+Topic:
+
+```text
+dict
+```
+
+Core idea:
+
+```text
+Track latest updated_at per key.
+```
+
+Data Engineering connection:
+
+```text
+Incremental sync merge.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Group Totals
+
+Topic:
+
+```text
+defaultdict
+```
+
+Core idea:
+
+```text
+Aggregate amount by customer.
+```
+
+Data Engineering connection:
+
+```text
+Group-by metrics.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Sort Records
+
+Topic:
+
+```text
+sorted key
+```
+
+Core idea:
+
+```text
+Sort by multiple fields.
+```
+
+Data Engineering connection:
+
+```text
+Deterministic output.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Split Valid Invalid
+
+Topic:
+
+```text
+validation
+```
+
+Core idea:
+
+```text
+Return valid rows and invalid with reasons.
+```
+
+Data Engineering connection:
+
+```text
+Dead-letter handling.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Safe Nested Access
+
+Topic:
+
+```text
+dict traversal
+```
+
+Core idea:
+
+```text
+Avoid KeyError on nested JSON.
+```
+
+Data Engineering connection:
+
+```text
+API JSON flattening.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Generator Valid Rows
+
+Topic:
+
+```text
+generator
+```
+
+Core idea:
+
+```text
+Yield valid records lazily.
+```
+
+Data Engineering connection:
+
+```text
+Streaming processing.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: Batch Iterator
+
+Topic:
+
+```text
+generator/list
+```
+
+Core idea:
+
+```text
+Yield batches of fixed size.
+```
+
+Data Engineering connection:
+
+```text
+Batch writes.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Parse Logs
+
+Topic:
+
+```text
+strings/dict
+```
+
+Core idea:
+
+```text
+Parse key=value tokens.
+```
+
+Data Engineering connection:
+
+```text
+Log ingestion.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Missing IDs
+
+Topic:
+
+```text
+set difference
+```
+
+Core idea:
+
+```text
+Compare expected and actual IDs.
+```
+
+Data Engineering connection:
+
+```text
+Reconciliation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Add Metadata
+
+Topic:
+
+```text
+dict copy
+```
+
+Core idea:
+
+```text
+Enrich without mutating input.
+```
+
+Data Engineering connection:
+
+```text
+Pipeline metadata.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Index by ID
+
+Topic:
+
+```text
+dict
+```
+
+Core idea:
+
+```text
+Build key lookup.
+```
+
+Data Engineering connection:
+
+```text
+Fast joins/lookups.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Duplicate Counts
+
+Topic:
+
+```text
+Counter
+```
+
+Core idea:
+
+```text
+Find repeated IDs.
+```
+
+Data Engineering connection:
+
+```text
+Data quality.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Normalize Columns
+
+Topic:
+
+```text
+regex
+```
+
+Core idea:
+
+```text
+Snake_case column names.
+```
+
+Data Engineering connection:
+
+```text
+Warehouse schema.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: Apply Mapping
+
+Topic:
+
+```text
+dict config
+```
+
+Core idea:
+
+```text
+Map source to target fields.
+```
+
+Data Engineering connection:
+
+```text
+Vendor transformations.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 18: Top N Values
+
+Topic:
+
+```text
+sorted/heapq
+```
+
+Core idea:
+
+```text
+Return largest records.
+```
+
+Data Engineering connection:
+
+```text
+Top metrics.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 19: Safe Parse Int
+
+Topic:
+
+```text
+exception handling
+```
+
+Core idea:
+
+```text
+Invalid numeric handling.
+```
+
+Data Engineering connection:
+
+```text
+Dirty file parsing.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 20: Invalid Threshold
+
+Topic:
+
+```text
+validation metrics
+```
+
+Core idea:
+
+```text
+Fail on high bad-row rate.
+```
+
+Data Engineering connection:
+
+```text
+Schema drift protection.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input/output shape.
+2. Chosen data structure.
+3. Why that structure fits.
+4. Edge cases.
+5. Time complexity.
+6. Space complexity.
+7. Production consideration.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 96. Data Engineering Scenario Appendix
+
+### Scenario 1: Raw Transaction Cleanup
+
+Pattern:
+
+```text
+strings + Decimal + validation
+```
+
+Task:
+
+```text
+Normalize raw transaction rows.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 2: Event Frequency Report
+
+Pattern:
+
+```text
+Counter
+```
+
+Task:
+
+```text
+Count events by type/status.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 3: Customer Spend Aggregation
+
+Pattern:
+
+```text
+defaultdict
+```
+
+Task:
+
+```text
+Total amount by customer.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 4: Latest Profile Merge
+
+Pattern:
+
+```text
+dict latest by id
+```
+
+Task:
+
+```text
+Keep latest user profile.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 5: Source Target Reconciliation
+
+Pattern:
+
+```text
+sets
+```
+
+Task:
+
+```text
+Find missing and extra IDs.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 6: Nested API Flattening
+
+Pattern:
+
+```text
+get_nested
+```
+
+Task:
+
+```text
+Flatten nested customer/order JSON.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 7: Streaming Valid Rows
+
+Pattern:
+
+```text
+generator
+```
+
+Task:
+
+```text
+Process only valid rows lazily.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 8: Batch Database Writes
+
+Pattern:
+
+```text
+batch iterator
+```
+
+Task:
+
+```text
+Group records into batch_size chunks.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 9: Log Parser
+
+Pattern:
+
+```text
+string splitting
+```
+
+Task:
+
+```text
+Parse service/event/id fields.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 10: Schema Mapping
+
+Pattern:
+
+```text
+dict mapping
+```
+
+Task:
+
+```text
+Convert source fields to target fields.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 11: Invalid Data Gate
+
+Pattern:
+
+```text
+invalid threshold
+```
+
+Task:
+
+```text
+Fail if bad-row ratio too high.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 12: Deterministic Output
+
+Pattern:
+
+```text
+sorting key
+```
+
+Task:
+
+```text
+Sort by stable tie-breakers.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 13: Money Parsing
+
+Pattern:
+
+```text
+Decimal
+```
+
+Task:
+
+```text
+Avoid float precision issues.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 14: Time Normalization
+
+Pattern:
+
+```text
+datetime
+```
+
+Task:
+
+```text
+Parse/normalize timestamps.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 15: PII-Safe Logging
+
+Pattern:
+
+```text
+logging discipline
+```
+
+Task:
+
+```text
+Log counts, not sensitive payloads.
+```
+
+Minimum expected answer:
+
+```text
+1. State Python feature or structure.
+2. State why it fits.
+3. Provide code or pseudocode.
+4. Explain edge cases.
+5. Explain DE production relevance.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 97. Drill Appendix
+
+### Drill 1: Mutability Drill
+
+Task:
+
+```text
+Explain and fix reference/copy and mutable default bugs.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Truthiness Drill
+
+Task:
+
+```text
+Handle None, zero, empty string, and False correctly.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: String Drill
+
+Task:
+
+```text
+Normalize status, currency, and log tokens.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: List Drill
+
+Task:
+
+```text
+Use append, slicing, and explain memory cost.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: Dict Drill
+
+Task:
+
+```text
+Build index by ID and safe get access.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Set Drill
+
+Task:
+
+```text
+Find missing IDs and dedupe records.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Tuple Drill
+
+Task:
+
+```text
+Use composite group-by keys.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Counter Drill
+
+Task:
+
+```text
+Count duplicates and event frequencies.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: defaultdict Drill
+
+Task:
+
+```text
+Group and aggregate records by key.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: deque Drill
+
+Task:
+
+```text
+Implement queue-style processing.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Sorting Drill
+
+Task:
+
+```text
+Sort by multiple fields with tie-breakers.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Function Drill
+
+Task:
+
+```text
+Refactor script logic into pure functions.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Exception Drill
+
+Task:
+
+```text
+Parse numbers safely with specific exceptions.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Generator Drill
+
+Task:
+
+```text
+Stream valid rows and batches.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Context Manager Drill
+
+Task:
+
+```text
+Use with-open and explain cleanup.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Decimal Drill
+
+Task:
+
+```text
+Parse and sum money values.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: Datetime Drill
+
+Task:
+
+```text
+Parse ISO timestamps and normalize UTC.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Regex Drill
+
+Task:
+
+```text
+Normalize column names and validate patterns.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 19: Logging Drill
+
+Task:
+
+```text
+Log summary counts safely.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 20: Full Mock
+
+Task:
+
+```text
+Build a raw-to-clean transformation with validation and summary.
+```
+
+Minimum passing answer:
+
+```text
+1. Explain the relevant Python concept.
+2. Write clean code.
+3. Handle edge cases.
+4. Explain complexity.
+5. Connect to Data Engineering.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 98. Quick Reference Cards
+
+### Quick Card 1: list
+
+Summary:
+
+```text
+Ordered, mutable, duplicates allowed.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 2: tuple
+
+Summary:
+
+```text
+Ordered, immutable, usable as composite key if elements are hashable.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 3: dict
+
+Summary:
+
+```text
+Key-value lookup, O(1) average access.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 4: set
+
+Summary:
+
+```text
+Unique values and O(1) average membership.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 5: Counter
+
+Summary:
+
+```text
+Frequency counting.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 6: defaultdict
+
+Summary:
+
+```text
+Grouping and aggregation without key checks.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 7: deque
+
+Summary:
+
+```text
+Queue with O(1) popleft.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 8: None
+
+Summary:
+
+```text
+Use `is None`; do not confuse with zero.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 9: mutable default
+
+Summary:
+
+```text
+Use None and create list/dict inside function.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 10: copy
+
+Summary:
+
+```text
+Use dict(row) or list(items) to avoid shared mutation.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 11: sorted
+
+Summary:
+
+```text
+Use key functions and explicit tie-breakers.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 12: generator
+
+Summary:
+
+```text
+Lazy values for memory-safe streaming.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 13: context manager
+
+Summary:
+
+```text
+Use with for files/resources.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 14: Decimal
+
+Summary:
+
+```text
+Exact decimal values for money.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 15: datetime
+
+Summary:
+
+```text
+Use timezone-aware UTC timestamps.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 16: exceptions
+
+Summary:
+
+```text
+Catch specific exceptions and keep context.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 17: comprehension
+
+Summary:
+
+```text
+Use for simple readable transforms.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```
+
+### Quick Card 18: logging
+
+Summary:
+
+```text
+Log counts/context, not secrets or raw PII.
+```
+
+Interview check:
+
+```text
+Give one coding example and one Data Engineering example where this applies.
+```

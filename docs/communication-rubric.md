@@ -1,0 +1,1098 @@
+# Communication Rubric
+
+Generated: 2026-06-06
+
+This file defines how **Data Engineering Sensei** should evaluate, train, and correct candidate communication for Data Engineering interviews.
+
+Communication is not a “soft extra.” In interviews, communication is part of the technical signal. A candidate can know the answer and still fail if they cannot explain assumptions, trade-offs, edge cases, and reasoning clearly.
+
+This rubric should be used by:
+
+- `SKILL.md`
+- `modes/interview-mode.md`
+- `modes/review-mode.md`
+- `modes/project-deep-dive-mode.md`
+- `modes/system-design-mode.md`
+- `modes/weakness-repair-mode.md`
+- `templates/interview-feedback/mock-interview-feedback-template.md`
+- `progress/ROADMAP_PROGRESS.md`
+
+---
+
+## 1. Purpose
+
+The purpose of this rubric is to make communication assessment strict and concrete.
+
+The mentor should evaluate whether the candidate can:
+
+1. Understand the question.
+2. Ask clarifying questions.
+3. Structure the answer.
+4. Explain reasoning step by step.
+5. Think out loud without rambling.
+6. Use correct technical language.
+7. Explain trade-offs.
+8. Discuss edge cases.
+9. Handle follow-ups.
+10. Recover from mistakes.
+11. Summarize clearly.
+12. Sound like someone who has actually worked on data systems.
+
+---
+
+## 2. Communication Is Technical Signal
+
+In Data Engineering interviews, interviewers judge more than final answers.
+
+They also judge:
+
+- how the candidate thinks
+- how the candidate decomposes problems
+- whether the candidate can work with ambiguity
+- whether the candidate can explain systems to teammates
+- whether the candidate can discuss trade-offs with stakeholders
+- whether the candidate is honest when unsure
+- whether the candidate can defend project decisions
+
+A weak communicator may look weak technically even when they know the topic.
+
+A strong communicator makes their thinking visible.
+
+---
+
+## 3. No-Sugarcoating Communication Standard
+
+The mentor must be direct.
+
+Allowed feedback:
+
+```text
+Your answer has correct pieces, but it is unstructured. In an interview, this would sound confusing.
+```
+
+```text
+You jumped to tools before explaining requirements. That is a system design communication problem.
+```
+
+```text
+You used “we” throughout the project explanation. I still do not know what you personally owned.
+```
+
+Not useful:
+
+```text
+Good communication. Keep practicing.
+```
+
+Feedback must say exactly what was weak and how to fix it.
+
+---
+
+## 4. Global Communication Scale
+
+| Score | Label | Meaning |
+|---:|---|---|
+| 0 | Not understandable | Candidate cannot explain ideas clearly |
+| 1 | Fragmented | Candidate gives broken, incomplete, or heavily prompted answers |
+| 2 | Unstructured | Candidate knows some content but communicates in a messy way |
+| 3 | Adequate | Candidate can explain basics but needs better structure and depth |
+| 4 | Interview-ready | Candidate explains clearly, handles follow-ups, and discusses trade-offs |
+| 5 | Strong | Candidate communicates like a strong engineer under pressure |
+
+---
+
+## 5. Score 0: Not Understandable
+
+### Candidate behavior
+
+- Cannot explain the answer.
+- Gives unrelated points.
+- Cannot restate the problem.
+- Cannot describe their own code or query.
+- Cannot explain their own project.
+- Freezes completely without recovery.
+
+### Interview risk
+
+```text
+Critical
+```
+
+### Mentor response
+
+```text
+Your communication is currently not interview-usable. We need to rebuild from basic answer structure: restate the question, state assumptions, explain approach, then answer.
+```
+
+### Repair path
+
+1. Use simple answer templates.
+2. Practice 60-second explanations.
+3. Explain one SQL query line by line.
+4. Explain one project using a fixed structure.
+5. Record and rewrite answers.
+
+---
+
+## 6. Score 1: Fragmented
+
+### Candidate behavior
+
+- Gives partial answers.
+- Needs constant prompting.
+- Starts in the middle.
+- Uses vague terms.
+- Does not connect ideas.
+- Struggles to explain why.
+
+### Example
+
+```text
+We used Spark and Airflow and loaded the data. There were some transformations. Then dashboard.
+```
+
+### Why this fails
+
+The interviewer cannot tell:
+
+- what the problem was
+- what the architecture was
+- what the candidate did
+- why the tools were chosen
+- what challenges existed
+
+### Mentor response
+
+```text
+This is fragmented. You are naming pieces, not explaining the system. Start with business problem, then data sources, then pipeline flow, then your contribution.
+```
+
+---
+
+## 7. Score 2: Unstructured
+
+### Candidate behavior
+
+- Knows some content.
+- Gives correct points in random order.
+- Jumps to solutions without assumptions.
+- Rambles.
+- Misses edge cases.
+- Does not summarize.
+- Sounds unsure even when partly correct.
+
+### Example
+
+```text
+For this pipeline we can use Kafka, maybe Spark, then store in S3, then use Snowflake, and Airflow can run it, and we can check quality.
+```
+
+### Why this is weak
+
+The answer names tools but misses structure:
+
+- no requirements
+- no volume
+- no latency
+- no trade-offs
+- no failure handling
+- no clear flow
+
+### Mentor response
+
+```text
+Your answer is not wrong, but it is not structured. In system design, structure matters. Start with requirements, then architecture, then failure handling, then trade-offs.
+```
+
+---
+
+## 8. Score 3: Adequate
+
+### Candidate behavior
+
+- Restates the problem.
+- Explains basic approach.
+- Can answer direct questions.
+- Mentions some assumptions.
+- Uses mostly correct terms.
+- Has some structure.
+
+### Remaining weaknesses
+
+- shallow trade-offs
+- weak follow-up handling
+- limited edge cases
+- too much tool listing
+- incomplete summary
+- inconsistent confidence
+
+### Mentor response
+
+```text
+This is acceptable for a standard interview, but not strong. To reach a stronger level, you need clearer trade-offs, edge cases, and follow-up handling.
+```
+
+---
+
+## 9. Score 4: Interview-Ready
+
+### Candidate behavior
+
+- Clarifies requirements.
+- Explains approach logically.
+- Uses correct terminology.
+- Thinks out loud.
+- Discusses edge cases.
+- Handles follow-ups.
+- Explains trade-offs.
+- Summarizes clearly.
+- Does not bluff.
+
+### Example
+
+```text
+I would first clarify the required latency and consumers. If daily reporting is enough, I would choose batch because it is simpler and cheaper than streaming. I would land raw data in object storage, validate it, transform it into curated tables, and publish to the warehouse. I would add freshness checks, row-count checks, retries, alerts, and a backfill path by partition.
+```
+
+### Mentor response
+
+```text
+This is interview-ready. The structure is clear, and you covered requirements, architecture, quality, monitoring, and trade-offs. The next improvement is to add data volume assumptions and cost discussion.
+```
+
+---
+
+## 10. Score 5: Strong
+
+### Candidate behavior
+
+- Handles ambiguity well.
+- Drives the conversation.
+- Explains trade-offs deeply.
+- Can teach the concept.
+- Handles pressure calmly.
+- Corrects mistakes transparently.
+- Gives practical examples.
+- Speaks like someone who has owned systems.
+
+### Example
+
+```text
+I would separate the design into ingestion, storage, processing, serving, and operations. The first decision depends on latency. If the dashboard SLA is daily, streaming is unnecessary. If product operations need sub-minute metrics, I would add a streaming path but still write raw events to object storage for replay. The main risks are duplicates, late events, schema changes, and bad data reaching dashboards, so I would add event IDs, schema validation, freshness checks, and backfill capability.
+```
+
+### Mentor response
+
+```text
+This is strong. You structured the answer, justified design choices, identified risks, and explained recovery paths. This is the level expected in strong product-company interviews.
+```
+
+---
+
+## 11. Communication Dimensions
+
+Evaluate communication across these dimensions.
+
+| Dimension | What to Check |
+|---|---|
+| Problem understanding | Did they restate the task correctly? |
+| Clarifying questions | Did they ask before solving? |
+| Structure | Is the answer organized? |
+| Reasoning | Can they explain why? |
+| Conciseness | Do they avoid rambling? |
+| Technical language | Are terms used correctly? |
+| Trade-offs | Do they compare options? |
+| Edge cases | Do they mention risks and exceptions? |
+| Follow-ups | Can they handle deeper questions? |
+| Ownership | Do they explain what they personally did? |
+| Honesty | Do they admit uncertainty instead of bluffing? |
+| Summary | Can they close with a clean conclusion? |
+
+---
+
+## 12. Clarifying Questions Rubric
+
+### Score 0-1
+
+Candidate does not ask any clarifying questions and jumps directly to answer.
+
+### Score 2
+
+Candidate asks generic questions but misses important constraints.
+
+Example:
+
+```text
+What is the input?
+```
+
+### Score 3
+
+Candidate asks useful basic questions.
+
+Example:
+
+```text
+What is the expected output grain?
+What is the data volume?
+What latency is required?
+```
+
+### Score 4
+
+Candidate asks role-appropriate questions.
+
+For SQL:
+
+- What is the output grain?
+- Can there be duplicates?
+- How should NULLs be handled?
+- What date range should be included?
+
+For system design:
+
+- What are the sources?
+- What is the volume?
+- What is the latency SLA?
+- Who are the consumers?
+- What failures should we handle?
+
+### Score 5
+
+Candidate asks precise, interview-driving questions and explains why they matter.
+
+---
+
+## 13. Structure Rubric
+
+A structured answer has a predictable flow.
+
+### SQL answer structure
+
+```text
+1. Clarify output grain
+2. Identify base table
+3. Explain joins
+4. Explain filters
+5. Explain aggregation/window logic
+6. Mention edge cases
+7. Write query
+8. Explain result
+```
+
+### Python answer structure
+
+```text
+1. Clarify input/output
+2. Discuss brute force if useful
+3. Explain optimized approach
+4. Mention data structures
+5. Code
+6. Analyze complexity
+7. Discuss edge cases
+```
+
+### System design answer structure
+
+```text
+1. Requirements
+2. Data sources
+3. Volume and latency
+4. Architecture
+5. Storage
+6. Processing
+7. Serving
+8. Quality
+9. Monitoring
+10. Failure handling
+11. Cost/security
+12. Trade-offs
+```
+
+### Project answer structure
+
+```text
+1. Business problem
+2. Data sources
+3. Architecture
+4. Your contribution
+5. Challenges
+6. Trade-offs
+7. Impact
+8. Improvements
+```
+
+---
+
+## 14. Thinking Out Loud Rubric
+
+Thinking out loud does not mean saying every random thought.
+
+It means making reasoning visible.
+
+### Weak thinking out loud
+
+```text
+Maybe I can join this, or maybe group it, not sure, maybe window.
+```
+
+### Strong thinking out loud
+
+```text
+The output needs one row per customer, so the grain is customer-level. Orders are at order-level, so I need to aggregate before returning. Since we need latest order, a ROW_NUMBER partitioned by customer_id ordered by order_date descending will work.
+```
+
+---
+
+## 15. Conciseness Rubric
+
+### Too short
+
+```text
+Use Spark and Snowflake.
+```
+
+### Too long
+
+A five-minute answer that never directly answers the question.
+
+### Good
+
+A structured answer with enough depth and no unnecessary wandering.
+
+Rule:
+
+```text
+Be complete, not verbose.
+```
+
+---
+
+## 16. Technical Language Rubric
+
+The candidate should use terms correctly.
+
+### Common wrong usage
+
+- saying database when meaning warehouse
+- saying streaming when meaning scheduled batch
+- saying partitioning when meaning clustering
+- saying ETL and ELT interchangeably without understanding
+- saying exactly-once without explaining what it means
+- saying real-time when latency is actually daily
+- saying normalization when describing denormalized analytics schema
+
+### Mentor correction
+
+```text
+You used the right-sounding word, but not the right meaning. In interviews, that is dangerous because follow-ups will expose it.
+```
+
+---
+
+## 17. Trade-Off Communication Rubric
+
+Strong candidates compare options.
+
+### Weak
+
+```text
+I will use streaming.
+```
+
+### Strong
+
+```text
+If the business needs sub-minute metrics, I would use streaming. If hourly or daily latency is enough, batch is simpler and cheaper. Streaming adds duplicate handling, late events, checkpointing, and monitoring complexity.
+```
+
+Trade-offs to mention:
+
+- batch vs streaming
+- warehouse vs lake
+- Spark vs warehouse SQL
+- full load vs incremental
+- normalized vs denormalized
+- managed vs self-managed
+- cost vs latency
+- consistency vs availability
+- simplicity vs flexibility
+
+---
+
+## 18. Edge Case Communication Rubric
+
+A candidate should mention what can go wrong.
+
+### SQL edge cases
+
+- duplicates
+- NULLs
+- missing records
+- ties in ranking
+- date boundaries
+- time zones
+- many-to-many joins
+
+### Python edge cases
+
+- empty input
+- missing fields
+- duplicate records
+- malformed JSON
+- large input
+- type mismatch
+
+### Pipeline edge cases
+
+- late-arriving data
+- schema changes
+- duplicate files
+- failed tasks
+- partial loads
+- source downtime
+- bad data
+- backfill needs
+
+### System design edge cases
+
+- scale increase
+- consumer lag
+- source changes
+- replay
+- security breach risk
+- cost spike
+- data corruption
+
+---
+
+## 19. Follow-Up Handling Rubric
+
+### Score 1
+
+Candidate collapses after follow-up.
+
+### Score 2
+
+Candidate guesses or bluffs.
+
+### Score 3
+
+Candidate answers basic follow-ups but misses depth.
+
+### Score 4
+
+Candidate handles follow-ups with reasoning.
+
+### Score 5
+
+Candidate uses follow-ups to improve the design or answer.
+
+Strong behavior:
+
+```text
+Good point. If duplicates are possible, I would require an event_id and deduplicate in the cleaned layer. If event_id is not available, I would create a composite key from user_id, event_time, event_type, and source, but I would call out that this is less reliable.
+```
+
+---
+
+## 20. Honesty Rubric
+
+A good candidate does not bluff.
+
+Strong uncertainty answer:
+
+```text
+I have not used that specific service deeply, but conceptually I would think about storage, compute, partitioning, cost, and failure handling. I can reason through the design using those principles.
+```
+
+Weak uncertainty answer:
+
+```text
+Yes, I know it.
+```
+
+Then fails follow-up.
+
+Mentor rule:
+
+```text
+Reward honest reasoning more than fake confidence.
+```
+
+---
+
+## 21. Ownership Communication Rubric
+
+For project deep dives, communication must show ownership.
+
+### Weak
+
+```text
+We created a pipeline and loaded data.
+```
+
+### Strong
+
+```text
+My responsibility was to design the incremental load logic, write the SQL transformations, add data quality checks for duplicate transaction IDs and null customer IDs, and debug a late-arriving data issue that caused dashboard mismatches.
+```
+
+### Mentor challenge
+
+If candidate says “we” repeatedly:
+
+```text
+Stop using only “we.” Tell me what you personally designed, coded, tested, optimized, or debugged.
+```
+
+---
+
+## 22. SQL Communication Checklist
+
+When explaining SQL, candidate should say:
+
+```text
+Output grain:
+Base table:
+Join logic:
+Filter logic:
+Aggregation level:
+Window function logic:
+Tie handling:
+NULL handling:
+Date boundary:
+Why this query returns correct result:
+```
+
+If candidate writes SQL silently, mentor should interrupt:
+
+```text
+Before the query, explain the grain and approach. Interviewers care about your reasoning, not only the final SQL.
+```
+
+---
+
+## 23. Python Communication Checklist
+
+When explaining Python, candidate should say:
+
+```text
+Input shape:
+Output shape:
+Data structures:
+Algorithm:
+Why this is efficient:
+Edge cases:
+Time complexity:
+Space complexity:
+```
+
+If candidate codes silently:
+
+```text
+Talk me through the approach before coding. Silence in interviews is a bad signal.
+```
+
+---
+
+## 24. DSA Communication Checklist
+
+Candidate should explain:
+
+```text
+Pattern:
+Why this pattern fits:
+Brute force:
+Optimized approach:
+Data structure used:
+Edge cases:
+Time complexity:
+Space complexity:
+```
+
+Weak DSA communication:
+
+```text
+I remember this problem.
+```
+
+Strong DSA communication:
+
+```text
+This is a frequency-counting problem. A hash map lets me count occurrences in O(n), then I can use a heap or bucket approach for top K.
+```
+
+---
+
+## 25. System Design Communication Checklist
+
+Candidate should explain:
+
+```text
+Functional requirements:
+Non-functional requirements:
+Data volume:
+Latency:
+Sources:
+Consumers:
+Architecture:
+Storage:
+Processing:
+Orchestration:
+Quality checks:
+Monitoring:
+Failure handling:
+Backfill:
+Cost:
+Security:
+Trade-offs:
+```
+
+If missing quality, monitoring, and failure handling, the answer is not interview-ready.
+
+---
+
+## 26. Project Deep Dive Communication Checklist
+
+Candidate should explain:
+
+```text
+Business problem:
+Data sources:
+Data volume:
+Architecture:
+Your contribution:
+Pipeline flow:
+Transformations:
+Data model:
+Tools and why:
+Failure handling:
+Data quality:
+Optimization:
+Impact:
+Trade-offs:
+What you would improve:
+```
+
+If candidate cannot explain impact, they should at least explain operational value:
+
+- reduced manual work
+- improved freshness
+- improved accuracy
+- improved reporting speed
+- reduced failures
+- enabled analytics
+
+---
+
+## 27. Behavioral Communication Checklist
+
+Use STAR, but add technical depth.
+
+```text
+Situation:
+Task:
+Action:
+Technical decision:
+Result:
+Learning:
+```
+
+Weak behavioral answer:
+
+```text
+I worked hard and completed the task.
+```
+
+Strong behavioral answer:
+
+```text
+The pipeline was missing SLA because upstream files arrived late. I added file-arrival checks, alerts, and a retry mechanism. This reduced missed dashboard refreshes and made failures visible earlier.
+```
+
+---
+
+## 28. Common Communication Red Flags
+
+Flag these clearly:
+
+1. Jumps to answer without clarifying.
+2. Gives tool names instead of reasoning.
+3. Uses vague “we did” language.
+4. Cannot explain why.
+5. Rambles without structure.
+6. Gives memorized definitions.
+7. Ignores edge cases.
+8. Ignores trade-offs.
+9. Becomes silent while coding.
+10. Cannot summarize.
+11. Bluffs when unsure.
+12. Uses terms incorrectly.
+13. Avoids follow-ups.
+14. Gets defensive.
+15. Does not admit mistakes.
+
+---
+
+## 29. Correction Templates
+
+### Unstructured answer
+
+```text
+Your answer has useful points, but the structure is weak. Re-answer using this format:
+1. Requirement
+2. Approach
+3. Trade-off
+4. Edge case
+5. Summary
+```
+
+### Tool listing
+
+```text
+This is tool listing, not engineering reasoning. Explain why each component exists and what problem it solves.
+```
+
+### Vague project ownership
+
+```text
+I still cannot tell what you personally did. Re-answer using: my responsibility was..., I built..., I debugged..., I optimized...
+```
+
+### Rambling
+
+```text
+You are over-explaining without direction. Give a 90-second version with only the business problem, architecture, your contribution, and impact.
+```
+
+### Memorized definition
+
+```text
+This sounds memorized. Now explain it using a real pipeline example.
+```
+
+### Bluffing
+
+```text
+Do not bluff. Say what you know, state assumptions, and reason from fundamentals.
+```
+
+---
+
+## 30. Strong Answer Patterns
+
+### Pattern 1: Clarify → Solve → Validate
+
+Useful for SQL/Python/DSA.
+
+```text
+First I will clarify the expected output.
+Then I will explain the approach.
+Then I will solve.
+Finally I will check edge cases and complexity.
+```
+
+### Pattern 2: Requirement → Architecture → Operations
+
+Useful for system design.
+
+```text
+I will first clarify requirements and constraints.
+Then I will propose architecture.
+Then I will cover operations: quality, monitoring, failures, backfills, cost, and security.
+```
+
+### Pattern 3: Context → Ownership → Impact
+
+Useful for project deep dives.
+
+```text
+The business problem was...
+My responsibility was...
+The impact was...
+```
+
+---
+
+## 31. Communication Drills
+
+### Drill 1: 60-Second SQL Explanation
+
+Candidate must explain a SQL approach without writing query.
+
+Prompt:
+
+```text
+For each customer, return their latest order.
+```
+
+Expected:
+
+- grain
+- ROW_NUMBER
+- partition
+- order
+- tie handling
+
+### Drill 2: 90-Second Project Pitch
+
+Candidate explains one project.
+
+Must include:
+
+- business problem
+- architecture
+- personal contribution
+- impact
+
+### Drill 3: System Design Opening
+
+Candidate explains first 2 minutes of a system design answer.
+
+Must include:
+
+- requirements
+- data volume
+- latency
+- consumers
+
+### Drill 4: Trade-Off Drill
+
+Candidate compares:
+
+```text
+Batch vs streaming
+```
+
+Must include:
+
+- when batch is better
+- when streaming is better
+- operational complexity
+- cost
+- latency
+
+### Drill 5: Recovery Drill
+
+Candidate must correct a mistake out loud.
+
+Prompt:
+
+```text
+You realize your SQL join creates duplicates. What do you say?
+```
+
+Strong answer:
+
+```text
+I think my join may change the output grain because one customer can have many orders. I need to aggregate orders first or use a window function depending on the requirement.
+```
+
+---
+
+## 32. Mock Interview Communication Scoring
+
+Use this table after mock interviews.
+
+| Area | Score | Notes |
+|---|---:|---|
+| Clarifying questions | /5 | |
+| Structure | /5 | |
+| Technical clarity | /5 | |
+| Thinking out loud | /5 | |
+| Trade-offs | /5 | |
+| Edge cases | /5 | |
+| Follow-up handling | /5 | |
+| Conciseness | /5 | |
+| Ownership | /5 | |
+| Summary | /5 | |
+
+### Overall communication verdict
+
+Use:
+
+```text
+Not interview-usable
+Weak
+Acceptable for basic rounds
+Interview-ready
+Strong
+```
+
+---
+
+## 33. Experience-Level Communication Expectations
+
+### Beginner
+
+Expected:
+
+- explain basic concepts clearly
+- ask simple clarifying questions
+- admit uncertainty
+- avoid bluffing
+
+Not expected:
+
+- senior-level trade-offs
+- deep architecture defense
+
+### Junior
+
+Expected:
+
+- explain SQL/Python approach
+- explain one project clearly
+- mention basic edge cases
+- communicate learning clearly
+
+### Mid-Level
+
+Expected:
+
+- explain trade-offs
+- discuss failure handling
+- show project ownership
+- answer follow-ups
+
+### Experienced
+
+Expected:
+
+- structure system design
+- discuss reliability
+- explain architecture choices
+- handle ambiguity
+- defend production decisions
+
+### Senior
+
+Expected:
+
+- lead the conversation
+- reason under ambiguity
+- discuss organizational trade-offs
+- communicate platform-level thinking
+- explain mentorship and ownership
+
+---
+
+## 34. Final Communication Principle
+
+Communication should make the candidate’s thinking visible.
+
+A strong candidate does not just know the answer.
+
+A strong candidate can show:
+
+```text
+I understand the problem.
+I know the constraints.
+I can reason through options.
+I can explain trade-offs.
+I can handle failures.
+I can own my decisions.
+```
+
+If the candidate cannot communicate that, they are not fully interview-ready.

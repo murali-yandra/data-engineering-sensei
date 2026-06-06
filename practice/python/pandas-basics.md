@@ -1,0 +1,5919 @@
+# Pandas Basics Practice Guide
+
+Generated: 2026-06-06
+
+This practice guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/python/pandas-basics.md
+```
+
+This guide teaches and drills **Pandas basics for Data Engineering interviews**.
+
+This is not a generic Pandas tutorial. It is an interview-focused guide for candidates who need to use Pandas for small-to-medium data analysis, data cleaning, transformation, validation, aggregation, file conversion, reconciliation, and interview-style data manipulation.
+
+Pandas is high-ROI for Data Engineering interviews because many practical rounds ask you to:
+
+- load CSV/JSON/JSONL data
+- inspect DataFrames
+- clean columns
+- handle missing values
+- filter rows
+- select columns
+- transform column values
+- create derived columns
+- group and aggregate
+- join/merge datasets
+- deduplicate records
+- keep latest records
+- pivot and reshape data
+- handle dates
+- validate data quality
+- compare source and target extracts
+- write output files
+- explain memory limits and when to use SQL/Spark instead
+- convert Pandas logic into SQL or PySpark thinking
+- debug common Pandas mistakes
+
+Use this guide with:
+
+- `docs/python-interview-guide.md`
+- `docs/data-engineering-fundamentals.md`
+- `docs/etl-elt-pipelines-guide.md`
+- `docs/data-modeling-guide.md`
+- `docs/data-warehouse-guide.md`
+- `docs/spark-pyspark-guide.md`
+- `docs/sql-interview-guide.md`
+- `docs/assessment-rubric.md`
+- `docs/communication-rubric.md`
+- `modes/python-drill-mode.md`
+- `modes/sql-drill-mode.md`
+- `modes/data-engineering-fundamentals-mode.md`
+- `modes/interview-mode.md`
+- `modes/review-mode.md`
+- `modes/feedback-mode.md`
+- `modes/weakness-repair-mode.md`
+- `practice/python/fundamentals.md`
+- `practice/python/files-json-csv.md`
+- `practice/python/data-scripting.md`
+- `practice/python/api-processing.md`
+- `practice/sql`
+- `practice/system-design`
+- `progress/CANDIDATE_PROFILE.md`
+- `progress/CURRENT_STATE.md`
+- `progress/ROADMAP_PROGRESS.md`
+- `progress/NEXT_STEPS.md`
+
+Default interview standard if target companies are not provided:
+
+```text
+FAANG-style Data Engineering interview standard, scaled by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at Pandas basics used in Data Engineering interviews.
+
+The candidate should learn to answer:
+
+```text
+When is Pandas appropriate?
+When is Pandas not appropriate?
+How do I load CSV, JSON, and JSONL files?
+How do I inspect a DataFrame?
+How do I select columns and rows?
+How do I filter records?
+How do I create and transform columns?
+How do I handle missing values?
+How do I handle duplicate records?
+How do I keep latest record per key?
+How do I group and aggregate data?
+How do I join/merge DataFrames?
+How do I reshape data with pivot/melt?
+How do I parse and use dates?
+How do I validate data quality?
+How do I compare two extracts?
+How do I write output safely?
+How do I explain Pandas memory limitations?
+How do I connect Pandas operations to SQL and PySpark?
+```
+
+A candidate is interview-ready only when they can:
+
+```text
+load files safely
+inspect schema and row counts
+select/filter rows correctly
+avoid chained assignment bugs
+handle missing values intentionally
+clean string columns
+parse datetime columns
+deduplicate by key
+keep latest row per ID
+group and aggregate with named aggregations
+merge with correct join type
+validate join cardinality
+detect unmatched records
+reshape using melt/pivot_table
+write outputs with index=False
+explain time and memory trade-offs
+know when to use SQL/Spark instead of Pandas
+translate Pandas operations to Data Engineering concepts
+```
+
+
+## 2. Why Pandas Matters for Data Engineers
+
+Pandas is not the main engine for massive production pipelines, but it is extremely useful for:
+
+```text
+interview coding rounds
+local data exploration
+small ETL scripts
+debugging extracts
+validating sample data
+building reconciliation reports
+checking CSV files
+prototyping transformations
+data-quality checks
+unit-test fixtures
+schema inspection
+one-time migration analysis
+small backfills
+comparing source and target samples
+preparing examples for SQL/Spark logic
+```
+
+Interviewers test Pandas because it reveals:
+
+```text
+Can the candidate manipulate tabular data?
+Can they think in rows and columns?
+Can they aggregate and join correctly?
+Can they handle missing and duplicate records?
+Can they validate data-quality assumptions?
+Can they explain when Pandas is not the right tool?
+Can they connect local analysis to production DE systems?
+```
+
+Weak answer:
+
+```text
+Use df and do something until it works.
+```
+
+Strong answer:
+
+```text
+Use Pandas intentionally for small/medium tabular data, validate schema and row counts, perform clear transformations, avoid chained assignment, and explain when to move to SQL/Spark for scale.
+```
+
+
+## 3. Core Mental Model
+
+A Pandas DataFrame is a table-like structure:
+
+```text
+rows = observations/records
+columns = fields/features
+index = row labels, not always business key
+Series = one column or one-dimensional labeled data
+DataFrame = two-dimensional labeled table
+```
+
+Most interview tasks follow this flow:
+
+```text
+1. Load data.
+2. Inspect shape, columns, dtypes, and sample rows.
+3. Clean column names and values.
+4. Validate required fields.
+5. Filter rows.
+6. Create derived columns.
+7. Deduplicate records.
+8. Aggregate/group by keys.
+9. Join/merge with other data.
+10. Validate output counts.
+11. Write output.
+12. Explain limitations and production equivalent.
+```
+
+Core interview line:
+
+```text
+Pandas is useful for in-memory tabular transformations. I still validate schema, row counts, join behavior, and memory assumptions like I would in a production data pipeline.
+```
+
+
+## 4. Pandas Vocabulary
+
+Important terms:
+
+```text
+DataFrame:
+A two-dimensional table with rows and columns.
+
+Series:
+A one-dimensional labeled array, usually one column.
+
+Index:
+Row labels. Not necessarily a business key.
+
+Column:
+Named field in a DataFrame.
+
+dtype:
+Data type of a column.
+
+NaN:
+Missing numeric/object value representation.
+
+NaT:
+Missing datetime value representation.
+
+Vectorized operation:
+Operation applied to a full Series/DataFrame without Python row loops.
+
+Boolean mask:
+True/False Series used for filtering rows.
+
+GroupBy:
+Split-apply-combine operation for aggregations.
+
+Merge:
+Join between DataFrames.
+
+Concat:
+Stack DataFrames vertically or horizontally.
+
+Pivot:
+Reshape long data to wide.
+
+Melt:
+Reshape wide data to long.
+
+Chained assignment:
+Ambiguous assignment after filtering/slicing that can produce bugs/warnings.
+
+Cardinality:
+Relationship between join keys: one-to-one, one-to-many, many-to-one, many-to-many.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this framework for Pandas interview answers:
+
+```text
+1. Restate the input and output.
+2. Clarify data size.
+3. Clarify schema:
+   - required columns
+   - optional columns
+   - dtypes
+   - keys
+4. Clarify invalid data behavior.
+5. Load DataFrame.
+6. Inspect shape, columns, dtypes, and missing values.
+7. Clean column names and values.
+8. Filter/transform/deduplicate/group/join as needed.
+9. Validate row counts and data quality.
+10. Write or return output.
+11. Explain complexity and memory.
+12. Explain production alternative if data is large.
+```
+
+Short version:
+
+```text
+Load:
+Inspect:
+Clean:
+Transform:
+Validate:
+Output:
+Scale note:
+```
+
+Strict rule:
+
+```text
+No Pandas answer is strong if it ignores row counts, missing values, duplicate keys, join cardinality, and memory limits.
+```
+
+
+## 6. Scoring Rubric
+
+Score each Pandas attempt from 0 to 5.
+
+### Score 0
+
+No meaningful Pandas answer.
+
+### Score 1
+
+Can load a DataFrame but cannot manipulate it reliably.
+
+### Score 2
+
+Works on clean small data but fails missing values, duplicate keys, or join edge cases.
+
+### Score 3
+
+Mostly correct transformation but weak validation, memory awareness, or explanation.
+
+### Score 4
+
+Interview-ready. Clean Pandas operations, correct filtering/grouping/joining, validation, and complexity explanation.
+
+### Score 5
+
+Strong. Handles dirty data, cardinality, deduplication, dtype issues, date parsing, performance, memory limits, and SQL/Spark equivalents.
+
+Do not give 4+ if:
+
+```text
+candidate uses chained assignment carelessly
+candidate does not check required columns
+candidate ignores missing values
+candidate uses apply/row loops when vectorization is expected
+candidate merges without understanding join type
+candidate does not validate join cardinality
+candidate loses records without noticing
+candidate writes CSV with unwanted index column
+candidate treats Pandas as production solution for huge data
+candidate cannot explain how operation maps to SQL/Spark
+```
+
+
+## 7. When to Use Pandas
+
+Use Pandas when:
+
+```text
+data fits comfortably in memory
+local exploration is needed
+input is tabular or semi-structured
+transformation is small/medium scale
+interview asks for Python data manipulation
+you need quick validation or reconciliation
+you are preparing test fixtures
+you are prototyping SQL/Spark logic
+```
+
+Avoid Pandas or be cautious when:
+
+```text
+data is larger than memory
+pipeline requires distributed processing
+many users/jobs run concurrently
+strict production SLAs require scalable processing
+data is already in warehouse and SQL is better
+transformation belongs in Spark/BigQuery/Snowflake
+input is streaming and unbounded
+```
+
+Interview line:
+
+```text
+I would use Pandas for local or moderate-sized data, but for large production Data Engineering pipelines I would usually move the logic to SQL, Spark, or the warehouse engine.
+```
+
+
+## 8. Importing Pandas
+
+Standard import:
+
+```python
+import pandas as pd
+```
+
+Optional imports:
+
+```python
+import numpy as np
+from pathlib import Path
+```
+
+Check version:
+
+```python
+pd.__version__
+```
+
+Interview line:
+
+```text
+I use the standard `import pandas as pd` convention so code is familiar and readable.
+```
+
+
+## 9. Creating DataFrames
+
+Create DataFrame from list of dictionaries:
+
+```python
+import pandas as pd
+
+records = [
+    {"id": 1, "customer_id": "c1", "amount": 100},
+    {"id": 2, "customer_id": "c2", "amount": 200},
+]
+
+df = pd.DataFrame(records)
+```
+
+Create DataFrame from dictionary of lists:
+
+```python
+df = pd.DataFrame({
+    "id": [1, 2],
+    "amount": [100, 200],
+})
+```
+
+Create empty DataFrame with columns:
+
+```python
+df = pd.DataFrame(columns=["id", "amount"])
+```
+
+Interview line:
+
+```text
+For record-like data, list of dictionaries maps naturally to a DataFrame.
+```
+
+
+## 10. DataFrame Inspection
+
+Basic inspection:
+
+```python
+df.head()
+df.tail()
+df.shape
+df.columns
+df.dtypes
+df.info()
+df.describe()
+```
+
+Useful checks:
+
+```python
+len(df)
+df.empty
+df.isna().sum()
+df.nunique()
+df["id"].duplicated().sum()
+```
+
+Example:
+
+```python
+print("rows:", len(df))
+print("columns:", list(df.columns))
+print("missing values:")
+print(df.isna().sum())
+```
+
+Interview line:
+
+```text
+Before transforming, I inspect row count, columns, dtypes, missing values, and duplicate keys.
+```
+
+
+## 11. Reading CSV
+
+Read CSV:
+
+```python
+df = pd.read_csv("transactions.csv")
+```
+
+Useful options:
+
+```python
+df = pd.read_csv(
+    "transactions.csv",
+    dtype={"id": "string", "customer_id": "string"},
+    parse_dates=["created_at"],
+)
+```
+
+Handle delimiter:
+
+```python
+df = pd.read_csv("file.psv", sep="|")
+df = pd.read_csv("file.tsv", sep="\t")
+```
+
+Handle missing values:
+
+```python
+df = pd.read_csv("file.csv", na_values=["", "NULL", "null", "N/A"])
+```
+
+Handle large files with chunks:
+
+```python
+for chunk in pd.read_csv("large.csv", chunksize=100_000):
+    process(chunk)
+```
+
+Interview line:
+
+```text
+When reading CSV, I often specify dtypes for IDs so leading zeros are not lost and parse date columns explicitly.
+```
+
+
+## 12. Reading JSON and JSONL
+
+Read JSON file:
+
+```python
+df = pd.read_json("data.json")
+```
+
+Read JSONL:
+
+```python
+df = pd.read_json("events.jsonl", lines=True)
+```
+
+Normalize nested JSON:
+
+```python
+df = pd.json_normalize(records)
+```
+
+Example:
+
+```python
+records = [
+    {"id": 1, "customer": {"id": "c1", "country": "IN"}},
+]
+
+df = pd.json_normalize(records)
+```
+
+Output columns:
+
+```text
+id
+customer.id
+customer.country
+```
+
+Interview line:
+
+```text
+For JSONL, I use `lines=True`; for nested JSON records, I use `pd.json_normalize` or explicit flattening depending on schema control.
+```
+
+
+## 13. Writing Files
+
+Write CSV:
+
+```python
+df.to_csv("output.csv", index=False)
+```
+
+Write JSONL:
+
+```python
+df.to_json("output.jsonl", orient="records", lines=True)
+```
+
+Write JSON records:
+
+```python
+df.to_json("output.json", orient="records", indent=2)
+```
+
+Important:
+
+```text
+Use index=False when writing CSV unless the index is intentionally part of output.
+```
+
+Interview line:
+
+```text
+I usually write CSV with `index=False` because Pandas index is not normally a business column.
+```
+
+
+## 14. Selecting Columns
+
+Select one column:
+
+```python
+df["amount"]
+```
+
+Select multiple columns:
+
+```python
+df[["id", "amount"]]
+```
+
+Create projection:
+
+```python
+output = df[["transaction_id", "customer_id", "amount"]].copy()
+```
+
+Use `.copy()` when you plan to modify:
+
+```python
+output = df[["id", "amount"]].copy()
+output["amount"] = output["amount"].fillna(0)
+```
+
+Interview line:
+
+```text
+I use `.copy()` after selecting a subset I plan to modify to avoid chained-assignment issues.
+```
+
+
+## 15. Selecting Rows with loc and iloc
+
+Use `.loc` for label/boolean selection:
+
+```python
+df.loc[df["amount"] > 100]
+df.loc[df["status"] == "SUCCESS", ["id", "amount"]]
+```
+
+Use `.iloc` for positional selection:
+
+```python
+df.iloc[0]
+df.iloc[:10]
+df.iloc[:, [0, 2]]
+```
+
+Set values safely:
+
+```python
+df.loc[df["amount"].isna(), "amount"] = 0
+```
+
+Interview line:
+
+```text
+I use `.loc` for condition-based selection and assignment because it avoids ambiguous chained assignment.
+```
+
+
+## 16. Boolean Filtering
+
+Filter rows:
+
+```python
+high_value = df[df["amount"] > 1000]
+```
+
+Multiple conditions:
+
+```python
+filtered = df[
+    (df["amount"] > 1000)
+    & (df["status"] == "SUCCESS")
+]
+```
+
+OR condition:
+
+```python
+filtered = df[
+    (df["status"] == "SUCCESS")
+    | (df["status"] == "SETTLED")
+]
+```
+
+Negation:
+
+```python
+failed = df[~(df["status"] == "SUCCESS")]
+```
+
+Important:
+
+```text
+Use parentheses around each condition.
+Use & and |, not and/or, for Pandas Series.
+```
+
+Interview line:
+
+```text
+For Pandas boolean masks, I use `&`, `|`, and parentheses because Python `and/or` does not work element-wise on Series.
+```
+
+
+## 17. Chained Assignment Warning
+
+Bad:
+
+```python
+filtered = df[df["amount"] > 100]
+filtered["flag"] = True
+```
+
+This can raise `SettingWithCopyWarning`.
+
+Better:
+
+```python
+filtered = df.loc[df["amount"] > 100].copy()
+filtered["flag"] = True
+```
+
+Or assign back to original safely:
+
+```python
+df.loc[df["amount"] > 100, "flag"] = True
+```
+
+Interview line:
+
+```text
+I avoid chained assignment by using `.loc` for assignment or `.copy()` when creating a modifiable subset.
+```
+
+
+## 18. Column Creation
+
+Create new column:
+
+```python
+df["amount_with_tax"] = df["amount"] * 1.18
+```
+
+Conditional column:
+
+```python
+df["is_high_value"] = df["amount"] > 1000
+```
+
+Using `.assign`:
+
+```python
+df = df.assign(
+    amount_with_tax=df["amount"] * 1.18,
+    is_high_value=df["amount"] > 1000,
+)
+```
+
+From multiple columns:
+
+```python
+df["full_name"] = df["first_name"].str.strip() + " " + df["last_name"].str.strip()
+```
+
+Interview line:
+
+```text
+I prefer vectorized column operations over row-by-row loops for performance and readability.
+```
+
+
+## 19. String Operations
+
+Pandas string methods use `.str`.
+
+```python
+df["status"] = df["status"].str.strip().str.upper()
+df["email"] = df["email"].str.strip().str.lower()
+df["name"] = df["name"].str.title()
+```
+
+Contains:
+
+```python
+df[df["message"].str.contains("error", case=False, na=False)]
+```
+
+Startswith:
+
+```python
+df[df["path"].str.startswith("/api", na=False)]
+```
+
+Replace:
+
+```python
+df["column"] = df["column"].str.replace(" ", "_", regex=False)
+```
+
+Extract regex:
+
+```python
+df["event_id"] = df["message"].str.extract(r"event_id=(\w+)")
+```
+
+Interview line:
+
+```text
+For string columns, I use vectorized `.str` operations and include `na=False` where missing values can exist.
+```
+
+
+## 20. Missing Values
+
+Check missing values:
+
+```python
+df.isna().sum()
+df["amount"].isna()
+df["amount"].notna()
+```
+
+Drop missing:
+
+```python
+df_clean = df.dropna(subset=["id", "amount"])
+```
+
+Fill missing:
+
+```python
+df["status"] = df["status"].fillna("UNKNOWN")
+df["amount"] = df["amount"].fillna(0)
+```
+
+Caution:
+
+```text
+Filling missing amount with 0 may be wrong if missing means unknown.
+```
+
+Missing value validation:
+
+```python
+invalid = df[df["id"].isna() | df["amount"].isna()]
+valid = df[df["id"].notna() & df["amount"].notna()]
+```
+
+Interview line:
+
+```text
+I do not blindly fill missing values. I decide based on business meaning: missing, unknown, zero, or invalid.
+```
+
+
+## 21. Type Conversion
+
+Convert types:
+
+```python
+df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+df["id"] = df["id"].astype("string")
+```
+
+`errors="coerce"`:
+
+```text
+invalid values become NaN/NaT
+then validate or dead-letter them
+```
+
+Check dtypes:
+
+```python
+df.dtypes
+```
+
+Caution:
+
+```text
+Do not convert ID columns to int if leading zeros matter.
+```
+
+Interview line:
+
+```text
+I convert numeric/date fields with coercion, then validate rows where conversion failed.
+```
+
+
+## 22. Renaming and Cleaning Columns
+
+Rename columns:
+
+```python
+df = df.rename(columns={
+    "Customer ID": "customer_id",
+    "Amount($)": "amount",
+})
+```
+
+Normalize all columns:
+
+```python
+import re
+
+def normalize_column_name(name):
+    name = name.strip()
+    name = re.sub(r"[^0-9a-zA-Z]+", "_", name)
+    name = re.sub(r"_+", "_", name)
+    return name.strip("_").lower()
+
+df.columns = [normalize_column_name(col) for col in df.columns]
+```
+
+Check duplicates after normalization:
+
+```python
+if pd.Index(df.columns).duplicated().any():
+    raise ValueError("Duplicate columns after normalization")
+```
+
+Interview line:
+
+```text
+When normalizing column names, I check for collisions so two columns do not collapse into the same name silently.
+```
+
+
+## 23. Dropping Columns and Rows
+
+Drop columns:
+
+```python
+df = df.drop(columns=["unused_column"])
+```
+
+Drop rows by condition:
+
+```python
+df = df.loc[df["status"] != "TEST"].copy()
+```
+
+Drop duplicates:
+
+```python
+df = df.drop_duplicates()
+```
+
+Drop duplicates by key:
+
+```python
+df = df.drop_duplicates(subset=["id"], keep="first")
+```
+
+Caution:
+
+```text
+Always clarify whether to keep first, last, latest by timestamp, or fail on duplicates.
+```
+
+Interview line:
+
+```text
+Deduplication requires a business rule; `drop_duplicates` is only correct after deciding the key and keep strategy.
+```
+
+
+## 24. Deduplication
+
+Keep first by ID:
+
+```python
+df_first = df.drop_duplicates(subset=["id"], keep="first")
+```
+
+Keep last by ID:
+
+```python
+df_last = df.drop_duplicates(subset=["id"], keep="last")
+```
+
+Keep latest by timestamp:
+
+```python
+df_sorted = df.sort_values(["id", "updated_at"])
+df_latest = df_sorted.drop_duplicates(subset=["id"], keep="last")
+```
+
+Alternative using index:
+
+```python
+idx = df.groupby("id")["updated_at"].idxmax()
+df_latest = df.loc[idx].copy()
+```
+
+Caution:
+
+```text
+Parse updated_at to datetime first.
+Handle ties explicitly if needed.
+```
+
+Interview line:
+
+```text
+For latest-record dedupe, I parse timestamp, sort or use idxmax, and define tie-breakers if timestamps are equal.
+```
+
+
+## 25. Sorting
+
+Sort by one column:
+
+```python
+df = df.sort_values("created_at")
+```
+
+Sort by multiple columns:
+
+```python
+df = df.sort_values(["customer_id", "created_at", "id"])
+```
+
+Mixed direction:
+
+```python
+df = df.sort_values(
+    ["amount", "id"],
+    ascending=[False, True],
+)
+```
+
+Reset index after sort:
+
+```python
+df = df.sort_values("created_at").reset_index(drop=True)
+```
+
+Interview line:
+
+```text
+I sort with explicit tie-breakers and reset index if downstream output should be sequential.
+```
+
+
+## 26. GroupBy Basics
+
+Group and aggregate:
+
+```python
+summary = df.groupby("customer_id")["amount"].sum().reset_index()
+```
+
+Count rows:
+
+```python
+counts = df.groupby("status").size().reset_index(name="count")
+```
+
+Multiple aggregations:
+
+```python
+summary = (
+    df.groupby("customer_id")
+      .agg(
+          total_amount=("amount", "sum"),
+          avg_amount=("amount", "mean"),
+          transaction_count=("id", "count"),
+      )
+      .reset_index()
+)
+```
+
+Interview line:
+
+```text
+I prefer named aggregations because output column names are clear and interview-readable.
+```
+
+
+## 27. GroupBy Multiple Keys
+
+Group by multiple columns:
+
+```python
+daily_customer_summary = (
+    df.groupby(["customer_id", "event_date"])
+      .agg(
+          total_amount=("amount", "sum"),
+          transaction_count=("id", "count"),
+      )
+      .reset_index()
+)
+```
+
+Equivalent SQL idea:
+
+```sql
+SELECT customer_id, event_date, SUM(amount), COUNT(id)
+FROM transactions
+GROUP BY customer_id, event_date;
+```
+
+Interview line:
+
+```text
+Pandas groupby maps directly to SQL GROUP BY and Spark groupBy operations.
+```
+
+
+## 28. Aggregation Functions
+
+Common aggregation functions:
+
+```text
+sum
+mean
+median
+min
+max
+count
+size
+nunique
+first
+last
+```
+
+Examples:
+
+```python
+df.groupby("customer_id").agg(
+    total_amount=("amount", "sum"),
+    unique_products=("product_id", "nunique"),
+    first_order=("created_at", "min"),
+    last_order=("created_at", "max"),
+)
+```
+
+Difference between count and size:
+
+```text
+count counts non-null values.
+size counts rows.
+```
+
+Example:
+
+```python
+df.groupby("status")["amount"].count()
+df.groupby("status").size()
+```
+
+Interview line:
+
+```text
+I use `size` for row count and `count` when I specifically want non-null values in a column.
+```
+
+
+## 29. Value Counts
+
+Count values:
+
+```python
+df["status"].value_counts()
+```
+
+Include missing:
+
+```python
+df["status"].value_counts(dropna=False)
+```
+
+Normalize percentage:
+
+```python
+df["status"].value_counts(normalize=True)
+```
+
+As DataFrame:
+
+```python
+status_counts = (
+    df["status"]
+      .value_counts(dropna=False)
+      .reset_index(name="count")
+      .rename(columns={"index": "status"})
+)
+```
+
+Interview line:
+
+```text
+`value_counts` is quick for frequency checks and data-quality inspection.
+```
+
+
+## 30. Joining and Merging
+
+Merge DataFrames:
+
+```python
+result = orders.merge(customers, on="customer_id", how="left")
+```
+
+Join types:
+
+```text
+inner:
+only matching rows
+
+left:
+all left rows plus matching right rows
+
+right:
+all right rows plus matching left rows
+
+outer:
+all rows from both sides
+```
+
+Different column names:
+
+```python
+result = orders.merge(
+    customers,
+    left_on="customer_id",
+    right_on="id",
+    how="left",
+)
+```
+
+Interview line:
+
+```text
+I choose join type based on whether I need to preserve left records, only matches, or full reconciliation.
+```
+
+
+## 31. Merge Validation
+
+Validate merge cardinality:
+
+```python
+orders.merge(
+    customers,
+    on="customer_id",
+    how="left",
+    validate="many_to_one",
+)
+```
+
+Common validations:
+
+```text
+one_to_one
+one_to_many
+many_to_one
+many_to_many
+```
+
+Use indicator:
+
+```python
+merged = orders.merge(
+    customers,
+    on="customer_id",
+    how="left",
+    indicator=True,
+)
+```
+
+Check unmatched:
+
+```python
+unmatched = merged[merged["_merge"] == "left_only"]
+```
+
+Interview line:
+
+```text
+I use merge validation and indicator when join correctness matters because accidental many-to-many joins can multiply rows.
+```
+
+
+## 32. Detecting Join Problems
+
+Before joining, check keys:
+
+```python
+orders["customer_id"].isna().sum()
+customers["customer_id"].duplicated().sum()
+```
+
+After joining, check row counts:
+
+```python
+before = len(orders)
+after = len(merged)
+
+if after != before:
+    print("row count changed")
+```
+
+Detect unmatched keys:
+
+```python
+unmatched = merged.loc[merged["_merge"] == "left_only", "customer_id"].unique()
+```
+
+Detect right duplicates:
+
+```python
+duplicates = customers[customers["customer_id"].duplicated(keep=False)]
+```
+
+Interview line:
+
+```text
+I validate join keys before and after merge to avoid silent row multiplication or record loss.
+```
+
+
+## 33. Concatenation
+
+Stack DataFrames vertically:
+
+```python
+combined = pd.concat([df1, df2], ignore_index=True)
+```
+
+Keep source file:
+
+```python
+df1["source"] = "file1"
+df2["source"] = "file2"
+combined = pd.concat([df1, df2], ignore_index=True)
+```
+
+Horizontal concat:
+
+```python
+wide = pd.concat([left, right], axis=1)
+```
+
+Caution:
+
+```text
+For row stacking, columns are aligned by name.
+Missing columns become NaN.
+```
+
+Interview line:
+
+```text
+I use concat for stacking same-schema files and check columns to catch schema drift.
+```
+
+
+## 34. Pivot and Pivot Table
+
+Pivot long to wide:
+
+```python
+wide = df.pivot(
+    index="date",
+    columns="metric",
+    values="value",
+).reset_index()
+```
+
+Pivot table with aggregation:
+
+```python
+wide = df.pivot_table(
+    index="date",
+    columns="metric",
+    values="value",
+    aggfunc="sum",
+    fill_value=0,
+).reset_index()
+```
+
+Difference:
+
+```text
+pivot fails if duplicate index/column pairs exist.
+pivot_table can aggregate duplicates.
+```
+
+Interview line:
+
+```text
+If duplicates are possible, I use pivot_table with explicit aggregation instead of pivot.
+```
+
+
+## 35. Melt
+
+Melt wide to long:
+
+```python
+long = df.melt(
+    id_vars=["date"],
+    value_vars=["clicks", "views"],
+    var_name="metric",
+    value_name="value",
+)
+```
+
+Example:
+
+```text
+date, clicks, views
+2026-01-01, 10, 100
+```
+
+becomes:
+
+```text
+date, metric, value
+2026-01-01, clicks, 10
+2026-01-01, views, 100
+```
+
+Interview line:
+
+```text
+Melt is useful when normalizing wide metric exports into long metric rows.
+```
+
+
+## 36. Date Handling
+
+Parse datetime:
+
+```python
+df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+```
+
+Extract date:
+
+```python
+df["event_date"] = df["created_at"].dt.date
+```
+
+Extract month:
+
+```python
+df["event_month"] = df["created_at"].dt.to_period("M").astype(str)
+```
+
+Filter date range:
+
+```python
+start = pd.Timestamp("2026-01-01", tz="UTC")
+end = pd.Timestamp("2026-02-01", tz="UTC")
+
+filtered = df[
+    (df["created_at"] >= start)
+    & (df["created_at"] < end)
+]
+```
+
+Interview line:
+
+```text
+I parse timestamps with `utc=True` and use half-open intervals for time-window filters.
+```
+
+
+## 37. Nulls in Date and Numeric Columns
+
+Convert with coercion:
+
+```python
+df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+```
+
+Find failed conversions:
+
+```python
+invalid_amount = df[df["amount"].isna()]
+invalid_dates = df[df["created_at"].isna()]
+```
+
+Caution:
+
+```text
+If original values can be missing and invalid, keep raw column before conversion if you need to distinguish them.
+```
+
+Example:
+
+```python
+df["amount_raw"] = df["amount"]
+df["amount"] = pd.to_numeric(df["amount_raw"], errors="coerce")
+```
+
+Interview line:
+
+```text
+I often preserve raw columns before coercion so invalid values can be reported accurately.
+```
+
+
+## 38. Apply vs Vectorized Operations
+
+Prefer vectorized operations:
+
+```python
+df["amount_with_tax"] = df["amount"] * 1.18
+```
+
+Avoid row-wise apply when simple vectorized operation exists:
+
+```python
+df["amount_with_tax"] = df.apply(lambda row: row["amount"] * 1.18, axis=1)
+```
+
+Use apply when:
+
+```text
+logic is genuinely row-wise and not easily vectorized
+data is small enough
+readability is acceptable
+```
+
+Example:
+
+```python
+def classify(row):
+    if row["amount"] > 1000 and row["status"] == "SUCCESS":
+        return "HIGH_SUCCESS"
+
+    return "OTHER"
+
+df["category"] = df.apply(classify, axis=1)
+```
+
+Better with vectorized where possible:
+
+```python
+df["category"] = "OTHER"
+df.loc[(df["amount"] > 1000) & (df["status"] == "SUCCESS"), "category"] = "HIGH_SUCCESS"
+```
+
+Interview line:
+
+```text
+I avoid row-wise apply for simple operations because vectorized Pandas operations are usually faster and clearer.
+```
+
+
+## 39. np.where and mask
+
+Use `np.where` for simple conditional columns:
+
+```python
+import numpy as np
+
+df["amount_bucket"] = np.where(
+    df["amount"] >= 1000,
+    "HIGH",
+    "LOW",
+)
+```
+
+Multiple conditions with `np.select`:
+
+```python
+conditions = [
+    df["amount"] >= 1000,
+    df["amount"] >= 100,
+]
+
+choices = ["HIGH", "MEDIUM"]
+
+df["amount_bucket"] = np.select(conditions, choices, default="LOW")
+```
+
+Using `.mask`:
+
+```python
+df["amount_clean"] = df["amount"].mask(df["amount"] < 0)
+```
+
+Interview line:
+
+```text
+For conditional columns, I use vectorized `np.where`, `np.select`, or `.loc` assignment instead of Python loops.
+```
+
+
+## 40. Data Quality Checks
+
+Common checks:
+
+```python
+required_columns = {"id", "amount", "created_at"}
+
+missing_columns = required_columns - set(df.columns)
+
+if missing_columns:
+    raise ValueError(f"Missing columns: {missing_columns}")
+```
+
+Missing values:
+
+```python
+df[["id", "amount", "created_at"]].isna().sum()
+```
+
+Duplicate IDs:
+
+```python
+df["id"].duplicated().sum()
+```
+
+Invalid amounts:
+
+```python
+invalid_amounts = df[df["amount"] < 0]
+```
+
+Unexpected statuses:
+
+```python
+allowed = {"SUCCESS", "FAILED", "PENDING"}
+invalid_status = df[~df["status"].isin(allowed)]
+```
+
+Interview line:
+
+```text
+I validate schema, required fields, duplicates, allowed values, and numeric/date conversion failures before trusting the output.
+```
+
+
+## 41. Valid and Invalid Splits
+
+Split valid and invalid rows:
+
+```python
+required = ["id", "amount", "created_at"]
+
+invalid_mask = df[required].isna().any(axis=1)
+invalid = df.loc[invalid_mask].copy()
+valid = df.loc[~invalid_mask].copy()
+```
+
+Add reason column:
+
+```python
+def invalid_reasons(row):
+    reasons = []
+
+    if pd.isna(row["id"]):
+        reasons.append("missing_id")
+
+    if pd.isna(row["amount"]):
+        reasons.append("missing_amount")
+
+    if pd.isna(row["created_at"]):
+        reasons.append("missing_created_at")
+
+    return reasons
+
+invalid["errors"] = invalid.apply(invalid_reasons, axis=1)
+```
+
+Caution:
+
+```text
+Row-wise apply for error list is acceptable for smaller validation/reporting, but for very large data use vectorized flags or Spark/SQL.
+```
+
+Interview line:
+
+```text
+I split invalid rows with reasons rather than silently dropping them.
+```
+
+
+## 42. Duplicate Detection
+
+Find duplicates:
+
+```python
+duplicates = df[df["id"].duplicated(keep=False)]
+```
+
+Count duplicate keys:
+
+```python
+duplicate_counts = (
+    df.groupby("id")
+      .size()
+      .reset_index(name="count")
+      .query("count > 1")
+)
+```
+
+Keep first:
+
+```python
+deduped = df.drop_duplicates(subset=["id"], keep="first")
+```
+
+Fail if duplicates exist:
+
+```python
+if df["id"].duplicated().any():
+    raise ValueError("Duplicate IDs found")
+```
+
+Interview line:
+
+```text
+Whether duplicates are dropped, reported, or fail the job depends on the business key rule.
+```
+
+
+## 43. Latest Record Per Key
+
+Keep latest per ID:
+
+```python
+df["updated_at"] = pd.to_datetime(df["updated_at"], errors="coerce", utc=True)
+
+df_latest = (
+    df.sort_values(["id", "updated_at"])
+      .drop_duplicates(subset=["id"], keep="last")
+      .reset_index(drop=True)
+)
+```
+
+With tie-breaker:
+
+```python
+df_latest = (
+    df.sort_values(["id", "updated_at", "ingestion_time"])
+      .drop_duplicates(subset=["id"], keep="last")
+      .reset_index(drop=True)
+)
+```
+
+Using idxmax:
+
+```python
+idx = df.groupby("id")["updated_at"].idxmax()
+df_latest = df.loc[idx].copy()
+```
+
+Caution:
+
+```text
+idxmax can be tricky when updated_at is all NaT for a group.
+```
+
+Interview line:
+
+```text
+For latest-row logic, I parse timestamp, define tie-breaker, and validate missing timestamp records.
+```
+
+
+## 44. Reconciliation with Pandas
+
+Compare source and target IDs.
+
+```python
+source_ids = set(source["id"].dropna())
+target_ids = set(target["id"].dropna())
+
+only_source = sorted(source_ids - target_ids)
+only_target = sorted(target_ids - source_ids)
+in_both = sorted(source_ids & target_ids)
+```
+
+Using merge indicator:
+
+```python
+recon = source[["id"]].merge(
+    target[["id"]],
+    on="id",
+    how="outer",
+    indicator=True,
+)
+
+only_source = recon[recon["_merge"] == "left_only"]
+only_target = recon[recon["_merge"] == "right_only"]
+matched = recon[recon["_merge"] == "both"]
+```
+
+Interview line:
+
+```text
+For reconciliation, merge indicator is useful because it clearly shows left-only, right-only, and matched records.
+```
+
+
+## 45. Comparing Totals
+
+Compare aggregated totals.
+
+```python
+source_summary = (
+    source.groupby("customer_id")
+          .agg(source_total=("amount", "sum"))
+          .reset_index()
+)
+
+target_summary = (
+    target.groupby("customer_id")
+          .agg(target_total=("amount", "sum"))
+          .reset_index()
+)
+
+comparison = source_summary.merge(
+    target_summary,
+    on="customer_id",
+    how="outer",
+).fillna({"source_total": 0, "target_total": 0})
+
+comparison["difference"] = comparison["source_total"] - comparison["target_total"]
+
+mismatches = comparison[comparison["difference"] != 0]
+```
+
+Interview line:
+
+```text
+I compare both row-level keys and aggregated totals because record counts can match while amounts differ.
+```
+
+
+## 46. Handling Large Files with chunksize
+
+Read CSV in chunks:
+
+```python
+total_rows = 0
+total_amount = 0
+
+for chunk in pd.read_csv("transactions.csv", chunksize=100_000):
+    chunk["amount"] = pd.to_numeric(chunk["amount"], errors="coerce")
+    total_rows += len(chunk)
+    total_amount += chunk["amount"].sum(skipna=True)
+```
+
+Chunked groupby:
+
+```python
+from collections import defaultdict
+
+totals = defaultdict(float)
+
+for chunk in pd.read_csv("transactions.csv", chunksize=100_000):
+    chunk["amount"] = pd.to_numeric(chunk["amount"], errors="coerce")
+    grouped = chunk.groupby("customer_id")["amount"].sum()
+
+    for customer_id, amount in grouped.items():
+        totals[customer_id] += amount
+```
+
+Caution:
+
+```text
+Chunks help memory but do not make Pandas distributed. For truly large data, use Spark/SQL.
+```
+
+Interview line:
+
+```text
+For files that are somewhat large but still processable locally, I use chunksize; for massive data, I move to Spark or warehouse SQL.
+```
+
+
+## 47. Memory Optimization Basics
+
+Check memory:
+
+```python
+df.memory_usage(deep=True)
+df.info(memory_usage="deep")
+```
+
+Use selected columns:
+
+```python
+df = pd.read_csv("file.csv", usecols=["id", "amount", "created_at"])
+```
+
+Specify dtypes:
+
+```python
+df = pd.read_csv(
+    "file.csv",
+    dtype={"id": "string", "status": "category"},
+)
+```
+
+Convert low-cardinality strings:
+
+```python
+df["status"] = df["status"].astype("category")
+```
+
+Caution:
+
+```text
+Category helps low-cardinality string columns but may not help high-cardinality columns like unique IDs.
+```
+
+Interview line:
+
+```text
+I reduce Pandas memory by reading only needed columns, specifying dtypes, and using category only for low-cardinality fields.
+```
+
+
+## 48. Index Basics
+
+The index is row labels.
+
+Reset index:
+
+```python
+df = df.reset_index(drop=True)
+```
+
+Set index:
+
+```python
+df = df.set_index("id")
+```
+
+Access by index label:
+
+```python
+df.loc["id_1"]
+```
+
+Caution:
+
+```text
+Do not confuse Pandas index with a database primary key unless explicitly set and validated.
+```
+
+Interview line:
+
+```text
+I usually keep business keys as explicit columns unless there is a clear reason to set them as index.
+```
+
+
+## 49. MultiIndex Basics
+
+Groupby can create MultiIndex.
+
+```python
+summary = df.groupby(["customer_id", "event_date"])["amount"].sum()
+```
+
+This returns a Series with MultiIndex.
+
+Convert to DataFrame:
+
+```python
+summary = summary.reset_index(name="total_amount")
+```
+
+Avoid confusion:
+
+```python
+df.groupby(["a", "b"], as_index=False).agg(total=("amount", "sum"))
+```
+
+Interview line:
+
+```text
+I often use `as_index=False` or `reset_index()` so grouped output stays table-like.
+```
+
+
+## 50. Window and Rolling Basics
+
+Rolling average:
+
+```python
+df = df.sort_values("created_at")
+df["rolling_3_amount"] = df["amount"].rolling(window=3).mean()
+```
+
+Group-wise rolling is more advanced:
+
+```python
+df = df.sort_values(["customer_id", "created_at"])
+df["customer_rolling_3"] = (
+    df.groupby("customer_id")["amount"]
+      .rolling(window=3)
+      .mean()
+      .reset_index(level=0, drop=True)
+)
+```
+
+Caution:
+
+```text
+Sort before rolling windows.
+```
+
+Interview line:
+
+```text
+Rolling calculations depend on row order, so I sort by the time column first.
+```
+
+
+## 51. Ranking
+
+Rank within whole DataFrame:
+
+```python
+df["amount_rank"] = df["amount"].rank(method="dense", ascending=False)
+```
+
+Rank within group:
+
+```python
+df["customer_amount_rank"] = (
+    df.groupby("customer_id")["amount"]
+      .rank(method="dense", ascending=False)
+)
+```
+
+Top per group:
+
+```python
+top_txn = df[df["customer_amount_rank"] == 1]
+```
+
+Interview line:
+
+```text
+Pandas rank maps to SQL window functions like RANK or DENSE_RANK.
+```
+
+
+## 52. SQL to Pandas Mapping
+
+Common mappings:
+
+| SQL | Pandas |
+|---|---|
+| SELECT columns | `df[["a", "b"]]` |
+| WHERE | `df[mask]` |
+| GROUP BY | `df.groupby(...).agg(...)` |
+| JOIN | `df.merge(...)` |
+| ORDER BY | `df.sort_values(...)` |
+| DISTINCT | `df.drop_duplicates(...)` |
+| COUNT(*) | `groupby.size()` |
+| COUNT(col) | `groupby["col"].count()` |
+| CASE WHEN | `np.where`, `np.select`, `.loc` |
+| UNION ALL | `pd.concat(...)` |
+| ROW_NUMBER | `groupby().cumcount() + 1` |
+| RANK | `groupby().rank()` |
+
+Interview line:
+
+```text
+I can translate Pandas operations to SQL concepts, which helps explain the logic in Data Engineering terms.
+```
+
+
+## 53. PySpark to Pandas Mapping
+
+Common mappings:
+
+| PySpark | Pandas |
+|---|---|
+| `select` | column selection |
+| `filter/where` | boolean mask |
+| `withColumn` | assign/create column |
+| `groupBy().agg()` | `groupby().agg()` |
+| `join` | `merge` |
+| `dropDuplicates` | `drop_duplicates` |
+| `orderBy` | `sort_values` |
+| `unionByName` | `concat` with aligned columns |
+| `isNull` | `isna` |
+| `fillna` | `fillna` |
+| window rank | groupby rank/cumcount |
+
+Important:
+
+```text
+Pandas runs in memory on one machine.
+PySpark distributes data across cluster workers.
+```
+
+Interview line:
+
+```text
+Pandas and PySpark have similar transformation concepts, but different execution models and scalability.
+```
+
+
+## 54. Common Pandas Mistakes
+
+Common mistakes:
+
+```text
+using chained assignment
+forgetting index=False in to_csv
+using and/or instead of &/|
+missing parentheses in boolean masks
+not checking dtypes after read_csv
+letting ID columns become numeric and lose leading zeros
+filling missing values blindly
+dropping duplicates without defining key/keep rule
+joining without validating cardinality
+not checking row count before/after merge
+using apply for simple vectorized logic
+assuming Pandas can handle production-scale data
+not sorting before rolling/ranking/latest logic
+not resetting index after groupby/sort when output needs clean rows
+not using parse_dates/to_datetime
+not checking duplicate columns after normalization
+```
+
+Strict feedback:
+
+```text
+This is not interview-ready. Your merge can silently multiply rows because you did not check duplicate keys or validate join cardinality.
+```
+
+
+## 55. Coding Problem: Load and Inspect CSV
+
+Problem:
+
+```text
+Load transactions.csv and print:
+- row count
+- columns
+- dtypes
+- missing values by column
+- duplicate id count
+```
+
+Solution:
+
+```python
+import pandas as pd
+
+def inspect_transactions(path):
+    df = pd.read_csv(path, dtype={"id": "string", "customer_id": "string"})
+
+    summary = {
+        "row_count": len(df),
+        "columns": list(df.columns),
+        "dtypes": df.dtypes.astype(str).to_dict(),
+        "missing_values": df.isna().sum().to_dict(),
+        "duplicate_id_count": int(df["id"].duplicated().sum()) if "id" in df.columns else None,
+    }
+
+    return summary
+```
+
+Interview point:
+
+```text
+Initial inspection catches schema, dtype, missing-value, and duplicate-key issues early.
+```
+
+
+## 56. Coding Problem: Clean Transaction Data
+
+Problem:
+
+```text
+Given transactions DataFrame:
+id, customer_id, amount, currency, status, created_at
+
+Clean:
+- normalize currency/status
+- parse amount
+- parse created_at UTC
+- split valid and invalid
+```
+
+Solution:
+
+```python
+def clean_transactions(df):
+    df = df.copy()
+
+    required_columns = {"id", "customer_id", "amount", "currency", "status", "created_at"}
+    missing = required_columns - set(df.columns)
+
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    df["id"] = df["id"].astype("string")
+    df["customer_id"] = df["customer_id"].astype("string")
+    df["currency"] = df["currency"].astype("string").str.strip().str.upper()
+    df["status"] = df["status"].astype("string").str.strip().str.upper()
+    df["amount_raw"] = df["amount"]
+    df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+    df["created_at_raw"] = df["created_at"]
+    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+
+    invalid_mask = (
+        df["id"].isna()
+        | df["customer_id"].isna()
+        | df["amount"].isna()
+        | df["currency"].isna()
+        | df["created_at"].isna()
+    )
+
+    valid = df.loc[~invalid_mask].copy()
+    invalid = df.loc[invalid_mask].copy()
+
+    return valid, invalid
+```
+
+Interview point:
+
+```text
+Preserve raw amount/date columns before coercion if invalid-value reporting matters.
+```
+
+
+## 57. Coding Problem: Top Customers by Spend
+
+Problem:
+
+```text
+Return top N customers by total spend from transactions.
+```
+
+Solution:
+
+```python
+def top_customers_by_spend(df, n=10):
+    df = df.copy()
+    df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+
+    valid = df.dropna(subset=["customer_id", "amount"])
+
+    summary = (
+        valid.groupby("customer_id")
+             .agg(
+                 total_spend=("amount", "sum"),
+                 transaction_count=("amount", "size"),
+             )
+             .reset_index()
+             .sort_values(["total_spend", "customer_id"], ascending=[False, True])
+             .head(n)
+    )
+
+    return summary
+```
+
+Complexity:
+
+```text
+Time: O(n + u log u)
+Space: O(u)
+```
+
+Interview point:
+
+```text
+This maps to SQL GROUP BY customer_id ORDER BY total_spend DESC LIMIT N.
+```
+
+
+## 58. Coding Problem: Latest User Profile
+
+Problem:
+
+```text
+Given user profiles with user_id and updated_at, keep latest profile per user.
+```
+
+Solution:
+
+```python
+def latest_user_profiles(df):
+    df = df.copy()
+
+    df["updated_at"] = pd.to_datetime(df["updated_at"], errors="coerce", utc=True)
+
+    valid = df.dropna(subset=["user_id", "updated_at"]).copy()
+
+    latest = (
+        valid.sort_values(["user_id", "updated_at"])
+             .drop_duplicates(subset=["user_id"], keep="last")
+             .reset_index(drop=True)
+    )
+
+    return latest
+```
+
+Follow-up with tie-breaker:
+
+```python
+latest = (
+    valid.sort_values(["user_id", "updated_at", "ingestion_time"])
+         .drop_duplicates(subset=["user_id"], keep="last")
+)
+```
+
+Interview point:
+
+```text
+Latest-record logic needs timestamp parsing and tie-breaker clarity.
+```
+
+
+## 59. Coding Problem: Source Target ID Reconciliation
+
+Problem:
+
+```text
+Given source and target DataFrames with id, return only_source, only_target, matched.
+```
+
+Solution:
+
+```python
+def reconcile_ids(source, target):
+    source_keys = source[["id"]].drop_duplicates()
+    target_keys = target[["id"]].drop_duplicates()
+
+    recon = source_keys.merge(
+        target_keys,
+        on="id",
+        how="outer",
+        indicator=True,
+    )
+
+    return {
+        "only_source": recon.loc[recon["_merge"] == "left_only", "id"].tolist(),
+        "only_target": recon.loc[recon["_merge"] == "right_only", "id"].tolist(),
+        "matched": recon.loc[recon["_merge"] == "both", "id"].tolist(),
+    }
+```
+
+Interview point:
+
+```text
+Merge indicator is clean for reconciliation classification.
+```
+
+
+## 60. Coding Problem: Join Orders to Customers
+
+Problem:
+
+```text
+Join orders to customers. Preserve all orders.
+Detect orders with missing customer match.
+```
+
+Solution:
+
+```python
+def join_orders_customers(orders, customers):
+    merged = orders.merge(
+        customers,
+        on="customer_id",
+        how="left",
+        validate="many_to_one",
+        indicator=True,
+        suffixes=("", "_customer"),
+    )
+
+    unmatched = merged[merged["_merge"] == "left_only"].copy()
+    matched = merged[merged["_merge"] == "both"].copy()
+
+    return matched.drop(columns=["_merge"]), unmatched
+```
+
+Interview point:
+
+```text
+`validate="many_to_one"` prevents accidental row multiplication when customer keys are duplicated.
+```
+
+
+## 61. Coding Problem: Daily Metrics
+
+Problem:
+
+```text
+Given events with created_at and event_type, return daily event counts by type.
+```
+
+Solution:
+
+```python
+def daily_event_counts(events):
+    df = events.copy()
+    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+    df = df.dropna(subset=["created_at", "event_type"]).copy()
+    df["event_date"] = df["created_at"].dt.date
+
+    summary = (
+        df.groupby(["event_date", "event_type"])
+          .size()
+          .reset_index(name="event_count")
+          .sort_values(["event_date", "event_type"])
+          .reset_index(drop=True)
+    )
+
+    return summary
+```
+
+Interview point:
+
+```text
+This maps to SQL GROUP BY DATE(created_at), event_type.
+```
+
+
+## 62. Coding Problem: Wide to Long Metrics
+
+Problem:
+
+```text
+Input columns:
+date, clicks, views, purchases
+
+Output:
+date, metric, value
+```
+
+Solution:
+
+```python
+def wide_to_long_metrics(df):
+    return df.melt(
+        id_vars=["date"],
+        value_vars=["clicks", "views", "purchases"],
+        var_name="metric",
+        value_name="value",
+    )
+```
+
+Interview point:
+
+```text
+Melt normalizes wide metric exports into long metric rows.
+```
+
+
+## 63. Coding Problem: Long to Wide Metrics
+
+Problem:
+
+```text
+Input:
+date, metric, value
+
+Output:
+date, clicks, views, purchases
+```
+
+Solution:
+
+```python
+def long_to_wide_metrics(df):
+    wide = (
+        df.pivot_table(
+            index="date",
+            columns="metric",
+            values="value",
+            aggfunc="sum",
+            fill_value=0,
+        )
+        .reset_index()
+    )
+
+    wide.columns.name = None
+
+    return wide
+```
+
+Interview point:
+
+```text
+Use pivot_table instead of pivot when duplicate date/metric pairs can exist.
+```
+
+
+## 64. Coding Problem: Data Quality Report
+
+Problem:
+
+```text
+Given transactions DataFrame, return metrics:
+- row_count
+- missing_id_count
+- duplicate_id_count
+- invalid_amount_count
+- invalid_currency_count
+```
+
+Solution:
+
+```python
+def transaction_quality_report(df):
+    allowed_currencies = {"INR", "USD", "EUR", "GBP"}
+
+    amount = pd.to_numeric(df["amount"], errors="coerce")
+    currency = df["currency"].astype("string").str.strip().str.upper()
+
+    report = {
+        "row_count": len(df),
+        "missing_id_count": int(df["id"].isna().sum()),
+        "duplicate_id_count": int(df["id"].duplicated().sum()),
+        "invalid_amount_count": int(amount.isna().sum()),
+        "invalid_currency_count": int(~currency.isin(allowed_currencies).sum()),
+    }
+
+    return report
+```
+
+Caution:
+
+```text
+If missing currency should be counted separately, use separate metrics.
+```
+
+
+## 65. Coding Problem: Compare Source Target Totals
+
+Problem:
+
+```text
+Compare total amount by customer between source and target.
+Return mismatches.
+```
+
+Solution:
+
+```python
+def compare_customer_totals(source, target):
+    source_summary = (
+        source.groupby("customer_id")
+              .agg(source_total=("amount", "sum"))
+              .reset_index()
+    )
+
+    target_summary = (
+        target.groupby("customer_id")
+              .agg(target_total=("amount", "sum"))
+              .reset_index()
+    )
+
+    comparison = source_summary.merge(
+        target_summary,
+        on="customer_id",
+        how="outer",
+    )
+
+    comparison["source_total"] = comparison["source_total"].fillna(0)
+    comparison["target_total"] = comparison["target_total"].fillna(0)
+    comparison["difference"] = comparison["source_total"] - comparison["target_total"]
+
+    return comparison[comparison["difference"] != 0].copy()
+```
+
+Interview point:
+
+```text
+Outer join ensures customers present on only one side are included in reconciliation.
+```
+
+
+## 66. Coding Problem: Chunked CSV Aggregation
+
+Problem:
+
+```text
+Read huge transactions.csv in chunks and compute total amount by customer.
+```
+
+Solution:
+
+```python
+from collections import defaultdict
+
+def chunked_total_by_customer(path, chunksize=100_000):
+    totals = defaultdict(float)
+
+    for chunk in pd.read_csv(path, chunksize=chunksize):
+        chunk["amount"] = pd.to_numeric(chunk["amount"], errors="coerce")
+        chunk = chunk.dropna(subset=["customer_id", "amount"])
+
+        grouped = chunk.groupby("customer_id")["amount"].sum()
+
+        for customer_id, amount in grouped.items():
+            totals[customer_id] += amount
+
+    result = pd.DataFrame(
+        [{"customer_id": key, "total_amount": value} for key, value in totals.items()]
+    )
+
+    return result.sort_values("customer_id").reset_index(drop=True)
+```
+
+Interview point:
+
+```text
+Chunks reduce memory pressure but are still single-machine Pandas.
+```
+
+
+## 67. Coding Problem: Detect Schema Drift Across Files
+
+Problem:
+
+```text
+Given list of CSV files, report columns missing from expected schema and unknown columns.
+```
+
+Solution:
+
+```python
+def csv_schema_drift_report(paths, expected_columns, required_columns):
+    expected = set(expected_columns)
+    required = set(required_columns)
+    rows = []
+
+    for path in paths:
+        header = pd.read_csv(path, nrows=0).columns
+        actual = set(header)
+
+        rows.append({
+            "path": str(path),
+            "missing_required": sorted(required - actual),
+            "unknown_columns": sorted(actual - expected),
+        })
+
+    return pd.DataFrame(rows)
+```
+
+Interview point:
+
+```text
+Reading only headers with nrows=0 is efficient for schema checks.
+```
+
+
+## 68. Coding Problem: Find Missing Daily Partitions
+
+Problem:
+
+```text
+Given DataFrame with event_date, find missing dates in expected range.
+```
+
+Solution:
+
+```python
+def missing_dates(df, start_date, end_date):
+    actual_dates = pd.to_datetime(df["event_date"], errors="coerce").dt.date.dropna().unique()
+    actual = set(str(date_value) for date_value in actual_dates)
+
+    expected = set(
+        pd.date_range(start=start_date, end=end_date, freq="D").date.astype(str)
+    )
+
+    return sorted(expected - actual)
+```
+
+Interview point:
+
+```text
+Missing partition checks are common data-quality checks in DE pipelines.
+```
+
+
+## 69. Coding Problem: Top N Per Group
+
+Problem:
+
+```text
+Return top 2 transactions by amount per customer.
+```
+
+Solution:
+
+```python
+def top_n_transactions_per_customer(df, n=2):
+    df = df.copy()
+    df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+    df = df.dropna(subset=["customer_id", "amount"])
+
+    df = df.sort_values(["customer_id", "amount", "id"], ascending=[True, False, True])
+    df["rank"] = df.groupby("customer_id")["amount"].rank(method="first", ascending=False)
+
+    return df[df["rank"] <= n].copy()
+```
+
+Interview point:
+
+```text
+This maps to SQL ROW_NUMBER over partition by customer ordered by amount desc.
+```
+
+
+## 70. Coding Problem: Row Number Per Group
+
+Problem:
+
+```text
+Add row_number per customer ordered by created_at.
+```
+
+Solution:
+
+```python
+def add_customer_row_number(df):
+    df = df.copy()
+    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+    df = df.sort_values(["customer_id", "created_at", "id"])
+
+    df["row_number"] = df.groupby("customer_id").cumcount() + 1
+
+    return df
+```
+
+Interview point:
+
+```text
+`groupby().cumcount() + 1` maps to SQL ROW_NUMBER.
+```
+
+
+## 71. Pandas Pattern Classification Drill
+
+Classify each prompt.
+
+```text
+1. Select id and amount columns.
+2. Filter successful transactions above 1000.
+3. Normalize status to uppercase.
+4. Convert amount string to numeric.
+5. Parse created_at as UTC datetime.
+6. Count records by status.
+7. Total amount by customer.
+8. Join orders to customers preserving all orders.
+9. Detect unmatched customers after join.
+10. Compare source and target IDs.
+11. Keep latest record per id.
+12. Convert wide metrics to long.
+13. Convert long metrics to wide.
+14. Detect duplicate IDs.
+15. Split valid and invalid records.
+16. Read huge CSV in chunks.
+17. Write CSV without index column.
+18. Avoid SettingWithCopyWarning.
+19. Validate many orders to one customer join.
+20. Use SQL/Spark instead of Pandas.
+```
+
+Expected classification:
+
+```text
+1. column selection
+2. boolean mask
+3. vectorized .str operation
+4. pd.to_numeric
+5. pd.to_datetime utc=True
+6. value_counts or groupby.size
+7. groupby aggregation
+8. left merge
+9. merge indicator
+10. outer merge indicator or set diff
+11. sort + drop_duplicates or groupby idxmax
+12. melt
+13. pivot_table
+14. duplicated/groupby size
+15. invalid mask and copy
+16. read_csv chunksize
+17. to_csv(index=False)
+18. .loc or .copy()
+19. merge(validate="many_to_one")
+20. scalability/memory decision
+```
+
+Passing standard:
+
+```text
+18/20 correct before timed Pandas mocks.
+```
+
+
+## 72. High-ROI Pandas Topics
+
+Practice these first.
+
+| Topic | What Candidate Must Explain |
+|---|---|
+| DataFrame/Series | table and column mental model |
+| read_csv | dtype, parse_dates, chunksize |
+| read_json/read_jsonl | lines=True, json_normalize |
+| inspection | shape, columns, dtypes, missing |
+| column selection | Series vs DataFrame |
+| loc/iloc | label/boolean vs position |
+| filtering | masks with &, |, ~ |
+| chained assignment | .loc and .copy |
+| string ops | .str methods |
+| type conversion | to_numeric, to_datetime |
+| missing values | isna, dropna, fillna |
+| deduplication | drop_duplicates, latest by timestamp |
+| groupby | named aggregations |
+| merge | join types, indicator, validate |
+| concat | stacking files |
+| pivot/melt | reshape |
+| dates | utc, date extraction, windows |
+| chunksize | memory-aware processing |
+| quality checks | duplicates, required columns |
+| SQL/Spark mapping | production translation |
+
+
+## 73. Practice Ladder
+
+### Level 1: DataFrame basics
+
+```text
+create DataFrame
+inspect DataFrame
+select columns
+filter rows
+create columns
+write CSV
+```
+
+Exit:
+
+```text
+Candidate can manipulate simple DataFrames safely.
+```
+
+### Level 2: Cleaning and validation
+
+```text
+clean column names
+handle missing values
+convert dtypes
+normalize strings
+split valid/invalid
+detect duplicates
+```
+
+Exit:
+
+```text
+Candidate can clean dirty tabular data.
+```
+
+### Level 3: Aggregation and dedupe
+
+```text
+groupby sum/count/nunique
+value_counts
+latest record per key
+top N
+ranking per group
+```
+
+Exit:
+
+```text
+Candidate can solve common analytics-style DE problems.
+```
+
+### Level 4: Joins and reconciliation
+
+```text
+merge joins
+validate cardinality
+indicator unmatched rows
+compare IDs
+compare totals
+concat files
+```
+
+Exit:
+
+```text
+Candidate can handle source-target comparison and joins safely.
+```
+
+### Level 5: Production awareness
+
+```text
+chunksize
+memory optimization
+schema drift
+atomic output strategy
+SQL/PySpark mapping
+when not to use Pandas
+```
+
+Exit:
+
+```text
+Candidate can explain Pandas limits and production alternatives.
+```
+
+
+## 74. 7-Day Pandas Basics Plan
+
+### Day 1: DataFrame basics
+
+Problems:
+
+```text
+Create DataFrame from records.
+Inspect shape/columns/dtypes.
+Select columns.
+Filter rows.
+Write CSV with index=False.
+```
+
+Focus:
+
+```text
+DataFrame mental model
+inspection
+selection
+output basics
+```
+
+### Day 2: Cleaning
+
+Problems:
+
+```text
+Normalize column names.
+Normalize status/currency.
+Convert amount to numeric.
+Parse timestamps.
+Handle missing values.
+```
+
+Focus:
+
+```text
+dtypes
+string ops
+missing data
+date parsing
+```
+
+### Day 3: Filtering and validation
+
+Problems:
+
+```text
+Filter high-value transactions.
+Split valid/invalid records.
+Detect invalid statuses.
+Detect duplicate IDs.
+Build quality report.
+```
+
+Focus:
+
+```text
+boolean masks
+data quality
+copy vs view
+```
+
+### Day 4: Aggregations
+
+Problems:
+
+```text
+Count by status.
+Total spend by customer.
+Daily event counts.
+Top customers by spend.
+Top N per group.
+```
+
+Focus:
+
+```text
+groupby
+value_counts
+rank
+named aggregations
+```
+
+### Day 5: Joins
+
+Problems:
+
+```text
+Join orders to customers.
+Validate many-to-one join.
+Detect unmatched customers.
+Compare source and target IDs.
+Compare source and target totals.
+```
+
+Focus:
+
+```text
+merge
+indicator
+validate
+reconciliation
+```
+
+### Day 6: Reshaping and scale
+
+Problems:
+
+```text
+Melt wide metrics.
+Pivot long metrics.
+Read CSV in chunks.
+Memory usage check.
+Schema drift across files.
+```
+
+Focus:
+
+```text
+reshape
+chunksize
+memory
+schema
+```
+
+### Day 7: Mock and repair
+
+Tasks:
+
+```text
+Run Mock Set 3 or 4.
+Review mistakes.
+Repair weakest Pandas topic.
+Update progress.
+```
+
+
+## 75. 30-Day Pandas Basics Plan
+
+### Week 1: Pandas foundation
+
+Focus:
+
+```text
+DataFrame
+Series
+read/write
+inspection
+selection
+filtering
+assignment
+```
+
+Exit:
+
+```text
+Candidate can manipulate simple DataFrames without chained assignment bugs.
+```
+
+### Week 2: Cleaning and validation
+
+Focus:
+
+```text
+missing values
+dtypes
+strings
+dates
+required columns
+duplicates
+invalid rows
+```
+
+Exit:
+
+```text
+Candidate can clean and validate raw tabular data.
+```
+
+### Week 3: Aggregation, joining, reshaping
+
+Focus:
+
+```text
+groupby
+value_counts
+merge
+concat
+pivot_table
+melt
+reconciliation
+```
+
+Exit:
+
+```text
+Candidate can solve common DE Pandas tasks.
+```
+
+### Week 4: Interview and production awareness
+
+Focus:
+
+```text
+chunksize
+memory
+schema drift
+SQL/PySpark mapping
+mock interviews
+edge cases
+```
+
+Exit:
+
+```text
+Average mock score >= 4/5.
+```
+
+
+## 76. Mock Set 1: Pandas Basics
+
+Problems:
+
+```text
+1. Load CSV and inspect schema.
+2. Select and filter columns.
+3. Normalize string columns.
+4. Create derived amount column.
+5. Write output CSV without index.
+```
+
+Expected skills:
+
+```text
+read_csv
+shape/columns/dtypes
+column selection
+boolean masks
+.str operations
+to_csv(index=False)
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate avoids chained assignment and explains dtypes.
+```
+
+
+## 77. Mock Set 2: Cleaning and Data Quality
+
+Problems:
+
+```text
+1. Convert amount to numeric and detect invalids.
+2. Parse created_at UTC.
+3. Split valid and invalid rows.
+4. Detect duplicate IDs.
+5. Build transaction quality report.
+```
+
+Expected skills:
+
+```text
+to_numeric
+to_datetime
+isna/notna
+duplicated
+data-quality metrics
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate does not blindly fill/drop missing values.
+```
+
+
+## 78. Mock Set 3: Aggregation and Joins
+
+Problems:
+
+```text
+1. Top customers by spend.
+2. Daily event counts.
+3. Join orders to customers with validation.
+4. Detect unmatched customers.
+5. Compare source and target totals.
+```
+
+Expected skills:
+
+```text
+groupby
+named aggregations
+merge
+indicator
+validate
+outer reconciliation
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate validates join cardinality and row counts.
+```
+
+
+## 79. Mock Set 4: Advanced Basics and Production Awareness
+
+Problems:
+
+```text
+1. Keep latest user profile per user.
+2. Wide-to-long and long-to-wide metrics.
+3. Chunked CSV aggregation.
+4. Schema drift report across files.
+5. Explain when to use Spark/SQL instead of Pandas.
+```
+
+Expected skills:
+
+```text
+sort/drop_duplicates
+melt
+pivot_table
+chunksize
+schema checks
+scale reasoning
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+Candidate explains memory limits and production alternatives.
+```
+
+
+## 80. Timed Drill Protocol
+
+Use this timing protocol.
+
+### Simple Pandas drill
+
+```text
+10-20 minutes
+```
+
+### Medium Pandas transformation
+
+```text
+25-40 minutes
+```
+
+### Pandas + DE reasoning scenario
+
+```text
+35-45 minutes
+```
+
+Per coding drill:
+
+```text
+Minute 0-3:
+Clarify input, output, keys, and data size.
+
+Minute 3-6:
+Inspect columns/dtypes and choose operations.
+
+Minute 6-25:
+Code transformation.
+
+Minute 25-35:
+Validate row counts, missing values, duplicates, joins.
+
+Minute 35-45:
+Explain complexity, memory, and SQL/Spark equivalent.
+```
+
+If candidate uses Pandas blindly for huge data:
+
+```text
+Stop and ask for scale-aware alternative.
+```
+
+
+## 81. Review Checklist
+
+Review Pandas answers using:
+
+```text
+1. Did candidate clarify data size?
+2. Did candidate inspect columns and dtypes?
+3. Did candidate validate required columns?
+4. Did candidate handle missing values intentionally?
+5. Did candidate avoid chained assignment?
+6. Did candidate use vectorized operations where possible?
+7. Did candidate use correct boolean mask syntax?
+8. Did candidate parse numeric/date fields safely?
+9. Did candidate preserve raw values when needed?
+10. Did candidate define dedupe key and keep rule?
+11. Did candidate use groupby correctly?
+12. Did candidate use named aggregations?
+13. Did candidate choose correct join type?
+14. Did candidate validate join cardinality?
+15. Did candidate check unmatched records?
+16. Did candidate check row counts before/after join?
+17. Did candidate write output with index=False?
+18. Did candidate explain Pandas memory limits?
+19. Did candidate map logic to SQL/PySpark?
+20. Did candidate connect to Data Engineering work?
+```
+
+Verdict examples:
+
+```text
+Works only for clean small data.
+Good transformation but no validation.
+Good aggregation but wrong null handling.
+Good merge but no cardinality validation.
+Good Pandas code but weak scale reasoning.
+Interview-ready.
+Strong.
+```
+
+
+## 82. Weakness Repair Map
+
+Use this map when candidate fails.
+
+| Weakness | Repair |
+|---|---|
+| Chained assignment | .loc and .copy drills |
+| Boolean mask errors | &, |, ~ with parentheses drills |
+| Dtype confusion | read_csv dtype/to_numeric drills |
+| Date parsing weak | to_datetime utc drills |
+| Missing values mishandled | isna/dropna/fillna decision drills |
+| Duplicate handling weak | drop_duplicates/latest-by-key drills |
+| Groupby confusion | named aggregation drills |
+| count vs size confusion | groupby count/size drills |
+| Merge join type confusion | inner/left/outer drills |
+| Row multiplication after merge | validate cardinality drills |
+| Unmatched records missed | indicator=True drills |
+| Pivot errors | pivot vs pivot_table drills |
+| Wide/long confusion | melt/pivot drills |
+| Slow apply usage | vectorization drills |
+| Uses Pandas for huge data blindly | chunksize/Spark/SQL drills |
+
+If weakness repeats:
+
+```text
+Use weakness-repair-mode.md.
+```
+
+
+## 83. Communication Scripts
+
+### Pandas use script
+
+```text
+I would use Pandas here because the data is small enough to fit in memory and the task is tabular cleaning/aggregation.
+```
+
+### Scale script
+
+```text
+If this data is large or production-scale, I would move this logic to SQL or Spark because Pandas is single-machine and memory-bound.
+```
+
+### Inspection script
+
+```text
+Before transforming, I check shape, columns, dtypes, missing values, and duplicate keys.
+```
+
+### Cleaning script
+
+```text
+I convert raw amount/date fields with coercion, preserve raw values if needed, and split invalid rows instead of silently dropping them.
+```
+
+### Groupby script
+
+```text
+This maps to SQL GROUP BY. I use named aggregations so output column names are clear.
+```
+
+### Merge script
+
+```text
+I choose a left join to preserve all left-side records, use validate to enforce expected cardinality, and indicator to detect unmatched rows.
+```
+
+### Chained assignment script
+
+```text
+I use `.loc` for assignment or `.copy()` after filtering to avoid chained-assignment bugs.
+```
+
+### Output script
+
+```text
+I write CSV with `index=False` because the DataFrame index is not part of the business data unless explicitly required.
+```
+
+
+## 84. Candidate Self-Review Questions
+
+After every Pandas problem, candidate should answer:
+
+```text
+1. Does the data fit in memory?
+2. What are the required columns?
+3. What are the key columns?
+4. What dtypes are expected?
+5. Are there missing values?
+6. Are there duplicate keys?
+7. What rows are invalid?
+8. What operation is needed: filter, group, join, reshape, dedupe?
+9. Is assignment safe or chained?
+10. Is the transformation vectorized?
+11. Does merge preserve the right side?
+12. Can merge multiply rows?
+13. Did row count change as expected?
+14. Are unmatched records handled?
+15. Is output schema deterministic?
+16. Should index be written?
+17. What is the SQL equivalent?
+18. What is the Spark equivalent?
+19. What is the memory risk?
+20. What production tool would I use at scale?
+```
+
+If candidate cannot answer these:
+
+```text
+The Pandas solution is not interview-ready.
+```
+
+
+## 85. Maintenance Drills
+
+After completing Pandas basics, maintain skill with:
+
+```text
+1 cleaning/dtype drill per week
+1 groupby drill per week
+1 merge/reconciliation drill per week
+1 reshape drill every 2 weeks
+1 chunksize/scale reasoning drill every 2 weeks
+1 full Pandas mock every month
+```
+
+Maintenance rotation:
+
+```text
+Week 1: cleaning + missing values
+Week 2: groupby + top N
+Week 3: merge + reconciliation
+Week 4: reshape + chunksize + SQL/Spark translation
+```
+
+If score drops below 4:
+
+```text
+Run weakness-repair-mode.md for failed topic.
+```
+
+
+## 86. Progress Tracking Template
+
+Use this progress format.
+
+```text
+# Pandas Basics Progress
+
+Last Updated:
+
+## Current Level
+
+Beginner / Intermediate / Advanced:
+
+## Completed Problems
+
+Date | Problem | Topic | Score | Time | Mistake | Next Action
+
+## Topic Scores
+
+DataFrame/Series:
+read_csv:
+read_json/read_jsonl:
+to_csv/to_json:
+inspection:
+column selection:
+row filtering:
+loc/iloc:
+boolean masks:
+chained assignment:
+string operations:
+missing values:
+type conversion:
+datetime:
+column renaming:
+deduplication:
+latest per key:
+groupby:
+value_counts:
+merge:
+join cardinality:
+merge indicator:
+concat:
+pivot_table:
+melt:
+rolling/rank:
+data quality checks:
+chunksize:
+memory optimization:
+SQL mapping:
+PySpark mapping:
+scale reasoning:
+
+## Repeated Mistakes
+
+-
+
+## Repair Items
+
+-
+
+## Next Practice
+
+Today:
+This week:
+Next mock:
+```
+
+
+## 87. Final Exit Test
+
+Candidate passes Pandas basics when they can solve/explain:
+
+```text
+1. Create DataFrame from records.
+2. Inspect shape, columns, dtypes, and missing values.
+3. Read CSV with dtype and parse_dates.
+4. Read JSONL with lines=True.
+5. Write CSV with index=False.
+6. Select columns.
+7. Filter rows with boolean masks.
+8. Use loc/iloc correctly.
+9. Avoid chained assignment.
+10. Normalize string columns.
+11. Convert numeric columns with to_numeric.
+12. Convert datetime columns with to_datetime utc=True.
+13. Handle missing values intentionally.
+14. Normalize column names and detect collisions.
+15. Drop duplicates with key and keep rule.
+16. Keep latest record per key.
+17. Sort with tie-breakers.
+18. Group and aggregate with named aggregations.
+19. Use value_counts.
+20. Merge with correct join type.
+21. Validate merge cardinality.
+22. Detect unmatched join records.
+23. Compare source/target IDs.
+24. Compare source/target totals.
+25. Concatenate same-schema files.
+26. Melt wide data to long.
+27. Pivot long data to wide.
+28. Use date extraction and half-open filters.
+29. Split valid and invalid rows.
+30. Build data-quality report.
+31. Use chunksize for large CSV.
+32. Explain Pandas memory limitations.
+33. Translate Pandas logic to SQL.
+34. Translate Pandas logic to PySpark.
+35. Explain when not to use Pandas.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No chained assignment mistakes.
+No blind missing-value handling.
+No unvalidated joins.
+No uncontrolled duplicate handling.
+No missing scale explanation.
+Can connect Pandas operations to DE pipelines.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles edge cases, cardinality, dirty data, memory, SQL/Spark translation, and production trade-offs clearly.
+```
+
+
+## 88. Final Summary
+
+Pandas basics are important for Data Engineering interviews because they test practical tabular thinking.
+
+They map directly to:
+
+```text
+CSV/JSON exploration
+data cleaning
+local ETL
+data-quality checks
+aggregation
+deduplication
+joins
+source-target reconciliation
+schema drift checks
+metric reports
+prototype transformations
+SQL/Spark logic validation
+```
+
+The candidate must master:
+
+```text
+DataFrame and Series basics
+file reading and writing
+inspection
+column selection
+row filtering
+loc and iloc
+boolean masks
+chained assignment avoidance
+string operations
+missing values
+type conversion
+datetime parsing
+column cleaning
+deduplication
+latest record logic
+groupby
+value_counts
+merge
+join validation
+concat
+melt
+pivot_table
+data-quality checks
+chunksize
+memory limits
+SQL/PySpark mapping
+```
+
+The mentor must be strict:
+
+```text
+Chained assignment bug → not interview-ready.
+Wrong boolean mask syntax → not interview-ready.
+No dtype/missing-value checks → not interview-ready.
+Unvalidated merge → not interview-ready.
+Uses Pandas blindly for huge data → not interview-ready.
+No SQL/Spark connection → not interview-ready.
+```
+
+The goal is not to memorize Pandas methods.
+
+The goal is to use Pandas as a clear, safe, interview-ready tool for small-to-medium tabular data while knowing when production Data Engineering requires SQL, Spark, or warehouse-native processing.
+
+
+## 89. Problem Card Appendix
+
+### Card 1: Load and Inspect CSV
+
+Topic:
+
+```text
+read_csv + inspection
+```
+
+Core idea:
+
+```text
+Check rows, columns, dtypes, missing values.
+```
+
+Data Engineering connection:
+
+```text
+Initial file validation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 2: Clean Transactions
+
+Topic:
+
+```text
+type conversion + validation
+```
+
+Core idea:
+
+```text
+Normalize fields and split valid/invalid.
+```
+
+Data Engineering connection:
+
+```text
+Raw-to-clean ETL.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 3: Top Customers
+
+Topic:
+
+```text
+groupby aggregation
+```
+
+Core idea:
+
+```text
+Total spend per customer.
+```
+
+Data Engineering connection:
+
+```text
+Customer metrics.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 4: Latest User Profile
+
+Topic:
+
+```text
+sort + drop_duplicates
+```
+
+Core idea:
+
+```text
+Keep latest row per user.
+```
+
+Data Engineering connection:
+
+```text
+Incremental sync merge.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 5: Source Target IDs
+
+Topic:
+
+```text
+merge indicator
+```
+
+Core idea:
+
+```text
+Find only-source/only-target/matched.
+```
+
+Data Engineering connection:
+
+```text
+Reconciliation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 6: Orders Customers Join
+
+Topic:
+
+```text
+left merge + validate
+```
+
+Core idea:
+
+```text
+Preserve orders and detect missing customers.
+```
+
+Data Engineering connection:
+
+```text
+Dimension enrichment.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 7: Daily Event Counts
+
+Topic:
+
+```text
+datetime + groupby
+```
+
+Core idea:
+
+```text
+Counts by date and event type.
+```
+
+Data Engineering connection:
+
+```text
+Event analytics.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 8: Wide to Long
+
+Topic:
+
+```text
+melt
+```
+
+Core idea:
+
+```text
+Normalize metric columns.
+```
+
+Data Engineering connection:
+
+```text
+Metric exports.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 9: Long to Wide
+
+Topic:
+
+```text
+pivot_table
+```
+
+Core idea:
+
+```text
+Create metric columns.
+```
+
+Data Engineering connection:
+
+```text
+Report shaping.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 10: Quality Report
+
+Topic:
+
+```text
+isna/duplicated/isin
+```
+
+Core idea:
+
+```text
+Data-quality metrics.
+```
+
+Data Engineering connection:
+
+```text
+Validation report.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 11: Compare Totals
+
+Topic:
+
+```text
+groupby + outer merge
+```
+
+Core idea:
+
+```text
+Find amount mismatches.
+```
+
+Data Engineering connection:
+
+```text
+Financial reconciliation.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 12: Chunked Aggregation
+
+Topic:
+
+```text
+read_csv chunksize
+```
+
+Core idea:
+
+```text
+Aggregate large CSV in chunks.
+```
+
+Data Engineering connection:
+
+```text
+Memory-aware local processing.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 13: Schema Drift
+
+Topic:
+
+```text
+read headers
+```
+
+Core idea:
+
+```text
+Compare columns across files.
+```
+
+Data Engineering connection:
+
+```text
+Source contract checks.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 14: Missing Dates
+
+Topic:
+
+```text
+date_range + set
+```
+
+Core idea:
+
+```text
+Find missing partitions.
+```
+
+Data Engineering connection:
+
+```text
+Pipeline monitoring.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 15: Top N Per Group
+
+Topic:
+
+```text
+rank/groupby
+```
+
+Core idea:
+
+```text
+Top records per group.
+```
+
+Data Engineering connection:
+
+```text
+Window function equivalent.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 16: Row Number
+
+Topic:
+
+```text
+cumcount
+```
+
+Core idea:
+
+```text
+Add row number per key.
+```
+
+Data Engineering connection:
+
+```text
+SQL ROW_NUMBER equivalent.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 17: Merge Cardinality
+
+Topic:
+
+```text
+validate
+```
+
+Core idea:
+
+```text
+Prevent accidental row multiplication.
+```
+
+Data Engineering connection:
+
+```text
+Join correctness.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 18: Unmatched Records
+
+Topic:
+
+```text
+indicator=True
+```
+
+Core idea:
+
+```text
+Find left_only/right_only.
+```
+
+Data Engineering connection:
+
+```text
+Join audit.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 19: Memory Optimization
+
+Topic:
+
+```text
+usecols/dtype/category
+```
+
+Core idea:
+
+```text
+Reduce memory footprint.
+```
+
+Data Engineering connection:
+
+```text
+Local analysis scale.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+### Card 20: SQL Mapping
+
+Topic:
+
+```text
+concept translation
+```
+
+Core idea:
+
+```text
+Explain Pandas operation as SQL.
+```
+
+Data Engineering connection:
+
+```text
+Interview communication.
+```
+
+Candidate must be able to explain:
+
+```text
+1. Input DataFrame shape and schema.
+2. Pandas operation used.
+3. Why the operation fits.
+4. Edge cases.
+5. Validation checks.
+6. Time and memory notes.
+7. SQL or PySpark equivalent.
+```
+
+Passing score:
+
+```text
+4/5 or higher without major hints.
+```
+
+
+## 90. Data Engineering Scenario Appendix
+
+### Scenario 1: Vendor CSV Cleanup
+
+Pattern:
+
+```text
+read_csv + dtype + missing values
+```
+
+Task:
+
+```text
+Clean messy vendor transactions.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 2: API JSONL Flattening
+
+Pattern:
+
+```text
+read_json lines + json_normalize
+```
+
+Task:
+
+```text
+Flatten API event dumps.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 3: Customer Dimension Join
+
+Pattern:
+
+```text
+left merge + many_to_one
+```
+
+Task:
+
+```text
+Enrich facts with dimensions.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 4: Fact Reconciliation
+
+Pattern:
+
+```text
+outer merge + indicator
+```
+
+Task:
+
+```text
+Compare source and target facts.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 5: Spend Aggregation
+
+Pattern:
+
+```text
+groupby named aggregation
+```
+
+Task:
+
+```text
+Build customer spend summary.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 6: Latest Snapshot
+
+Pattern:
+
+```text
+sort + drop_duplicates
+```
+
+Task:
+
+```text
+Create latest profile snapshot.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 7: Metric Normalization
+
+Pattern:
+
+```text
+melt
+```
+
+Task:
+
+```text
+Convert wide report to long metric table.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 8: Dashboard Wide Format
+
+Pattern:
+
+```text
+pivot_table
+```
+
+Task:
+
+```text
+Convert long metrics to dashboard columns.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 9: Daily Quality Report
+
+Pattern:
+
+```text
+groupby + isna + duplicated
+```
+
+Task:
+
+```text
+Produce DQ report.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 10: Chunked Local Backfill
+
+Pattern:
+
+```text
+read_csv chunksize
+```
+
+Task:
+
+```text
+Process larger file locally within memory.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 11: Schema Drift Scan
+
+Pattern:
+
+```text
+nrows=0
+```
+
+Task:
+
+```text
+Check headers across incoming files.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 12: Join Explosion Debug
+
+Pattern:
+
+```text
+duplicated keys + validate
+```
+
+Task:
+
+```text
+Find many-to-many join issue.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 13: Unmatched Dimension Keys
+
+Pattern:
+
+```text
+indicator=True
+```
+
+Task:
+
+```text
+Find facts missing dimension rows.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 14: Partition Completeness
+
+Pattern:
+
+```text
+date_range
+```
+
+Task:
+
+```text
+Find missing event dates.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Scenario 15: SQL Translation Mock
+
+Pattern:
+
+```text
+Pandas to SQL
+```
+
+Task:
+
+```text
+Explain DataFrame logic to interviewer.
+```
+
+Minimum expected answer:
+
+```text
+1. State assumptions.
+2. Write Pandas code or pseudocode.
+3. Validate output.
+4. Explain edge cases.
+5. Explain SQL/Spark equivalent.
+6. Explain scale limitation.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 91. Drill Appendix
+
+### Drill 1: Inspection Drill
+
+Task:
+
+```text
+Load a DataFrame and report shape, columns, dtypes, missing values, duplicates.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 2: Selection Drill
+
+Task:
+
+```text
+Select columns, filter rows, and use loc/iloc correctly.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 3: Boolean Mask Drill
+
+Task:
+
+```text
+Write filters using &, |, ~ and parentheses.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 4: Chained Assignment Drill
+
+Task:
+
+```text
+Fix SettingWithCopyWarning examples.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 5: String Cleanup Drill
+
+Task:
+
+```text
+Normalize email, currency, status, and column names.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 6: Missing Values Drill
+
+Task:
+
+```text
+Split valid/invalid rows and explain fill/drop decisions.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 7: Type Conversion Drill
+
+Task:
+
+```text
+Use to_numeric and to_datetime with coercion.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 8: Dedup Drill
+
+Task:
+
+```text
+Keep first, last, and latest rows by key.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 9: GroupBy Drill
+
+Task:
+
+```text
+Use named aggregations for totals, counts, unique counts.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 10: Value Counts Drill
+
+Task:
+
+```text
+Build frequency reports including missing values.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 11: Merge Drill
+
+Task:
+
+```text
+Perform inner, left, outer joins and explain row preservation.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 12: Cardinality Drill
+
+Task:
+
+```text
+Use validate and duplicated checks before merge.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 13: Indicator Drill
+
+Task:
+
+```text
+Use indicator=True for reconciliation.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 14: Concat Drill
+
+Task:
+
+```text
+Stack same-schema files and handle missing columns.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 15: Melt Drill
+
+Task:
+
+```text
+Convert wide metrics to long.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 16: Pivot Drill
+
+Task:
+
+```text
+Convert long metrics to wide with aggregation.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 17: Date Drill
+
+Task:
+
+```text
+Parse UTC timestamps and filter half-open windows.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 18: Chunk Drill
+
+Task:
+
+```text
+Aggregate CSV in chunks and explain memory trade-offs.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 19: SQL Mapping Drill
+
+Task:
+
+```text
+Translate Pandas code to SQL.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+### Drill 20: Spark Mapping Drill
+
+Task:
+
+```text
+Translate Pandas code to PySpark conceptually.
+```
+
+Minimum passing answer:
+
+```text
+1. State Pandas operation.
+2. Write correct code.
+3. Handle missing/duplicate edge cases.
+4. Validate output row counts or keys.
+5. Explain memory/scale limits.
+6. Give SQL or Spark equivalent where relevant.
+```
+
+Repair trigger:
+
+```text
+If score is below 4/5, repeat with two variations before moving on.
+```
+
+
+## 92. Quick Reference Cards
+
+### Quick Card 1: DataFrame
+
+Summary:
+
+```text
+Table-like object with rows and columns.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 2: Series
+
+Summary:
+
+```text
+One-dimensional labeled column.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 3: read_csv
+
+Summary:
+
+```text
+Use dtype, parse_dates, usecols, chunksize when needed.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 4: read_jsonl
+
+Summary:
+
+```text
+Use pd.read_json(path, lines=True).
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 5: to_csv
+
+Summary:
+
+```text
+Use index=False unless index is required.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 6: loc
+
+Summary:
+
+```text
+Label/condition-based selection and safe assignment.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 7: iloc
+
+Summary:
+
+```text
+Position-based selection.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 8: mask
+
+Summary:
+
+```text
+Use &, |, ~ with parentheses.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 9: copy
+
+Summary:
+
+```text
+Use after filtering when modifying subset.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 10: str
+
+Summary:
+
+```text
+Vectorized string operations.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 11: to_numeric
+
+Summary:
+
+```text
+Convert numbers with errors='coerce'.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 12: to_datetime
+
+Summary:
+
+```text
+Parse timestamps with utc=True.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 13: dropna
+
+Summary:
+
+```text
+Drop missing rows only when business-approved.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 14: fillna
+
+Summary:
+
+```text
+Fill missing values intentionally.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 15: drop_duplicates
+
+Summary:
+
+```text
+Requires key and keep rule.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 16: groupby
+
+Summary:
+
+```text
+Use named aggregations.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 17: merge
+
+Summary:
+
+```text
+Join DataFrames; validate cardinality.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 18: indicator
+
+Summary:
+
+```text
+Track left_only/right_only/both.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 19: melt
+
+Summary:
+
+```text
+Wide to long.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 20: pivot_table
+
+Summary:
+
+```text
+Long to wide with aggregation.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 21: chunksize
+
+Summary:
+
+```text
+Process CSV in memory-bounded chunks.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+### Quick Card 22: Spark/SQL
+
+Summary:
+
+```text
+Use for large production-scale data.
+```
+
+Interview check:
+
+```text
+Give one Pandas example and one Data Engineering production equivalent.
+```
+
+
+## 93. Pandas Interview FAQ
+
+### FAQ 1: Why did my CSV output include an extra unnamed column?
+
+Answer:
+
+```text
+You probably wrote the DataFrame index. Use `df.to_csv(path, index=False)` unless the index is required.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 2: Why did my filter with and/or fail?
+
+Answer:
+
+```text
+Pandas Series need element-wise operators `&` and `|`, with each condition wrapped in parentheses.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 3: Why did my merge create more rows?
+
+Answer:
+
+```text
+The join keys likely have duplicates, causing many-to-many multiplication. Check duplicates and use `validate`.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 4: Why did my ID lose leading zeros?
+
+Answer:
+
+```text
+Pandas inferred the ID as numeric. Read it with `dtype={'id': 'string'}`.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 5: Why is my date column object dtype?
+
+Answer:
+
+```text
+It was read as string. Use `parse_dates` in read_csv or `pd.to_datetime`.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 6: Why is my amount NaN after conversion?
+
+Answer:
+
+```text
+Invalid numeric strings were coerced. Preserve raw values and validate conversion failures.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 7: Why did SettingWithCopyWarning appear?
+
+Answer:
+
+```text
+You assigned to a filtered slice. Use `.loc` assignment or `.copy()` before modification.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 8: Should I use apply?
+
+Answer:
+
+```text
+Use vectorized operations first. Use apply only when logic is genuinely row-wise and data is small enough.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 9: Should I use Pandas in production?
+
+Answer:
+
+```text
+For small/local jobs maybe. For large production pipelines, SQL/Spark/warehouse-native processing is usually better.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```
+
+### FAQ 10: What is the Pandas equivalent of SQL GROUP BY?
+
+Answer:
+
+```text
+`df.groupby(keys).agg(...)`, often followed by `reset_index()`.
+```
+
+Candidate should also explain:
+
+```text
+1. How to detect the issue.
+2. How to fix it.
+3. How to prevent it in production.
+```

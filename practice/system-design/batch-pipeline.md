@@ -1,0 +1,4373 @@
+# Batch Pipeline System Design Guide
+
+Generated: 2026-06-06
+
+This guide is part of **Data Engineering Sensei**.
+
+Path:
+
+```text
+data-engineering-sensei/practice/system-design/batch-pipeline.md
+```
+
+This file trains the mentor and candidate on **batch data pipeline system design for Data Engineering interviews**.
+
+The guide is interview-focused. It teaches how to design a production-grade batch pipeline that is:
+
+```text
+correct
+idempotent
+observable
+recoverable
+scalable
+cost-aware
+secure
+easy to backfill
+easy to operate
+```
+
+Use this with:
+
+```text
+docs/system-design-guide.md
+docs/data-engineering-fundamentals.md
+docs/etl-elt-pipelines-guide.md
+docs/data-warehouse-guide.md
+docs/cloud-data-platforms-guide.md
+docs/orchestration-airflow-guide.md
+docs/spark-pyspark-guide.md
+docs/sql-interview-guide.md
+docs/assessment-rubric.md
+docs/communication-rubric.md
+modes/system-design-mode.md
+modes/interview-mode.md
+modes/feedback-mode.md
+modes/weakness-repair-mode.md
+practice/sql/deduplication.md
+practice/sql/joins.md
+practice/sql/query-optimization.md
+practice/sql/window-functions.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+```
+
+Default interview target:
+
+```text
+FAANG-style Data Engineering interview standard, adjusted by candidate experience.
+```
+
+
+## 1. Purpose
+
+The purpose of this guide is to make the candidate strong at batch pipeline design interviews.
+
+The candidate should learn to answer:
+
+```text
+What are the business requirements?
+What are the source systems?
+What is the data volume?
+What is the freshness SLA?
+What is the batch frequency?
+What is the output grain?
+Where does raw data land?
+How is data cleaned?
+How is data transformed?
+How are duplicates handled?
+How are deletes handled?
+How is incremental load designed?
+How are watermarks managed?
+How are writes made idempotent?
+How are late-arriving records handled?
+How are backfills handled?
+How are schema changes handled?
+How are data quality checks designed?
+How are retries and failures handled?
+How is the pipeline monitored?
+How is cost controlled?
+How does the design scale?
+```
+
+A candidate is interview-ready only when they can design beyond tool names.
+
+A strong answer must cover:
+
+```text
+requirements
+source behavior
+scale
+SLA
+architecture
+raw/stage/curated/mart layers
+storage format
+partitioning
+incremental strategy
+idempotency
+data quality
+orchestration
+failure handling
+backfills
+late data
+schema evolution
+observability
+security
+cost
+trade-offs
+```
+
+
+## 2. What Interviewers Are Testing
+
+Batch pipeline design tests whether the candidate can think like a production Data Engineer.
+
+Interviewers evaluate:
+
+```text
+structured requirement gathering
+ability to define table grain
+understanding of source update patterns
+ability to design layered architecture
+idempotency and rerun safety
+incremental processing
+late-arriving data strategy
+data quality design
+operational monitoring
+failure recovery
+backfill thinking
+security and governance awareness
+cost and performance trade-offs
+clear communication
+```
+
+Weak answer:
+
+```text
+Use Airflow, Spark, and Snowflake.
+```
+
+Strong answer:
+
+```text
+I would land immutable raw data partitioned by ingestion date, validate schema and completeness, clean into staging, deduplicate by business key, merge incrementally into curated facts and dimensions, build partitioned marts for dashboards, orchestrate with Airflow, make writes idempotent, track watermarks, support date-range backfills, and monitor job health and data health.
+```
+
+Interview line:
+
+```text
+A batch pipeline is not just moving data. It is a reliability system for trusted business data.
+```
+
+
+## 3. Core Mental Model
+
+A batch pipeline transforms source data into trusted analytical outputs on a schedule.
+
+Mental model:
+
+```text
+Source systems
+    ↓
+Ingestion
+    ↓
+Raw immutable storage
+    ↓
+Validation
+    ↓
+Staging / cleaned data
+    ↓
+Curated facts and dimensions
+    ↓
+Business marts / aggregates / feature tables
+    ↓
+Consumers
+```
+
+Operational control plane:
+
+```text
+orchestration
+metadata
+watermarks
+data quality
+monitoring
+alerts
+lineage
+security
+cost tracking
+runbooks
+```
+
+Every design should answer:
+
+```text
+What data enters?
+How is it stored raw?
+How is it transformed?
+How is correctness guaranteed?
+How is output served?
+How are failures recovered?
+How is the system operated over time?
+```
+
+Interview line:
+
+```text
+I design batch pipelines as layered, idempotent, observable systems.
+```
+
+
+## 4. Batch Pipeline Vocabulary
+
+Core vocabulary:
+
+```text
+Batch pipeline:
+Scheduled data processing workflow.
+
+Source:
+System where data originates.
+
+Ingestion:
+Extraction and landing of source data.
+
+Raw zone:
+Immutable source copy.
+
+Staging:
+Typed, cleaned, normalized data.
+
+Curated layer:
+Trusted facts, dimensions, and history tables.
+
+Data mart:
+Consumer-specific aggregate or serving table.
+
+DAG:
+Directed acyclic graph of tasks.
+
+Watermark:
+Last successfully processed point.
+
+Incremental load:
+Processing only new or changed data.
+
+Full refresh:
+Rebuild all data.
+
+CDC:
+Change Data Capture for inserts, updates, and deletes.
+
+Backfill:
+Historical reprocessing.
+
+Idempotency:
+Safe rerun produces the same final result.
+
+Partition:
+Logical or physical data split, usually by date.
+
+Late-arriving data:
+Data that arrives after its expected processing window.
+
+Schema evolution:
+Source schema changes over time.
+
+Data quality:
+Freshness, completeness, uniqueness, validity, consistency, and volume checks.
+
+Quarantine:
+Storage for bad records with error metadata.
+```
+
+
+## 5. Standard Answer Framework
+
+Use this structure in every batch pipeline interview:
+
+```text
+1. Clarify requirements.
+2. Identify sources and consumers.
+3. Estimate data scale.
+4. Define SLA and batch frequency.
+5. Define output tables and grain.
+6. Draw high-level architecture.
+7. Explain ingestion.
+8. Explain raw storage.
+9. Explain staging and transformation.
+10. Explain curated and mart layers.
+11. Explain incremental strategy.
+12. Explain idempotency and writes.
+13. Explain deduplication and delete handling.
+14. Explain late-arriving data.
+15. Explain backfills.
+16. Explain schema evolution.
+17. Explain data quality checks.
+18. Explain orchestration.
+19. Explain retries and failures.
+20. Explain monitoring and alerts.
+21. Explain security and governance.
+22. Explain cost and scaling.
+23. Summarize trade-offs.
+```
+
+Short version:
+
+```text
+Requirements → Architecture → Correctness → Operations → Scale → Trade-offs
+```
+
+Strict rule:
+
+```text
+No batch design is strong without idempotency, data quality, backfills, and monitoring.
+```
+
+
+## 6. Scoring Rubric
+
+Score batch pipeline answers from 0 to 5.
+
+### Score 0
+
+No real design. Only tool names.
+
+### Score 1
+
+Basic source-to-warehouse flow but no reliability or quality.
+
+### Score 2
+
+Some layers included, but misses idempotency, incremental strategy, or failure handling.
+
+### Score 3
+
+Reasonable design but weak on backfills, late data, schema changes, observability, or trade-offs.
+
+### Score 4
+
+Interview-ready. Covers requirements, layered architecture, incremental/idempotent processing, data quality, orchestration, recovery, backfills, monitoring, scale, and trade-offs.
+
+### Score 5
+
+Strong. Handles CDC, deletes, schema contracts, late data, replay, data lineage, cost, security, backfill framework, operational runbooks, and realistic failure modes.
+
+Automatic score cap below 4 if:
+
+```text
+no requirements clarification
+no output grain
+no raw immutable layer
+no idempotency
+no data quality checks
+no backfill strategy
+no late-arriving data strategy
+no failure recovery
+no monitoring
+only mentions tools
+```
+
+
+## 7. Requirement Clarification Questions
+
+Ask these first.
+
+### Business
+
+```text
+What business problem are we solving?
+Who consumes the output?
+What tables or metrics are needed?
+What is the expected output grain?
+Is this for BI, finance, ML, operations, or compliance?
+What is the SLA?
+What happens if data is late or missing?
+```
+
+### Source
+
+```text
+What are the source systems?
+Are they databases, APIs, files, SaaS tools, or logs?
+Is source data append-only or mutable?
+Are deletes possible?
+Is updated_at reliable?
+Is CDC available?
+Are source systems rate-limited?
+Can we read from replicas?
+```
+
+### Scale
+
+```text
+How many records per day?
+How much history?
+How many tables?
+How wide are rows?
+How fast is data growing?
+What is the peak batch size?
+```
+
+### Processing
+
+```text
+Daily, hourly, weekly, or event-triggered?
+Full refresh, incremental, or CDC?
+SQL, Spark, Python, or warehouse ELT?
+How much late data is expected?
+Do we need backfills?
+```
+
+### Operations
+
+```text
+What failures are expected?
+Who owns the pipeline?
+What alerts are required?
+What DQ checks are critical?
+What security constraints exist?
+```
+
+Interview line:
+
+```text
+I clarify source behavior, data volume, freshness, and consumers before choosing architecture.
+```
+
+
+## 8. Non-Functional Requirements
+
+Non-functional requirements decide architecture.
+
+Important NFRs:
+
+```text
+freshness:
+data available by 7 AM daily
+
+reliability:
+scheduled runs succeed consistently
+
+correctness:
+metrics reconcile and keys are unique
+
+recoverability:
+safe retry and replay
+
+scalability:
+handles data growth
+
+cost:
+runs within compute and storage budget
+
+observability:
+clear job and data health metrics
+
+security:
+least privilege and PII protection
+
+maintainability:
+modular, documented, owned
+```
+
+Interview line:
+
+```text
+A pipeline that is fast but not correct or recoverable is not production-ready.
+```
+
+
+## 9. Reference Architecture
+
+Reference architecture:
+
+```text
+[Sources]
+  OLTP DBs
+  APIs
+  SaaS tools
+  Partner files
+  Logs/events
+        ↓
+[Ingestion]
+  extract jobs
+  API pullers
+  file watchers
+  CDC capture
+        ↓
+[Raw Zone]
+  immutable object storage
+  source + ingestion_date + batch_id partitions
+        ↓
+[Validation]
+  schema
+  row count
+  freshness
+  required fields
+        ↓
+[Staging]
+  typed columns
+  normalized timestamps
+  deduped source records
+  bad rows quarantined
+        ↓
+[Curated]
+  facts
+  dimensions
+  SCD history
+  current state tables
+        ↓
+[Data Marts]
+  dashboard tables
+  feature tables
+  exports
+        ↓
+[Consumers]
+  BI
+  analysts
+  ML
+  operations
+```
+
+Control plane:
+
+```text
+orchestrator
+watermark metadata
+audit tables
+data quality results
+monitoring dashboards
+alerts
+catalog/lineage
+access controls
+```
+
+Interview line:
+
+```text
+I separate storage and transformation into raw, staging, curated, and mart layers so data is reproducible and trusted.
+```
+
+
+## 10. Source System Patterns
+
+Common source patterns:
+
+```text
+Small static table:
+full snapshot is acceptable.
+
+Large mutable table:
+incremental timestamp or CDC.
+
+Append-only event logs:
+partitioned incremental ingestion.
+
+SaaS API:
+cursor/timestamp incremental extraction with retries.
+
+Partner files:
+file audit, manifest validation, checksum, raw landing.
+
+CDC feed:
+ordered insert/update/delete events with offsets.
+
+Unreliable updated_at:
+snapshot diff or CDC if available.
+```
+
+Source decision questions:
+
+```text
+Can the source be updated?
+Can rows be deleted?
+Is updated_at reliable?
+Is there a primary key?
+Can we extract incrementally?
+Is CDC available?
+How far back can source data change?
+```
+
+Interview line:
+
+```text
+The source update pattern determines the ingestion and merge strategy.
+```
+
+
+## 11. Ingestion Method Decision Table
+
+### Full snapshot
+
+```text
+Simple and safe for small tables, but expensive for large tables.
+```
+
+### Incremental timestamp
+
+```text
+Efficient if updated_at is reliable; needs lookback and tie handling.
+```
+
+### CDC
+
+```text
+Best for high-volume mutable sources with deletes; more operationally complex.
+```
+
+### File arrival
+
+```text
+Best for partner/batch files; needs manifest and file audit.
+```
+
+### API cursor
+
+```text
+Best for APIs; needs pagination, retries, rate limit handling, and cursor persistence.
+```
+
+### Snapshot diff
+
+```text
+Useful when no updated_at exists; can be expensive.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 12. Raw Zone Design
+
+### Immutable storage
+
+```text
+Never overwrite raw source data.
+```
+
+### Partitioning
+
+```text
+Usually partition by source and ingestion_date.
+```
+
+### Metadata columns
+
+```text
+Add _source_system, _ingested_at, _batch_id, _source_file, _schema_version.
+```
+
+### Replay
+
+```text
+Raw data should support reprocessing and debugging.
+```
+
+### Access
+
+```text
+Restrict raw access because it can contain sensitive unmasked data.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 13. Staging Layer Design
+
+### Parsing
+
+```text
+Parse CSV, JSON, Avro, or source-specific formats.
+```
+
+### Typing
+
+```text
+Cast strings into dates, timestamps, numbers, booleans, and IDs.
+```
+
+### Normalization
+
+```text
+Standardize names, timestamp timezones, country codes, and IDs.
+```
+
+### JSON extraction
+
+```text
+Extract frequently used fields into typed columns.
+```
+
+### Validation
+
+```text
+Check required fields and schema.
+```
+
+### Quarantine
+
+```text
+Store invalid records with error metadata.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 14. Curated Layer Design
+
+### Facts
+
+```text
+Represent measurable business events such as orders, payments, events, inventory movements.
+```
+
+### Dimensions
+
+```text
+Represent descriptive entities such as users, products, stores, plans.
+```
+
+### History
+
+```text
+Use SCD Type 2 when historical dimension attributes matter.
+```
+
+### Keys
+
+```text
+Define primary/business keys and foreign keys.
+```
+
+### Grain
+
+```text
+Document what one row represents.
+```
+
+### Quality
+
+```text
+Curated tables should pass stricter DQ checks than staging.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 15. Data Mart Layer Design
+
+### Consumer focused
+
+```text
+Shape tables around dashboards, ML, reports, and exports.
+```
+
+### Pre-aggregated
+
+```text
+Materialize expensive common metrics.
+```
+
+### Stable definitions
+
+```text
+Use consistent business metric logic.
+```
+
+### Partitioned
+
+```text
+Partition by report_date, feature_date, or business date.
+```
+
+### Validated
+
+```text
+Reconcile marts back to curated facts.
+```
+
+### Documented
+
+```text
+Each mart needs grain, owner, SLA, and metric definitions.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 16. File Format Choices
+
+### CSV
+
+```text
+Easy exchange but weak schema and slow parsing.
+```
+
+### JSON
+
+```text
+Flexible and good for raw APIs, but large and expensive to query repeatedly.
+```
+
+### Parquet
+
+```text
+Columnar, compressed, schema-aware, preferred for analytics.
+```
+
+### Avro
+
+```text
+Good for row-oriented event/CDC data and schema evolution.
+```
+
+### ORC
+
+```text
+Columnar and efficient in Hive ecosystems.
+```
+
+### Default
+
+```text
+Use raw format when needed for fidelity; use Parquet for staged/curated analytics.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 17. Partitioning Strategy
+
+### Raw partition
+
+```text
+Often ingestion_date for replay and operations.
+```
+
+### Curated fact partition
+
+```text
+Often business date such as order_date or event_date.
+```
+
+### Mart partition
+
+```text
+Often report_date or feature_date.
+```
+
+### Good partition
+
+```text
+Commonly filtered and moderate cardinality.
+```
+
+### Bad partition
+
+```text
+High-cardinality user_id or timestamp-to-second.
+```
+
+### Trade-off
+
+```text
+Too few partitions scan too much; too many partitions create metadata and small-file problems.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 18. Output Grain
+
+### Definition
+
+```text
+Output grain defines what one row means.
+```
+
+### Examples
+
+```text
+one row per order, order item, user-date, product-date, campaign-date, or user snapshot.
+```
+
+### Why it matters
+
+```text
+Grain controls primary key, joins, dedupe, validation, and metrics.
+```
+
+### Interview rule
+
+```text
+Always state grain before discussing joins or metrics.
+```
+
+
+Interview line:
+
+```text
+Define the layer, its purpose, and the validation needed before moving downstream.
+```
+
+
+## 19. Incremental Processing
+
+Incremental processing means only new or changed data is processed.
+
+Common methods:
+
+```text
+updated_at watermark
+source sequence watermark
+CDC offset / LSN
+file registry
+affected partitions
+```
+
+Safe watermark rule:
+
+```text
+Advance watermark only after target write and data quality validation succeed.
+```
+
+Lookback pattern:
+
+```text
+extract from last_watermark - N days
+dedupe by business key
+merge or overwrite affected partitions
+```
+
+Interview line:
+
+```text
+Incremental loads reduce cost, but they require reliable watermarks and idempotent writes.
+```
+
+
+## 20. Full Refresh vs Incremental vs CDC
+
+Decision table:
+
+```text
+Small dimension:
+full refresh
+
+Large append-only fact:
+partition incremental
+
+Large mutable table:
+incremental merge or CDC
+
+Deletes required:
+CDC or source snapshot diff
+
+Unreliable updated_at:
+CDC if possible, otherwise snapshot comparison
+
+Dashboard aggregate:
+partition overwrite by report_date
+
+ML features:
+partition overwrite by feature_date with point-in-time logic
+```
+
+Interview line:
+
+```text
+I choose the load pattern based on source mutability, volume, delete behavior, and freshness requirements.
+```
+
+
+## 21. Idempotency
+
+Idempotency means rerunning the same batch does not create duplicate or corrupt data.
+
+Idempotent write patterns:
+
+```text
+MERGE by business key
+partition overwrite
+delete affected partition then insert
+write temp table then atomic swap
+dedupe source before load
+use batch_id and run_id
+update watermark after successful validation
+```
+
+Bad pattern:
+
+```text
+blind append into final table
+```
+
+Failure scenario:
+
+```text
+job writes data and fails before marking success
+rerun processes same input
+idempotent write prevents duplicates
+```
+
+Interview line:
+
+```text
+Every production batch job should be safe to rerun.
+```
+
+
+## 22. MERGE / Upsert Design
+
+Use MERGE for mutable current-state targets.
+
+Steps:
+
+```text
+1. Read incremental source.
+2. Deduplicate source to one latest record per key.
+3. Validate source uniqueness.
+4. MERGE into target by business key.
+5. Apply deletes if operation = DELETE.
+6. Avoid updating unchanged rows if possible.
+7. Validate target uniqueness and row counts.
+```
+
+Pseudo-SQL:
+
+```sql
+MERGE INTO target t
+USING deduped_source s
+ON t.business_key = s.business_key
+WHEN MATCHED AND s.operation = 'DELETE' THEN DELETE
+WHEN MATCHED THEN UPDATE SET ...
+WHEN NOT MATCHED AND s.operation <> 'DELETE' THEN INSERT (...);
+```
+
+Interview line:
+
+```text
+MERGE source must be one row per key, otherwise updates can be ambiguous.
+```
+
+
+## 23. Partition Overwrite Design
+
+Use partition overwrite for date-based outputs.
+
+Steps:
+
+```text
+1. Identify affected business dates.
+2. Recompute complete output for those partitions.
+3. Write to temp location.
+4. Validate row counts and metrics.
+5. Overwrite affected partitions.
+6. Update audit metadata.
+```
+
+Good for:
+
+```text
+daily marts
+daily features
+late-arriving event corrections
+backfills
+snapshot tables
+```
+
+Warning:
+
+```text
+Do not partially append into a partition that should be complete.
+```
+
+Interview line:
+
+```text
+Partition overwrite is a simple and reliable idempotency strategy for date-grained outputs.
+```
+
+
+## 24. Deduplication Strategy
+
+Deduplication needs:
+
+```text
+business key
+duplicate definition
+keep rule
+tie-breaker
+audit count
+validation
+```
+
+Common keep order:
+
+```text
+source_updated_at DESC
+source_sequence DESC
+ingested_at DESC
+record_id DESC
+```
+
+SQL pattern:
+
+```sql
+WITH ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (
+      PARTITION BY business_key
+      ORDER BY source_updated_at DESC, ingested_at DESC
+    ) AS rn,
+    COUNT(*) OVER (PARTITION BY business_key) AS duplicate_count
+  FROM staging_table
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+Interview line:
+
+```text
+Deduplication is not SELECT DISTINCT; it needs a key and deterministic survivor rule.
+```
+
+
+## 25. Late-Arriving Data
+
+Late-arriving data examples:
+
+```text
+mobile events uploaded late
+partner file delayed
+payment status updated after report
+CDC lag
+timezone cutoffs
+source outage
+```
+
+Handling strategies:
+
+```text
+lookback window
+overwrite recent partitions
+merge mutable records
+track late-arrival rate
+separate correction pipeline for very old changes
+business policy for closed accounting periods
+```
+
+Trade-off:
+
+```text
+longer lookback = more correctness + more cost
+shorter lookback = less cost + more missed changes
+```
+
+Interview line:
+
+```text
+I handle late data with lookback plus idempotent rewrite of affected outputs.
+```
+
+
+## 26. Backfill Strategy
+
+Backfill means reprocessing historical data.
+
+Strong backfill design:
+
+```text
+parameterized by date/key range
+uses same code path as daily pipeline
+writes idempotently
+processes partitions in chunks
+records backfill metadata
+validates output before publishing
+supports resume from checkpoint
+communicates downstream impact
+```
+
+Backfill metadata:
+
+```text
+backfill_id
+pipeline_name
+range_start
+range_end
+triggered_by
+code_version
+status
+records_processed
+validation_status
+started_at
+completed_at
+```
+
+Interview line:
+
+```text
+Backfills should be controlled production workflows, not one-off manual scripts.
+```
+
+
+## 27. Schema Evolution
+
+Source schema changes include:
+
+```text
+new nullable column
+new required column
+renamed column
+removed column
+type change
+new enum value
+nested JSON shape change
+meaning change
+```
+
+Handling:
+
+```text
+capture schema version
+validate schema at ingestion
+allow safe additive changes
+fail fast on breaking changes
+quarantine bad records
+alert source owner
+version transformations
+document downstream impact
+```
+
+Interview line:
+
+```text
+Schema changes should be treated as data contract events, not silent surprises.
+```
+
+
+## 28. CDC Batch Processing
+
+CDC records include:
+
+```text
+operation type
+business key
+before values
+after values
+source timestamp
+log sequence number
+ingested_at
+```
+
+CDC current-state pipeline:
+
+```text
+read CDC since last offset
+preserve raw changes
+dedupe to latest operation per key if building current state
+MERGE into target
+delete or mark deleted for DELETE operation
+update offset only after success
+monitor lag
+```
+
+CDC history pipeline:
+
+```text
+apply changes in order
+create SCD intervals
+preserve deletes as end dates or tombstones
+```
+
+Interview line:
+
+```text
+CDC pipelines must preserve source ordering and handle deletes explicitly.
+```
+
+
+## 29. Data Quality Dimensions
+
+- Freshness: data is updated on time.
+- Completeness: expected records, files, or partitions exist.
+- Uniqueness: business keys are unique.
+- Validity: values follow allowed rules.
+- Consistency: related tables agree.
+- Accuracy: values match source/business truth.
+- Referential integrity: foreign keys match dimensions.
+- Volume: row counts are within expected range.
+- Schema: structure matches the expected contract.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 30. Essential Data Quality Checks
+
+- freshness check on latest partition or max ingested_at
+- row count check by partition
+- required field not-null checks
+- business key uniqueness checks
+- accepted value checks for status/enums
+- referential integrity checks
+- source-to-target count reconciliation
+- metric total reconciliation
+- duplicate file or duplicate batch checks
+- schema compatibility checks
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 31. Data Quality Severity
+
+- Critical: block publish, page/on-call, example duplicate primary keys or missing partition.
+- Warning: continue with visible alert, example moderate row count drift.
+- Info: log and trend, example new optional enum value.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 32. Orchestration
+
+- Use a DAG to schedule extraction, validation, staging, curated build, mart build, and publish.
+- Tasks should be idempotent and parameterized by run date.
+- Retries should be used for transient failures, not deterministic data-quality failures.
+- Each task should emit audit metadata and logs.
+- Orchestration should support backfills and manual reruns.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 33. Failure Handling
+
+- Do not publish partial output.
+- Write to temp paths/tables first.
+- Validate before promotion.
+- Retry transient failures with backoff.
+- Fail fast on schema or critical DQ failures.
+- Quarantine bad records with error metadata.
+- Alert with affected table, partition, and owner.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 34. Quarantine / Dead Letter
+
+- Store raw bad record.
+- Store source system and batch ID.
+- Store error type and error message.
+- Store field name if applicable.
+- Store detected timestamp.
+- Expose quarantine count in monitoring.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 35. Observability
+
+- job status
+- task duration
+- records read and written
+- records rejected
+- watermark value
+- freshness by table
+- DQ check results
+- schema version
+- late-arrival count
+- cost and bytes processed
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 36. Alerting
+
+- DAG failed
+- SLA missed
+- critical DQ check failed
+- missing expected file or partition
+- schema breaking change
+- row count zero unexpectedly
+- cost spike
+- duplicate key spike
+- freshness delayed
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 37. Audit Tables
+
+- pipeline_run table tracks run_id, status, start, end, code version.
+- task_run table tracks task-level status and counts.
+- watermark table tracks last successful source point.
+- dq_result table tracks check outcomes.
+- file_audit table tracks file ingestion status.
+- backfill table tracks historical reruns.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 38. Security and Governance
+
+- Use least-privilege access.
+- Encrypt data at rest and in transit.
+- Store secrets outside code.
+- Restrict raw zone access.
+- Mask or tokenize PII in marts.
+- Audit access to sensitive data.
+- Document table owners and data classifications.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 39. Cost and Performance
+
+- Process incrementally instead of full refresh where possible.
+- Partition by commonly filtered dates.
+- Select only needed columns.
+- Use Parquet or columnar formats for analytics.
+- Pre-aggregate reusable metrics.
+- Compact small files.
+- Avoid raw fact-to-fact joins.
+- Monitor cost by pipeline.
+- Right-size compute and use autoscaling limits.
+
+Interview line:
+
+```text
+Production batch pipelines must monitor both job health and data health.
+```
+
+
+## 41. Practice Case 1: Daily Orders Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for daily orders pipeline.
+```
+
+Source:
+
+```text
+OLTP orders table
+```
+
+Output:
+
+```text
+fact_orders and daily_order_metrics
+```
+
+Strong design points:
+
+- incremental extraction by updated_at with 3-day lookback
+- raw landing by ingestion_date and batch_id
+- staging casts timestamps and amounts
+- dedupe by order_id using updated_at and ingested_at
+- MERGE curated fact_orders by order_id
+- overwrite recent order_date mart partitions
+- validate duplicate order_id, null IDs, row counts, revenue totals, freshness
+- monitor late updates and SLA
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 42. Practice Case 2: API Customer Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for api customer pipeline.
+```
+
+Source:
+
+```text
+SaaS customer API
+```
+
+Output:
+
+```text
+dim_customer_current and customer history
+```
+
+Strong design points:
+
+- cursor-based API extraction
+- pagination and rate-limit backoff
+- raw JSON response storage
+- parse to typed staging
+- dedupe by customer_id and source_updated_at
+- MERGE current dimension
+- optional SCD Type 2 history
+- update cursor only after successful validation
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 43. Practice Case 3: Partner Transaction File Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for partner transaction file pipeline.
+```
+
+Source:
+
+```text
+daily partner CSV files
+```
+
+Output:
+
+```text
+fact_partner_transactions
+```
+
+Strong design points:
+
+- file watcher detects arrival
+- file_audit tracks checksum, size, row count, status
+- raw file copied immutably
+- schema and manifest validation
+- bad rows quarantined
+- dedupe by transaction_id
+- merge or overwrite target partition
+- alert on missing or duplicate files
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 44. Practice Case 4: Clickstream Batch Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for clickstream batch pipeline.
+```
+
+Source:
+
+```text
+event logs in object storage
+```
+
+Output:
+
+```text
+fact_events, fact_sessions, daily_user_activity
+```
+
+Strong design points:
+
+- raw events partitioned by ingestion_date/hour
+- staging extracts event_id, user_id, event_name, event_time, event_date
+- dedupe by event_id
+- partition curated facts by event_date
+- sessionize using 30-minute inactivity rule
+- build user-day table for DAU
+- use lookback for late events
+- monitor duplicate rate, null user rate, late arrivals, schema drift
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 45. Practice Case 5: Finance Reconciliation Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for finance reconciliation pipeline.
+```
+
+Source:
+
+```text
+provider transactions and internal payments
+```
+
+Output:
+
+```text
+reconciliation_detail and summary
+```
+
+Strong design points:
+
+- preserve raw provider files/API responses
+- normalize transaction_id, amount, currency, status
+- dedupe provider and internal records
+- full outer join by transaction_id
+- classify only_in_provider, only_in_internal, amount_mismatch, status_mismatch, match
+- strict DQ checks on totals and duplicate IDs
+- partition output by reconciliation_date
+- preserve audit history
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 46. Practice Case 6: Customer 360 Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for customer 360 pipeline.
+```
+
+Source:
+
+```text
+users, orders, payments, tickets, events, marketing
+```
+
+Output:
+
+```text
+customer_360 one row per user
+```
+
+Strong design points:
+
+- curate each source independently
+- aggregate each one-to-many source to user grain
+- join user-level aggregates to dim_user
+- avoid raw fact-to-fact joins
+- validate one row per user
+- reconcile feature totals to source facts
+- snapshot daily if history is needed
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 47. Practice Case 7: ML Feature Batch Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for ml feature batch pipeline.
+```
+
+Source:
+
+```text
+curated facts and dimensions
+```
+
+Output:
+
+```text
+user_features_daily
+```
+
+Strong design points:
+
+- define feature_date and point-in-time cutoff
+- compute features using only data before cutoff
+- partition by feature_date
+- one row per user_id + feature_date
+- support historical backfill
+- validate feature nulls and distribution drift
+- avoid data leakage
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 48. Practice Case 8: CDC to Warehouse Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for cdc to warehouse pipeline.
+```
+
+Source:
+
+```text
+database CDC logs
+```
+
+Output:
+
+```text
+current tables and optional SCD history
+```
+
+Strong design points:
+
+- land raw CDC with operation and sequence
+- track CDC offset/LSN
+- parse staging changes
+- dedupe latest operation per key for current state
+- apply inserts, updates, deletes with MERGE
+- build history using ordered changes
+- monitor CDC lag and sequence gaps
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 49. Practice Case 9: Inventory Snapshot Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for inventory snapshot pipeline.
+```
+
+Source:
+
+```text
+inventory movements and stock snapshots
+```
+
+Output:
+
+```text
+inventory_snapshot_daily
+```
+
+Strong design points:
+
+- define grain product_id + warehouse_id + snapshot_date
+- ingest movements incrementally
+- compute stock balance by date
+- overwrite affected snapshot_date partitions
+- validate uniqueness and negative quantity rules
+- monitor missing product/location snapshots
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 50. Practice Case 10: Data Quality Monitoring Pipeline
+
+Prompt:
+
+```text
+Design a batch pipeline for data quality monitoring pipeline.
+```
+
+Source:
+
+```text
+warehouse metadata and configured rules
+```
+
+Output:
+
+```text
+dq_results and alerts
+```
+
+Strong design points:
+
+- store DQ rules in config table
+- run checks on affected partitions
+- write results with severity
+- block publish on critical checks
+- alert owners with actionable context
+- build DQ dashboard over historical results
+
+Minimum interview answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure handling
+backfill strategy
+monitoring
+trade-offs
+```
+
+Interview line:
+
+```text
+Tie the architecture to the business output and production failure modes.
+```
+
+
+## 51. ELT vs ETL
+
+ETL:
+
+```text
+extract → transform outside warehouse → load
+```
+
+ELT:
+
+```text
+extract → load raw/staged data → transform inside warehouse
+```
+
+Use ELT when SQL transformations and warehouse scalability are strong.
+Use ETL/Spark when parsing, file processing, or distributed transformations are complex.
+
+Interview line:
+
+```text
+I choose ETL or ELT based on transformation complexity, data volume, platform, and team skills.
+```
+
+
+## 52. SQL vs Spark vs Python
+
+SQL is strong for warehouse transformations, joins, aggregations, and marts.
+
+Spark is strong for very large distributed file/event processing and complex transformations.
+
+Python is strong for API ingestion, orchestration helpers, metadata tasks, and small processing.
+
+Avoid using single-node Python for huge data.
+
+Interview line:
+
+```text
+I use the simplest engine that can meet scale, reliability, and maintainability requirements.
+```
+
+
+## 53. Timezone and Date Handling
+
+Rules:
+
+```text
+store timestamps in UTC
+store business date explicitly if needed
+separate ingestion_date from event_date
+convert to business timezone for reporting
+document timezone assumptions
+handle daylight saving time carefully
+```
+
+Interview line:
+
+```text
+Ingestion date and business date are different and should not be confused.
+```
+
+
+## 54. Data Modeling
+
+Batch outputs should have clear grains.
+
+Examples:
+
+```text
+fact_orders: one row per order
+fact_order_items: one row per order item
+fact_events: one row per event
+inventory_snapshot_daily: one row per product + location + date
+customer_360: one row per user + snapshot_date
+```
+
+Interview line:
+
+```text
+Modeling grain controls correctness of joins, metrics, and validations.
+```
+
+
+## 55. Slowly Changing Dimensions
+
+Use SCD Type 2 when historical attribute values matter.
+
+Columns:
+
+```text
+business_key
+attributes
+effective_from
+effective_to
+is_current
+```
+
+Checks:
+
+```text
+one current row per key
+no overlapping intervals
+no duplicate effective_from per key
+```
+
+Interview line:
+
+```text
+If reports need historical truth, join facts to the dimension row active at the fact time.
+```
+
+
+## 56. Data Contracts
+
+A data contract defines expected producer behavior.
+
+Includes:
+
+```text
+schema
+data types
+required fields
+primary key
+update/delete semantics
+freshness
+allowed enum values
+ownership
+evolution rules
+```
+
+Interview line:
+
+```text
+Data contracts prevent silent upstream changes from breaking downstream pipelines.
+```
+
+
+## 57. Small Files Problem
+
+Small files hurt data lake performance.
+
+Causes:
+
+```text
+over-partitioning
+frequent tiny writes
+too many concurrent writers
+streaming-style outputs
+```
+
+Fixes:
+
+```text
+compaction
+target file size policies
+avoid high-cardinality partitions
+batch writes
+optimize table commands where supported
+```
+
+Interview line:
+
+```text
+For lake pipelines, file layout is part of performance design.
+```
+
+
+## 58. Source Protection
+
+Batch extraction can overload source systems.
+
+Protections:
+
+```text
+read replicas
+off-peak extraction
+incremental reads
+pagination
+rate limits
+CDC
+indexed source queries
+coordination with source owners
+```
+
+Interview line:
+
+```text
+The pipeline should not make production source systems unstable.
+```
+
+
+## 59. Effectively-Once Output
+
+True exactly-once across systems is difficult.
+
+Practical target:
+
+```text
+effectively-once final results
+```
+
+Achieve with:
+
+```text
+idempotent writes
+dedupe by business key
+atomic publish
+watermark after success
+raw replay
+transactional merge where supported
+```
+
+Interview line:
+
+```text
+I aim for effectively-once outputs through idempotency and safe commit semantics.
+```
+
+
+## 60. Runbook
+
+A runbook should include:
+
+```text
+pipeline purpose
+owner
+SLA
+DAG link
+input sources
+output tables
+common failures
+rerun steps
+backfill steps
+DQ checks
+escalation contacts
+known limitations
+```
+
+Interview line:
+
+```text
+A runbook turns pipeline recovery from tribal knowledge into repeatable operations.
+```
+
+
+## 61. Testing Strategy
+
+Test types:
+
+```text
+unit tests for transformation logic
+integration tests for source-to-target flow
+data quality tests for production assumptions
+regression tests for metric changes
+performance tests for large partitions
+backfill tests for historical ranges
+```
+
+Interview line:
+
+```text
+Data pipelines need both code tests and data tests.
+```
+
+
+## 62. Deployment Strategy
+
+Good deployment:
+
+```text
+version-controlled code
+CI checks
+SQL linting
+unit tests
+staging environment
+shadow run for critical changes
+old-vs-new output comparison
+rollback plan
+```
+
+Interview line:
+
+```text
+For critical pipelines, I prefer shadow runs and reconciliation before switching consumers.
+```
+
+
+## 63. Pattern Classification Drill
+
+### Small table changes rarely
+
+```text
+Full snapshot
+```
+
+### Large mutable source with deletes
+
+```text
+CDC or incremental merge
+```
+
+### Events arrive late for 3 days
+
+```text
+Lookback + partition overwrite
+```
+
+### Rerun duplicates output
+
+```text
+Idempotency issue
+```
+
+### API has rate limits
+
+```text
+Cursor + backoff + checkpoint
+```
+
+### Partner sends daily CSV
+
+```text
+File audit + manifest validation
+```
+
+### Finance source-target mismatch
+
+```text
+Full outer reconciliation
+```
+
+### Customer 360 inflated metrics
+
+```text
+Pre-aggregate to user grain
+```
+
+### Source schema type changed
+
+```text
+Schema contract failure
+```
+
+### Backfill two years
+
+```text
+Parameterized backfill framework
+```
+
+### Need historical plan at order time
+
+```text
+SCD Type 2 as-of join
+```
+
+### ML features use future data
+
+```text
+Point-in-time correctness issue
+```
+
+### Many tiny files
+
+```text
+Compaction / file layout issue
+```
+
+### Source DB overloaded
+
+```text
+Read replica / CDC / extraction throttling
+```
+
+### Data must be ready by 7 AM
+
+```text
+Freshness SLA monitoring
+```
+
+### Duplicate business keys
+
+```text
+Deduplication by key and keep rule
+```
+
+### Transformation failed after raw landing
+
+```text
+Replay from raw
+```
+
+### CDC delete events
+
+```text
+Explicit delete handling
+```
+
+### DQ check scans full history daily
+
+```text
+Partition-level DQ
+```
+
+### Cost spike
+
+```text
+Partition pruning, incremental, pre-aggregation
+```
+
+
+## 64. High-ROI Topics
+
+### requirements
+
+```text
+source, SLA, scale, consumers
+```
+
+### layered architecture
+
+```text
+raw, staging, curated, marts
+```
+
+### raw immutability
+
+```text
+replay and audit
+```
+
+### output grain
+
+```text
+keys and metrics
+```
+
+### incremental load
+
+```text
+watermarks and lookback
+```
+
+### idempotency
+
+```text
+safe reruns
+```
+
+### deduplication
+
+```text
+business key and deterministic keep rule
+```
+
+### MERGE
+
+```text
+current mutable state
+```
+
+### partition overwrite
+
+```text
+date-based marts
+```
+
+### late data
+
+```text
+recent partition correction
+```
+
+### backfills
+
+```text
+controlled historical reprocessing
+```
+
+### schema evolution
+
+```text
+contracts and safe changes
+```
+
+### data quality
+
+```text
+freshness, completeness, uniqueness
+```
+
+### orchestration
+
+```text
+DAG and dependencies
+```
+
+### observability
+
+```text
+job and data health
+```
+
+### security
+
+```text
+PII and access control
+```
+
+### cost
+
+```text
+process less data
+```
+
+### scale
+
+```text
+partition, parallelize, compact
+```
+
+
+## 65. Review Checklist
+
+### Did candidate clarify requirements?
+
+```text
+Must ask before tools.
+```
+
+### Did candidate define sources and consumers?
+
+```text
+Architecture depends on both.
+```
+
+### Did candidate estimate volume and SLA?
+
+```text
+Scale/freshness drive design.
+```
+
+### Did candidate define output grain?
+
+```text
+Grain drives keys and validation.
+```
+
+### Did candidate preserve raw data?
+
+```text
+Needed for replay and audit.
+```
+
+### Did candidate design staging and curated layers?
+
+```text
+Need typed/trusted tables.
+```
+
+### Did candidate choose ingestion method?
+
+```text
+Based on source behavior.
+```
+
+### Did candidate define partitioning?
+
+```text
+Needed for cost and backfills.
+```
+
+### Did candidate define incremental strategy?
+
+```text
+Avoid unnecessary full refresh.
+```
+
+### Did candidate make writes idempotent?
+
+```text
+Safe reruns are mandatory.
+```
+
+### Did candidate handle duplicates?
+
+```text
+Key + keep rule.
+```
+
+### Did candidate handle deletes?
+
+```text
+Especially for CDC/mutable sources.
+```
+
+### Did candidate handle late data?
+
+```text
+Lookback/corrections.
+```
+
+### Did candidate handle backfills?
+
+```text
+Historical reruns.
+```
+
+### Did candidate handle schema evolution?
+
+```text
+Data contracts.
+```
+
+### Did candidate define DQ checks?
+
+```text
+Trust.
+```
+
+### Did candidate define orchestration?
+
+```text
+DAG dependencies.
+```
+
+### Did candidate define monitoring?
+
+```text
+Operational visibility.
+```
+
+### Did candidate discuss security?
+
+```text
+PII and access.
+```
+
+### Did candidate explain trade-offs?
+
+```text
+Production thinking.
+```
+
+
+## 66. Weakness Repair Map
+
+### Jumps to tools
+
+```text
+Practice requirement questions.
+```
+
+### No grain
+
+```text
+Practice table grain drills.
+```
+
+### No idempotency
+
+```text
+Practice MERGE and partition overwrite.
+```
+
+### No late data
+
+```text
+Practice lookback window cases.
+```
+
+### No backfill
+
+```text
+Practice date-range rerun design.
+```
+
+### No DQ
+
+```text
+Practice quality dimensions and checks.
+```
+
+### No monitoring
+
+```text
+Practice alert and dashboard design.
+```
+
+### No source-specific logic
+
+```text
+Practice API/file/CDC cases.
+```
+
+### No cost thinking
+
+```text
+Practice partitioning and incremental design.
+```
+
+### Poor communication
+
+```text
+Practice whiteboard structure.
+```
+
+
+## 67. 7-Day Study Plan
+
+### Day 1
+
+```text
+Architecture layers, requirements, output grain.
+```
+
+### Day 2
+
+```text
+Source-specific ingestion: database, API, files, CDC.
+```
+
+### Day 3
+
+```text
+Incremental loads, watermarks, idempotency, dedupe.
+```
+
+### Day 4
+
+```text
+Late data, backfills, schema evolution, data contracts.
+```
+
+### Day 5
+
+```text
+Data quality, orchestration, failure handling, monitoring.
+```
+
+### Day 6
+
+```text
+Case studies: sales, clickstream, finance, customer 360.
+```
+
+### Day 7
+
+```text
+Mock interview and weakness repair.
+```
+
+
+## 68. 30-Day Study Plan
+
+### Week 1
+
+```text
+Foundation: requirements, architecture, layers, storage.
+```
+
+### Week 2
+
+```text
+Correctness: incremental, idempotency, late data, backfills.
+```
+
+### Week 3
+
+```text
+Operations: DQ, orchestration, monitoring, security, cost.
+```
+
+### Week 4
+
+```text
+Case studies and timed mocks.
+```
+
+
+## 69. Timed Interview Protocol
+
+### 0-5 minutes
+
+```text
+Clarify business goal, source, scale, SLA, consumers.
+```
+
+### 5-12 minutes
+
+```text
+Draw high-level architecture.
+```
+
+### 12-22 minutes
+
+```text
+Deep dive into ingestion, storage, transformations, output model.
+```
+
+### 22-32 minutes
+
+```text
+Discuss idempotency, data quality, late data, backfills, failures.
+```
+
+### 32-40 minutes
+
+```text
+Discuss monitoring, scale, cost, security.
+```
+
+### 40-45 minutes
+
+```text
+Trade-offs and final summary.
+```
+
+
+## 70. Whiteboard Template
+
+```text
+Requirements:
+- business goal:
+- source systems:
+- consumers:
+- SLA:
+- volume:
+- output grain:
+
+Architecture:
+source → ingestion → raw → validation → staging → curated → marts → consumers
+
+Correctness:
+- incremental strategy:
+- idempotent write:
+- dedupe key:
+- late data:
+- backfill:
+- schema evolution:
+
+Operations:
+- orchestration:
+- retries:
+- DQ checks:
+- monitoring:
+- alerts:
+- security:
+- cost:
+```
+
+
+## 71. Batch Pipeline Design Template
+
+```text
+# Design: <pipeline name>
+
+## Business goal
+
+## Requirements and assumptions
+
+## Source systems
+
+## Data volume and SLA
+
+## Output tables and grain
+
+## High-level architecture
+
+## Ingestion design
+
+## Raw layer
+
+## Staging layer
+
+## Curated layer
+
+## Mart layer
+
+## Incremental strategy
+
+## Idempotency strategy
+
+## Deduplication and deletes
+
+## Late-arriving data
+
+## Backfill strategy
+
+## Schema evolution
+
+## Data quality checks
+
+## Orchestration DAG
+
+## Failure handling
+
+## Monitoring and alerts
+
+## Security and governance
+
+## Cost and performance
+
+## Trade-offs
+
+## Final summary
+```
+
+
+## 72. Data Quality Checklist Template
+
+```text
+Freshness:
+- max ingested_at
+- latest expected partition exists
+
+Completeness:
+- row count by partition
+- expected files received
+
+Uniqueness:
+- business key duplicate count = 0
+
+Validity:
+- required fields not null
+- status in allowed values
+- amount >= 0 where expected
+
+Consistency:
+- source and target counts reconcile
+- mart totals match curated facts
+
+Referential integrity:
+- facts match dimensions
+
+Volume:
+- row count within expected range
+
+Schema:
+- expected columns and types
+```
+
+
+## 73. Failure Runbook Template
+
+```text
+Pipeline:
+Owner:
+SLA:
+Failed task:
+Affected table:
+Affected partition:
+Severity:
+
+Immediate checks:
+1. Check logs.
+2. Check source availability.
+3. Check raw landing.
+4. Check DQ result.
+5. Check recent schema changes.
+
+Recovery:
+1. Fix root cause.
+2. Rerun failed task or DAG.
+3. Validate output.
+4. Update incident notes.
+5. Notify consumers if SLA missed.
+
+Escalation:
+- source owner:
+- data platform owner:
+- business owner:
+```
+
+
+## 74. Backfill Template
+
+```text
+Backfill ID:
+Pipeline:
+Reason:
+Date range:
+Code version:
+Triggered by:
+Expected affected tables:
+
+Steps:
+1. Reprocess raw/staging for range.
+2. Build curated partitions.
+3. Build dependent marts.
+4. Run DQ checks.
+5. Compare metrics.
+6. Promote output.
+7. Record metadata.
+8. Notify consumers.
+
+Validation:
+- row counts
+- duplicate keys
+- metric totals
+- sample diff
+```
+
+
+## 75. Mock Set 1: Architecture Foundation
+
+Problems:
+
+- Design a source-to-warehouse daily batch pipeline.
+- Explain raw, staging, curated, and mart layers.
+- Choose partitioning for raw and curated data.
+- Define output grain for an orders fact table.
+- Explain why raw immutable storage matters.
+
+Expected answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure recovery
+backfill
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 76. Mock Set 2: Reliability and Correctness
+
+Problems:
+
+- Make a pipeline safe to rerun.
+- Design incremental load with watermarks.
+- Handle duplicate source records.
+- Handle late-arriving data.
+- Design historical backfills.
+
+Expected answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure recovery
+backfill
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 77. Mock Set 3: Operations
+
+Problems:
+
+- Define DQ checks for a sales mart.
+- Design alerting for SLA misses.
+- Design audit metadata tables.
+- Handle schema evolution.
+- Create a failure runbook.
+
+Expected answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure recovery
+backfill
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 78. Mock Set 4: Source-Specific Design
+
+Problems:
+
+- Design API ingestion with pagination.
+- Design partner file ingestion.
+- Design CDC pipeline into warehouse.
+- Design database snapshot pipeline.
+- Protect a source database during extraction.
+
+Expected answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure recovery
+backfill
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 79. Mock Set 5: Business Cases
+
+Problems:
+
+- Daily sales reporting pipeline.
+- Clickstream DAU and sessions pipeline.
+- Finance reconciliation pipeline.
+- Customer 360 pipeline.
+- ML feature batch pipeline.
+
+Expected answer must include:
+
+```text
+requirements
+architecture
+idempotency
+data quality
+failure recovery
+backfill
+monitoring
+trade-offs
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+```
+
+
+## 80. Batch Pipeline FAQ
+
+### FAQ 1: What is the most important thing in batch pipeline design?
+
+```text
+Correctness and recoverability. The pipeline must produce trusted outputs and be safe to rerun.
+```
+
+### FAQ 2: Why keep a raw layer?
+
+```text
+Raw immutable data enables replay, audit, debugging, and backfills.
+```
+
+### FAQ 3: When should I use full refresh?
+
+```text
+Use it for small tables or when simplicity is worth the cost.
+```
+
+### FAQ 4: When should I use incremental loading?
+
+```text
+Use it for large or frequently updated data when reliable change tracking exists.
+```
+
+### FAQ 5: When should I use CDC?
+
+```text
+Use it for high-volume mutable sources with updates and deletes.
+```
+
+### FAQ 6: How do I prevent duplicate records?
+
+```text
+Use business-key deduplication and idempotent writes.
+```
+
+### FAQ 7: How do I handle late data?
+
+```text
+Use a lookback window and rewrite affected partitions or merge by key.
+```
+
+### FAQ 8: How do I handle backfills?
+
+```text
+Use parameterized historical reruns with validation and idempotent writes.
+```
+
+### FAQ 9: What should I monitor?
+
+```text
+Job health, data freshness, row counts, DQ checks, duplicates, late data, and cost.
+```
+
+### FAQ 10: What makes a batch design strong?
+
+```text
+Clear requirements, layered architecture, idempotency, DQ, backfills, observability, scale, security, and trade-offs.
+```
+
+
+## 81. Final Exit Test
+
+Candidate passes batch pipeline system design when they can explain:
+
+```text
+1. Requirement clarification.
+2. Source update behavior.
+3. Data scale and SLA.
+4. Output grain.
+5. Raw/staging/curated/mart architecture.
+6. File format choice.
+7. Partitioning strategy.
+8. Full refresh vs incremental vs CDC.
+9. Watermark management.
+10. Idempotent writes.
+11. MERGE/upsert design.
+12. Partition overwrite.
+13. Deduplication.
+14. Delete handling.
+15. Late-arriving data.
+16. Backfill strategy.
+17. Schema evolution.
+18. Data contracts.
+19. Data quality checks.
+20. DQ severity.
+21. Orchestration.
+22. Retry strategy.
+23. Failure recovery.
+24. Quarantine.
+25. Monitoring.
+26. Alerting.
+27. Audit metadata.
+28. Lineage/catalog.
+29. Security/governance.
+30. Cost optimization.
+31. Performance/scaling.
+32. API ingestion.
+33. File ingestion.
+34. CDC pipeline.
+35. Sales reporting case.
+36. Clickstream case.
+37. Finance reconciliation case.
+38. Customer 360 case.
+39. ML feature case.
+40. Trade-offs and final summary.
+```
+
+Passing standard:
+
+```text
+Average score >= 4/5.
+No tool-only answers.
+No missing idempotency.
+No missing data quality.
+No missing backfill strategy.
+No missing late-data strategy.
+No missing monitoring.
+```
+
+Strong standard:
+
+```text
+Average score >= 4.5/5.
+Candidate handles production edge cases and communicates clearly under pressure.
+```
+
+
+## 82. Final Summary
+
+Batch pipeline design is a core Data Engineering interview skill.
+
+The candidate must master:
+
+```text
+requirements
+source analysis
+scale estimation
+SLA
+output grain
+layered architecture
+raw immutable storage
+staging
+curated facts and dimensions
+data marts
+file formats
+partitioning
+incremental loading
+watermarks
+idempotency
+deduplication
+MERGE
+partition overwrite
+late-arriving data
+backfills
+schema evolution
+data contracts
+data quality
+orchestration
+retries
+failure handling
+quarantine
+observability
+alerts
+audit metadata
+lineage
+security
+cost
+performance
+trade-offs
+```
+
+The mentor must be strict:
+
+```text
+Only names tools → not interview-ready.
+No requirements → not interview-ready.
+No output grain → not interview-ready.
+No idempotency → not interview-ready.
+No DQ checks → not interview-ready.
+No backfill strategy → not interview-ready.
+No late data handling → not interview-ready.
+No monitoring → not interview-ready.
+No trade-offs → not interview-ready.
+```
+
+Final interview line:
+
+```text
+A production batch pipeline must be correct, rerunnable, observable, scalable, cost-aware, and useful to the business.
+```
+
+
+## 83. Additional Mini Scenario Cards
+
+### Mini Scenario 1: Daily job failed after partial write
+
+Recommended direction:
+
+```text
+Use temp writes and atomic publish or partition overwrite after validation.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 2: Rerun duplicated output
+
+Recommended direction:
+
+```text
+Replace blind append with MERGE or partition overwrite.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 3: API cursor advanced before load
+
+Recommended direction:
+
+```text
+Update cursor only after successful validation and publish.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 4: updated_at has timestamp ties
+
+Recommended direction:
+
+```text
+Use composite watermark with updated_at and source sequence/key.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 5: Late events change DAU
+
+Recommended direction:
+
+```text
+Reprocess recent event_date partitions with lookback.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 6: Partner sends duplicate file
+
+Recommended direction:
+
+```text
+Use file audit with checksum and processed status.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 7: Finance totals mismatch
+
+Recommended direction:
+
+```text
+Block publish and run source-target reconciliation.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 8: Nullable column added
+
+Recommended direction:
+
+```text
+Allow additive schema evolution after validation.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 9: Column type changed
+
+Recommended direction:
+
+```text
+Treat as breaking schema change and alert.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 10: Customer 360 inflated
+
+Recommended direction:
+
+```text
+Aggregate every fact to user grain before joining.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 11: Raw event dashboard slow
+
+Recommended direction:
+
+```text
+Create materialized marts/user-day aggregates.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 12: Backfill too expensive
+
+Recommended direction:
+
+```text
+Chunk by partition and throttle compute.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 13: CDC delete ignored
+
+Recommended direction:
+
+```text
+Apply delete/tombstone logic explicitly.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 14: DQ scans all history
+
+Recommended direction:
+
+```text
+Run DQ on affected partitions and store results.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 15: Alerts too noisy
+
+Recommended direction:
+
+```text
+Use severity and actionable runbook links.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 16: Source DB overloaded
+
+Recommended direction:
+
+```text
+Use replica, CDC, off-peak extraction, or throttling.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 17: Small files slow queries
+
+Recommended direction:
+
+```text
+Compact files and avoid over-partitioning.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 18: PII visible in mart
+
+Recommended direction:
+
+```text
+Mask/tokenize and restrict access.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 19: ML feature leakage
+
+Recommended direction:
+
+```text
+Use point-in-time filters by feature_date.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 20: Schema drift in JSON
+
+Recommended direction:
+
+```text
+Capture raw, validate schema, quarantine breaking records.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 21: Missing expected file
+
+Recommended direction:
+
+```text
+File completeness check and critical alert.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 22: Late partner file arrives
+
+Recommended direction:
+
+```text
+Process file by business_date and overwrite affected partitions.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 23: Multiple DAGs depend on table
+
+Recommended direction:
+
+```text
+Use lineage and downstream notification before backfill.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 24: Metric definition changes
+
+Recommended direction:
+
+```text
+Version transformation and run old-vs-new comparison.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 25: Warehouse cost spike
+
+Recommended direction:
+
+```text
+Check scanned bytes, partition filters, full refreshes, and raw scans.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 26: SCD overlapping intervals
+
+Recommended direction:
+
+```text
+Validate no overlaps before as-of joins.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 27: Duplicate business key in source
+
+Recommended direction:
+
+```text
+Rank and dedupe before MERGE.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 28: Bad records silently dropped
+
+Recommended direction:
+
+```text
+Quarantine with error metadata and report counts.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 29: No owner for failed pipeline
+
+Recommended direction:
+
+```text
+Catalog owner metadata and alert routing.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+### Mini Scenario 30: Need audit proof
+
+Recommended direction:
+
+```text
+Preserve raw data, run metadata, and reconciliation outputs.
+```
+
+Candidate must explain:
+
+```text
+1. What failed.
+2. Why it matters.
+3. Correct design pattern.
+4. Validation or monitoring.
+5. Trade-off.
+```
+
+Passing score:
+
+```text
+4/5 or higher.
+```
+
+
+## 84. Quick Reference Cards
+
+### Card 1: Raw zone
+
+Purpose:
+
+```text
+Immutable source copy for replay and audit.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 2: Watermark
+
+Purpose:
+
+```text
+Tracks last successfully processed point.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 3: Idempotency
+
+Purpose:
+
+```text
+Safe rerun without duplicate/corrupt output.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 4: MERGE
+
+Purpose:
+
+```text
+Upserts mutable current state by business key.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 5: Partition overwrite
+
+Purpose:
+
+```text
+Recomputes full date partitions safely.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 6: Lookback window
+
+Purpose:
+
+```text
+Handles late-arriving records.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 7: Backfill
+
+Purpose:
+
+```text
+Historical rerun with validation.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 8: Schema contract
+
+Purpose:
+
+```text
+Prevents breaking source changes.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 9: Data quality
+
+Purpose:
+
+```text
+Freshness/completeness/uniqueness and more.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 10: Orchestration
+
+Purpose:
+
+```text
+Schedules and controls dependencies.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 11: Quarantine
+
+Purpose:
+
+```text
+Stores bad records with error reason.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 12: Observability
+
+Purpose:
+
+```text
+Tracks job health and data health.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 13: File audit
+
+Purpose:
+
+```text
+Tracks file arrival, checksum, processing status.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 14: CDC offset
+
+Purpose:
+
+```text
+Tracks processed log sequence.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 15: SCD Type 2
+
+Purpose:
+
+```text
+Tracks historical dimension changes.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 16: Customer 360
+
+Purpose:
+
+```text
+Aggregates multiple sources to user grain.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 17: Finance reconciliation
+
+Purpose:
+
+```text
+Full outer join and exception reporting.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 18: ML features
+
+Purpose:
+
+```text
+Point-in-time correct feature generation.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 19: Cost control
+
+Purpose:
+
+```text
+Process less data and pre-aggregate.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
+
+### Card 20: Runbook
+
+Purpose:
+
+```text
+Operational recovery instructions.
+```
+
+Interview check:
+
+```text
+Explain where it fits, what breaks if missing, and how to validate it.
+```
