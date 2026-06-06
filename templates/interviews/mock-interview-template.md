@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Strict readiness rule:
 Generated files are preparation material only. Interview readiness requires attempted answers, scores, feedback, weakness repair, and retest evidence.
@@ -101,7 +101,7 @@ System Design Mock:
 batch, warehouse, DQ, CDC, reporting, realtime
 
 Project Deep Dive Mock:
-Personal Finance Tracking Platform defense
+Primary Portfolio Data Project defense
 
 Behavioral Mock:
 ownership, debugging, learning, conflict, mistakes
@@ -280,7 +280,7 @@ Score strictly.
 
 ## 11. Project Mock Question Pool
 
-1. Explain Personal Finance Tracking Platform.
+1. Explain Primary Portfolio Data Project.
 2. Deep dive architecture.
 3. Deep dive data model.
 4. Deep dive DQ/reconciliation.
@@ -361,12 +361,12 @@ Topic:
 Date/condition:
 
 ## Files to update
-CURRENT_STATE.md
-ROADMAP_PROGRESS.md
-NEXT_STEPS.md
-WEAKNESS_REGISTER.md
-SESSION_LOG.md
-MOCK_INTERVIEW_HISTORY.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/MOCK_INTERVIEW_HISTORY.md
 ```
 
 
@@ -395,27 +395,27 @@ Candidate should not apply aggressively until repeated mocks are passing in SQL,
 After the round, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 latest round, score, active weakness, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 module status, score, evidence, gate changes
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 repair tasks and next round
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 new weakness, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with round details
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 round type, topic, score, pass/fail, feedback, retest date
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 only if project evidence was discussed
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 only if resume bullets/evidence were discussed
 ```

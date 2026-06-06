@@ -763,7 +763,7 @@ Monotonic yes/no condition.
 
 ```text
 left      mid      right
-  ↓        ↓         ↓
+  ->        ->         ->
 [1, 3, 5, 7, 9, 11]
 ```
 
@@ -2509,7 +2509,7 @@ You chose GROUP BY for latest order per customer. GROUP BY can find max date but
 
 ## 61. Pattern Mapper Hint Strategy
 
-Use hints from `hint-mode.md`.
+Use hints from `modes/hint-mode.md`.
 
 Best first hints:
 

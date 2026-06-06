@@ -1700,7 +1700,7 @@ I worked on ETL pipelines using SQL and Python.
 Strong:
 
 ```text
-I built an incremental transaction pipeline that extracted source changes using updated_at, loaded staging tables, deduplicated transactions by transaction_id, transformed data into fact_transactions, ran row count and duplicate checks, and published daily expense reports. I handled reruns with delete-and-reload by partition.
+I built an incremental transaction pipeline that extracted source changes using updated_at, loaded staging tables, deduplicated transactions by transaction_id, transformed data into fact_transactions, ran row count and duplicate checks, and published daily analytics reports. I handled reruns with delete-and-reload by partition.
 ```
 
 

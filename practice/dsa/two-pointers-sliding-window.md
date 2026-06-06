@@ -4072,7 +4072,7 @@ Complexity and Data Engineering connection.
 If candidate cannot explain pointer movement:
 
 ```text
-Stop and switch to weakness-repair-mode.md.
+Stop and switch to modes/weakness-repair-mode.md.
 ```
 
 
@@ -4134,7 +4134,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -4238,7 +4238,7 @@ Week 4: time-based DE window + mixed mock
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed pattern.
+Run modes/weakness-repair-mode.md for failed pattern.
 ```
 
 

@@ -448,7 +448,7 @@ Do not overfocus on dialect unless the user asks.
 
 ## 11. Hint Policy
 
-Use progressive hints from `hint-mode.md`.
+Use progressive hints from `modes/hint-mode.md`.
 
 Default hint ladder for SQL:
 

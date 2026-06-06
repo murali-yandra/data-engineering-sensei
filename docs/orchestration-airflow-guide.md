@@ -1281,19 +1281,19 @@ Example workflow:
 
 ```text
 extract
-  ↓
+  ->
 raw_load
-  ↓
+  ->
 schema_check
-  ↓
+  ->
 staging_load
-  ↓
+  ->
 dedupe
-  ↓
+  ->
 business_transform
-  ↓
+  ->
 quality_check
-  ↓
+  ->
 publish
 ```
 
@@ -1420,13 +1420,13 @@ Common pattern:
 
 ```text
 extract/source load
-  ↓
+  ->
 staging SQL
-  ↓
+  ->
 fact/dimension SQL
-  ↓
+  ->
 quality SQL
-  ↓
+  ->
 publish
 ```
 
@@ -1472,13 +1472,13 @@ Pattern:
 
 ```text
 sensor/check input
-  ↓
+  ->
 submit Spark job
-  ↓
+  ->
 monitor Spark job
-  ↓
+  ->
 validate output
-  ↓
+  ->
 publish
 ```
 
@@ -1500,17 +1500,17 @@ Pattern:
 
 ```text
 get cursor/watermark
-  ↓
+  ->
 call API pages
-  ↓
+  ->
 write raw responses
-  ↓
+  ->
 normalize to staging
-  ↓
+  ->
 validate
-  ↓
+  ->
 merge target
-  ↓
+  ->
 commit cursor
 ```
 
@@ -1528,21 +1528,21 @@ Pattern:
 
 ```text
 wait for file
-  ↓
+  ->
 validate file
-  ↓
+  ->
 copy to raw
-  ↓
+  ->
 load staging
-  ↓
+  ->
 deduplicate
-  ↓
+  ->
 transform
-  ↓
+  ->
 quality check
-  ↓
+  ->
 publish
-  ↓
+  ->
 archive
 ```
 
@@ -1562,13 +1562,13 @@ Pattern:
 
 ```text
 CDC capture system writes change logs
-  ↓
+  ->
 Airflow validates batch/window
-  ↓
+  ->
 apply changes to staging/target
-  ↓
+  ->
 quality checks
-  ↓
+  ->
 publish/report lag
 ```
 
@@ -2070,19 +2070,19 @@ Design an Airflow DAG for a daily sales analytics pipeline.
 
 ```text
 check_source_ready
-  ↓
+  ->
 extract_orders
-  ↓
+  ->
 validate_raw_orders
-  ↓
+  ->
 load_orders_staging
-  ↓
+  ->
 build_fact_sales
-  ↓
+  ->
 run_quality_checks
-  ↓
+  ->
 publish_sales_mart
-  ↓
+  ->
 notify_success
 ```
 
@@ -2221,15 +2221,15 @@ Airflow may orchestrate downstream batch application of CDC changes, quality che
 
 ```text
 check_cdc_lag
-  ↓
+  ->
 load_cdc_window_to_staging
-  ↓
+  ->
 apply_merges
-  ↓
+  ->
 validate_target
-  ↓
+  ->
 refresh_downstream_marts
-  ↓
+  ->
 notify
 ```
 

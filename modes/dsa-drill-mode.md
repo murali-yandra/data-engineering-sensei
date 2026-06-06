@@ -933,7 +933,7 @@ Visual:
 
 ```text
 left      mid      right
-  ↓        ↓         ↓
+  ->        ->         ->
 [1, 3, 5, 7, 9, 11, 13]
 ```
 
@@ -1435,7 +1435,6 @@ Default progression:
 - Alien Dictionary
 - Find Median from Data Stream
 - Word Ladder
-```
 
 Do not start with hard problems if the candidate cannot solve Two Sum cleanly.
 

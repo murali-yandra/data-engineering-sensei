@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Important templates already created:
 templates/assessment/*
@@ -71,14 +71,14 @@ Create a 90-day roadmap to make me a strong Data Engineering candidate.
 Use my context:
 I am an early-career data professional with around 2 years of experience.
 I am targeting Data Engineer / Analytics Engineer / ETL Developer roles.
-My main project is Personal Finance Tracking Platform.
+My main project is Primary Portfolio Data Project.
 I want strict, realistic, job-focused guidance.
 
 Rules:
 1. Divide into 3 months.
 2. Month 1 = foundations and baseline repair.
 3. Month 2 = system design and project depth.
-4. Month 3 = mocks, resume/GitHub, and job search execution.
+4. Month 3 = mocks, resume/public portfolio, and job search execution.
 5. Include weekly tasks.
 6. Include score gates.
 7. Include project milestones.
@@ -110,7 +110,7 @@ DSA: 3.5/5 for most Data Engineering roles
 Data Engineering fundamentals: 4/5
 System design: 4/5
 Project deep dive: 4/5
-Resume/GitHub readiness: 4/5
+Resume/public portfolio readiness: 4/5
 Communication: 3.5/5
 ```
 
@@ -130,7 +130,7 @@ interview_ready:
 core scores meet target and mocks are passing
 
 strong_candidate:
-scores >= 4 across core areas, project/resume/GitHub are defensible, and no critical weaknesses are open
+scores >= 4 across core areas, project/resume/public portfolio are defensible, and no critical weaknesses are open
 ```
 
 
@@ -141,7 +141,7 @@ Core roadmap rules:
 ```text
 1. Do not mark anything complete only because a file was generated.
 2. Mark complete only when there is evidence.
-3. Evidence can be solved problems, code, mock scores, project proof, resume bullets, GitHub updates, or retest results.
+3. Evidence can be solved problems, code, mock scores, project proof, resume bullets, public portfolio updates, or retest results.
 4. If score is below target, create a weakness and repair task.
 5. If a weakness is repaired, retest before marking it repaired.
 6. Keep tasks small, time-boxed, and measurable.
@@ -157,8 +157,8 @@ High-ROI preparation order for this candidate:
 3. Python data scripting
 4. Data Engineering fundamentals
 5. Batch pipeline + data warehouse + data quality system design
-6. Personal Finance Tracking Platform deep dive
-7. Resume/GitHub evidence
+6. Primary Portfolio Data Project deep dive
+7. Resume/public portfolio evidence
 8. Mock interview loop
 9. Targeted job applications
 ```
@@ -177,7 +177,7 @@ Data modeling, warehouse, lake, DQ, batch, CDC, reporting, project deep dive.
 
 Month 3:
 Interview conversion
-Mocks, resume, GitHub, LinkedIn, referrals, applications, interview feedback loop.
+Mocks, resume, public portfolio, professional profile, referrals, applications, interview feedback loop.
 ```
 
 Expected result:
@@ -203,7 +203,7 @@ Evidence required for this month:
 scores
 mock feedback
 weakness updates
-project/resume/GitHub proof
+project/resume/public portfolio proof
 roadmap status updates
 ```
 
@@ -216,7 +216,7 @@ roadmap status updates
 | Week 6 | Batch pipelines, idempotency, backfills, orchestration |
 | Week 7 | Data quality framework, reconciliation, monitoring, alerts |
 | Week 8 | CDC, data lake, event ingestion, realtime basics |
-| Week 9 | Personal Finance Tracking Platform deep dive + README + architecture |
+| Week 9 | Primary Portfolio Data Project deep dive + README + architecture |
 
 
 Evidence required for this month:
@@ -225,7 +225,7 @@ Evidence required for this month:
 scores
 mock feedback
 weakness updates
-project/resume/GitHub proof
+project/resume/public portfolio proof
 roadmap status updates
 ```
 
@@ -235,7 +235,7 @@ roadmap status updates
 | Week | Focus |
 |---|---|
 | Week 10 | SQL/Python/system design retests + mock loop |
-| Week 11 | Project deep-dive mock + resume/GitHub/LinkedIn polish |
+| Week 11 | Project deep-dive mock + resume/public portfolio/professional profile polish |
 | Week 12 | Mixed mocks + selective applications + referrals |
 | Week 13 | Interview feedback loop + weakness repair + application scaling |
 
@@ -246,7 +246,7 @@ Evidence required for this month:
 scores
 mock feedback
 weakness updates
-project/resume/GitHub proof
+project/resume/public portfolio proof
 roadmap status updates
 ```
 
@@ -262,7 +262,7 @@ roadmap status updates
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -276,7 +276,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -290,7 +290,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -304,7 +304,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -318,7 +318,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -332,7 +332,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -346,7 +346,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -360,7 +360,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -375,7 +375,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -389,7 +389,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -398,13 +398,13 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 - Project mock
 - Behavioral mock
 - Resume review
-- GitHub review
-- LinkedIn positioning
+- public portfolio review
+- professional profile positioning
 
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -418,7 +418,7 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
@@ -432,13 +432,13 @@ This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGR
 Weekly done condition:
 
 ```text
-This week is done only if evidence is logged in SESSION_LOG.md and ROADMAP_PROGRESS.md.
+This week is done only if evidence is logged in progress/SESSION_LOG.md and progress/ROADMAP_PROGRESS.md.
 ```
 
 
 ## 21. 90-Day Score Targets
 
-| Stage | SQL | Python | DSA | DE Fundamentals | System Design | Project | Resume/GitHub |
+| Stage | SQL | Python | DSA | DE Fundamentals | System Design | Project | Resume/public portfolio |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | End Month 1 | 3.5 | 3.5 | 3 | 3.5 | 2.5 | 2.5 | 2 |
 | End Month 2 | 4 | 4 | 3.5 | 4 | 3.5-4 | 3.5 | 3 |
@@ -470,7 +470,7 @@ Apply selectively if readiness gates are met.
 Use mock feedback to repair between interviews.
 
 After Day 90:
-Scale applications only if resume/GitHub/project and mock scores are strong.
+Scale applications only if resume/public portfolio/project and mock scores are strong.
 ```
 
 Application readiness gate:
@@ -480,7 +480,7 @@ SQL >= 4
 Python >= 4
 System design >= 4
 Project deep dive >= 4
-Resume/GitHub >= 4
+Resume/public portfolio >= 4
 Communication >= 3.5
 No critical weakness open
 ```
@@ -498,7 +498,7 @@ Tell me:
 4. weaknesses repaired
 5. blockers
 6. project progress
-7. resume/GitHub progress
+7. resume/public portfolio progress
 8. job readiness status
 9. next month plan
 
@@ -513,7 +513,7 @@ Candidate passes the 90-day roadmap when:
 
 ```text
 mock interviews are repeatedly passing
-resume/GitHub/project evidence is strong
+resume/public portfolio/project evidence is strong
 SQL and Python are interview-ready
 system design core cases are interview-ready
 project deep dive can survive follow-ups
@@ -533,34 +533,34 @@ Generate a personalized weakness-repair plan instead of starting broad new topic
 After roadmap work, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 active phase, current focus, latest completed task, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 phase/module status, score, evidence, completion %
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 today/this week tasks and repair actions
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 weaknesses discovered, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with completed roadmap work
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 project milestones and evidence
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 if roadmap task included a mock
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if resume evidence or bullets changed
 
-GITHUB_PORTFOLIO_STATE.md:
-if GitHub/README/portfolio changed
+progress/PORTFOLIO_READINESS.md:
+if public portfolio/README/portfolio changed
 
-JOB_SEARCH_STATE.md:
+progress/JOB_SEARCH_READINESS.md:
 if applications/referrals/interviews started
 ```
 
@@ -581,5 +581,5 @@ Next 3 actions:
 
 ```text
 A 90-day roadmap should make the candidate visibly stronger through proof:
-scores, projects, mocks, resume bullets, GitHub readiness, and application feedback.
+scores, projects, mocks, resume bullets, public portfolio readiness, and application feedback.
 ```

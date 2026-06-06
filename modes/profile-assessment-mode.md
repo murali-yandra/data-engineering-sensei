@@ -267,7 +267,7 @@ Do not require these questions unless they become relevant later:
 ```text
 Current tech stack.
 Exact target companies.
-Exact salary expectation.
+Compensation expectation.
 Preferred country.
 Resume upload.
 Every tool used in past jobs.
@@ -1098,7 +1098,7 @@ No file layout knowledge.
 If weak and resume mentions Spark, recommend:
 
 ```text
-modes/spark-pyspark-guide.md
+docs/spark-pyspark-guide.md
 docs/spark-pyspark-guide.md
 ```
 
@@ -1504,28 +1504,28 @@ Prioritize Spark + SQL + data lake + file formats + performance.
 Choose next mode based on biggest gap.
 
 ```text
-Weak SQL → sql-drill-mode.md
-Weak Python → python-drill-mode.md
-Weak DSA → dsa-drill-mode.md
-Weak fundamentals → data-engineering-fundamentals-mode.md
-Weak system design → system-design-mode.md
-Weak project explanation → project-deep-dive-mode.md
-Weak pattern recognition → pattern-mapper-mode.md
-Weak communication → feedback-mode.md + interview-mode.md
-Broad gaps → roadmap-mode.md
-Ready for pressure → interview-mode.md
+Weak SQL → modes/sql-drill-mode.md
+Weak Python → modes/python-drill-mode.md
+Weak DSA → modes/dsa-drill-mode.md
+Weak fundamentals → modes/data-engineering-fundamentals-mode.md
+Weak system design → modes/system-design-mode.md
+Weak project explanation → modes/project-deep-dive-mode.md
+Weak pattern recognition → modes/pattern-mapper-mode.md
+Weak communication → modes/feedback-mode.md + modes/interview-mode.md
+Broad gaps → modes/roadmap-mode.md
+Ready for pressure → modes/interview-mode.md
 ```
 
 If multiple gaps:
 
 ```text
-Use roadmap-mode.md after assessment.
+Use modes/roadmap-mode.md after assessment.
 ```
 
 If candidate has interviews within 2 weeks:
 
 ```text
-Use interview-mode.md for rapid diagnostic, then weakness-repair-mode.md.
+Use modes/interview-mode.md for rapid diagnostic, then modes/weakness-repair-mode.md.
 ```
 
 
@@ -1673,7 +1673,7 @@ Priority:
 Recommended next mode:
 
 ```text
-roadmap-mode.md
+modes/roadmap-mode.md
 ```
 
 
@@ -1802,7 +1802,7 @@ Priority:
 Recommended next mode:
 
 ```text
-data-engineering-fundamentals-mode.md
+modes/data-engineering-fundamentals-mode.md
 ```
 
 
@@ -2054,7 +2054,7 @@ Recommended roadmap duration:
 Example:
 
 ```text
-Use roadmap-mode.md to create a 60-day plan focused on SQL, DSA, fundamentals, system design, and project deep dive. Candidate has 2 years DE experience, 1 hour daily practice, SQL intermediate, DSA beginner, system design beginner.
+Use modes/roadmap-mode.md to create a 60-day plan focused on SQL, DSA, fundamentals, system design, and project deep dive. Candidate has 2 years DE experience, 1 hour daily practice, SQL intermediate, DSA beginner, system design beginner.
 ```
 
 
@@ -2074,7 +2074,7 @@ Feedback style:
 Example:
 
 ```text
-Start interview-mode.md with a 30-minute mixed Data Engineering mock. Candidate is 2 years experience, SQL intermediate, DSA beginner, project explanation okay. Use FAANG-style standard scaled to mid-level. No hints unless requested.
+Start modes/interview-mode.md with a 30-minute mixed Data Engineering mock. Candidate is 2 years experience, SQL intermediate, DSA beginner, project explanation okay. Use FAANG-style standard scaled to mid-level. No hints unless requested.
 ```
 
 
@@ -2379,7 +2379,6 @@ Use this priority matrix.
 | Cloud weak | Medium | P2 |
 | Communication weak | High | P1 |
 | Behavioral weak | Medium | P2 |
-```
 
 P0 means start immediately.
 
@@ -2519,7 +2518,7 @@ Progress files should store:
 
 Memory should not store sensitive unnecessary details.
 
-Do not store target companies, salary, personal details, or private career constraints unless user explicitly asks.
+Do not store target companies, compensation, personal details, or private career constraints unless user explicitly asks.
 
 
 ## 57. Assessment Mode Error Handling
@@ -2620,7 +2619,7 @@ P0 Priorities:
 4. DSA high-ROI patterns.
 
 Next Mode:
-roadmap-mode.md
+modes/roadmap-mode.md
 
 Immediate Drill:
 Answer: What is idempotency in a pipeline? Include example, failure case, and safe rerun strategy.
@@ -2900,7 +2899,7 @@ Minimum passing output:
 ### Drill 16: Progress File
 
 ```text
-Write a CANDIDATE_PROFILE.md-style summary from assessment results.
+Write a progress/CANDIDATE_PROFILE.md-style summary from assessment results.
 ```
 
 Minimum passing output:

@@ -1,0 +1,187 @@
+# DSA for Data Engineering Interviews
+
+This is the canonical DSA guide for Data Engineering Sensei.
+
+Use this file when a candidate needs role-relevant data structures and algorithms practice without turning preparation into competitive programming.
+
+Related files:
+
+```text
+docs/dsa-for-data-engineers.md
+docs/leetcode-practice-map.md
+practice/dsa/high-roi-leetcode-list.md
+practice/dsa/arrays-strings.md
+practice/dsa/hashmaps.md
+practice/dsa/two-pointers-sliding-window.md
+practice/dsa/sorting-binary-search.md
+practice/dsa/stack-queue.md
+practice/dsa/heap-top-k.md
+practice/dsa/intervals.md
+practice/dsa/bfs-dfs-basics.md
+modes/dsa-drill-mode.md
+```
+
+## Purpose
+
+DSA exists in this skill because many Data Engineering interviews include coding screens or live problem solving.
+
+The goal is not to make the candidate a competitive programmer. The goal is to make the candidate able to:
+
+1. Recognize common problem patterns quickly.
+2. Write clean Python under pressure.
+3. Explain time and space complexity.
+4. Handle edge cases.
+5. Connect patterns to Data Engineering work where useful.
+
+## Default Scope
+
+Focus on high-return patterns:
+
+| Pattern | Interview value | Data Engineering connection |
+|---|---|---|
+| Hash map | Very high | Lookup joins, frequency counting, grouping |
+| Set | Very high | Deduplication, membership checks |
+| Sorting | High | Ranking, ordered processing, merge logic |
+| Two pointers | Medium-high | Ordered records, pair logic, window boundaries |
+| Sliding window | Medium-high | Session windows, rolling checks, contiguous ranges |
+| Stack | Medium | Parsing, validation, monotonic scans |
+| Queue | Medium | BFS, ordered processing |
+| Heap | Medium-high | Top K, priority events, stream summaries |
+| Binary search | Medium | Ordered search, thresholds, sorted partitions |
+| Intervals | High | Time windows, schedules, overlaps |
+| BFS/DFS basics | Medium | Dependency traversal, graph-shaped lineage |
+
+Avoid by default:
+
+```text
+segment trees
+Fenwick trees
+advanced dynamic programming
+advanced graph algorithms
+math-heavy contest tricks
+hard competitive programming problems
+```
+
+Only add those when the target company or role clearly requires them.
+
+## Candidate Standard
+
+### Entry Level
+
+The candidate should solve common easy problems and explain:
+
+- input and output
+- brute-force idea
+- optimized idea
+- complexity
+- edge cases
+
+### Junior to Mid-Level
+
+The candidate should solve easy and common medium problems in Python and explain why the pattern fits.
+
+Required patterns:
+
+```text
+hash map
+set
+sorting
+two pointers
+sliding window
+stack
+binary search
+heap/top K
+intervals
+BFS/DFS basics
+```
+
+### Experienced Candidate
+
+The candidate should solve common mediums faster, communicate clearly, and handle follow-up changes:
+
+- larger input
+- duplicate records
+- streaming input
+- memory constraint
+- malformed records
+- tie-breaking
+- stable ordering
+
+## Drill Format
+
+Every DSA drill should include:
+
+```text
+Problem:
+Difficulty:
+Pattern:
+Expected time:
+Why it matters for Data Engineering:
+Candidate task:
+What to explain:
+Hints:
+Review criteria:
+Follow-up variation:
+```
+
+The mentor should not immediately reveal the solution unless the candidate asks for it or has already attempted.
+
+## Review Criteria
+
+Score DSA answers on:
+
+| Category | What to check |
+|---|---|
+| Pattern recognition | Did the candidate identify the right approach? |
+| Correctness | Does the solution produce the right output? |
+| Edge cases | Empty input, duplicates, ties, null-like values, order |
+| Complexity | Can the candidate explain time and space? |
+| Code quality | Clear names, simple control flow, no unnecessary cleverness |
+| Interview communication | Did the candidate think out loud and justify decisions? |
+
+## High-ROI Problem Set
+
+Use `practice/dsa/high-roi-leetcode-list.md` as the canonical problem index.
+
+Core examples:
+
+| LeetCode | Title | Difficulty | Pattern |
+|---:|---|---|---|
+| 1 | Two Sum | Easy | Hash map |
+| 217 | Contains Duplicate | Easy | Set |
+| 242 | Valid Anagram | Easy | Frequency count |
+| 49 | Group Anagrams | Medium | Hash map |
+| 347 | Top K Frequent Elements | Medium | Heap or bucket count |
+| 238 | Product of Array Except Self | Medium | Prefix/suffix |
+| 3 | Longest Substring Without Repeating Characters | Medium | Sliding window |
+| 125 | Valid Palindrome | Easy | Two pointers |
+| 15 | 3Sum | Medium | Sorting and two pointers |
+| 704 | Binary Search | Easy | Binary search |
+| 20 | Valid Parentheses | Easy | Stack |
+| 215 | Kth Largest Element in an Array | Medium | Heap or quickselect |
+| 56 | Merge Intervals | Medium | Intervals |
+| 200 | Number of Islands | Medium | BFS/DFS |
+| 207 | Course Schedule | Medium | Graph/topological sort |
+
+## Anti-Patterns
+
+Flag these directly:
+
+- memorizing code without explaining the pattern
+- skipping complexity
+- ignoring edge cases
+- using nested loops when a hash map is expected
+- using list membership for large lookup problems
+- overengineering simple problems
+- solving silently
+- failing to dry run
+
+## Minimum Passing Standard
+
+The candidate is DSA-ready for typical Data Engineering interviews when they can:
+
+1. Solve common easy problems without hand-holding.
+2. Solve selected medium problems with clear reasoning.
+3. Explain hash map, set, sorting, sliding window, two pointers, stack, heap, intervals, and BFS/DFS basics.
+4. Give time and space complexity accurately.
+5. Handle edge cases and follow-up variations.

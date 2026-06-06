@@ -2478,7 +2478,7 @@ def data_quality_report(rows):
 
         currency = row.get("currency")
 
-        if currency not in {"INR", "USD", "EUR", "GBP"}:
+        if currency not in {"INR", "USD", "target marketR", "GBP"}:
             metrics["invalid_currency_count"] += 1
 
     metrics["duplicate_id_count"] = sum(
@@ -4379,7 +4379,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -4485,7 +4485,7 @@ Week 4: streaming + atomic write + checkpoint
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed topic.
+Run modes/weakness-repair-mode.md for failed topic.
 ```
 
 

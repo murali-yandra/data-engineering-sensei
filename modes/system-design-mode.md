@@ -455,7 +455,6 @@ Priority order for Data Engineering interviews:
 8. large backfill/replay architecture
 9. cross-region disaster recovery
 10. platform developer experience
-```
 
 For Data Engineering interviews, reliability and correctness usually matter more than naming many tools.
 
@@ -610,7 +609,7 @@ Score at the end.
 
 ## 13. Hint Policy
 
-Use progressive hints from `hint-mode.md`.
+Use progressive hints from `modes/hint-mode.md`.
 
 System design hint ladder:
 
@@ -2613,26 +2612,25 @@ Designing warehouse tables without grain.
 ```
 
 
-## 58. Drill: Data Model for Finance Tracker
+## 58. Drill: Data Model for Transaction Analytics
 
 Prompt:
 
 ```text
-Design the core data model for a personal finance tracking platform.
-It tracks accounts, transactions, merchants, categories, and monthly spend.
+Design the core data model for a neutral transaction analytics project.
+It tracks source transactions, related entities, classifications, dates, and monthly metrics.
 ```
 
 Candidate must cover:
 
 ```text
 fact_transactions grain
-dim_account
-dim_merchant
-dim_category
+related entity dimensions
+classification dimension
 date dimension or date fields
-account balance snapshots
-category spend mart
-merchant normalization
+periodic snapshot or reconciliation table if needed
+monthly metrics mart
+entity normalization
 data quality
 reconciliation
 ```
@@ -2640,14 +2638,14 @@ reconciliation
 Expected direction:
 
 ```text
-fact_transactions has one row per transaction. Dimensions include account, merchant, category, and date. Aggregated marts can summarize spend by account/category/month. Balance reconciliation compares transaction-derived balances with expected balances.
+fact_transactions has one row per source transaction or business event. Dimensions describe related entities, classifications, and dates. Aggregated marts can summarize metrics by entity, classification, and month. Reconciliation compares source-derived totals with expected target totals.
 ```
 
 Follow-ups:
 
 ```text
-How do you handle merchant name corrections?
-How do you handle category changes?
+How do you handle entity name corrections?
+How do you handle classification changes?
 How do you prevent duplicate transactions?
 How do you reconcile account balances?
 How do you backfill category logic changes?
@@ -3647,13 +3645,13 @@ When visuals are needed, use text diagrams.
 
 ```text
 [Source DB]
-    ↓ extract
+    -> extract
 [Raw Storage]
-    ↓ validate/parse
+    -> validate/parse
 [Staging Tables]
-    ↓ transform
+    -> transform
 [Curated Warehouse Tables]
-    ↓ quality gate
+    -> quality gate
 [BI Dashboard / Analysts]
 ```
 
@@ -3661,13 +3659,13 @@ When visuals are needed, use text diagrams.
 
 ```text
 [App Events]
-    ↓
+    ->
 [Message Broker]
-    ↓
+    ->
 [Stream Processor]
-    ↓
+    ->
 [Real-time Store] → [Live Dashboard/Alerts]
-    ↓ raw retention
+    -> raw retention
 [Data Lake] → [Batch Trusted Aggregates]
 ```
 
@@ -3675,13 +3673,13 @@ When visuals are needed, use text diagrams.
 
 ```text
 [OLTP DB Log]
-    ↓
+    ->
 [CDC Connector]
-    ↓
+    ->
 [Raw Change Events]
-    ↓
+    ->
 [Staging/Dedupe/Ordering]
-    ↓ MERGE
+    -> MERGE
 [Warehouse Current Table]
 ```
 
@@ -4812,7 +4810,7 @@ Minimum passing answer:
 ### Drill 20: Data Modeling
 
 ```text
-Design fact/dimension model for finance tracking platform.
+Design a fact/dimension model for a neutral transaction analytics platform.
 ```
 
 Minimum passing answer:

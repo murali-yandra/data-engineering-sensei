@@ -192,11 +192,11 @@ Producers
   services
   devices
   CDC logs
-      ↓
+      ->
 Collection / ingestion
-      ↓
+      ->
 Broker / stream
-      ↓
+      ->
 Realtime processing
   validation
   enrichment
@@ -204,7 +204,7 @@ Realtime processing
   stateful joins
   windowed aggregation
   rules / scoring
-      ↓
+      ->
 Serving sinks
   realtime dashboard
   alerting system
@@ -524,18 +524,18 @@ Reference architecture:
 ```text
 [Producers]
   web/mobile/backend/CDC/IoT
-        ↓
+        ->
 [Collection Layer]
   API/SDK/agent
   auth/rate limit/light validation
-        ↓
+        ->
 [Broker]
   Kafka/Kinesis/PubSub
   topics + partitions
-        ↓
+        ->
 [Raw Sink]
   immutable event lake
-        ↓
+        ->
 [Stream Processor]
   validation
   dedupe
@@ -543,7 +543,7 @@ Reference architecture:
   windowing
   stateful processing
   rules/scoring
-        ↓
+        ->
 [Serving Sinks]
   dashboard store
   alerting system

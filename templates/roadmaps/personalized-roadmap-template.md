@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Important templates already created:
 templates/assessment/*
@@ -74,16 +74,16 @@ Rules:
 4. Prioritize highest ROI for my target role.
 5. Include weekly and daily tasks.
 6. Include score targets.
-7. Include project, resume, GitHub, and mock interviews.
+7. Include project, resume, public portfolio, and mock interviews.
 8. Include weakness repair and retests.
 9. Be realistic about job-readiness.
 10. Tell me if my goal timeline is unrealistic.
 
 Candidate context:
 I am an early-career Data Engineering candidate with around 2 years of experience.
-I want better jobs, possibly India first, remote/international later.
-Main project: Personal Finance Tracking Platform.
-I need structured preparation in SQL, Python, DSA, DE fundamentals, system design, project deep dive, resume/GitHub/LinkedIn, and job applications.
+I want stronger Data Engineering opportunities, starting with the most realistic target market and progressing toward more selective roles as proof improves.
+Main project: Primary Portfolio Data Project.
+I need structured preparation in SQL, Python, DSA, DE fundamentals, system design, project deep dive, resume/public portfolio/professional profile, and job applications.
 ```
 
 
@@ -139,7 +139,7 @@ start project deep dive early.
 If system design < 3:
 start batch pipeline and DQ fundamentals before advanced streaming.
 
-If resume/GitHub < 3:
+If resume/public portfolio < 3:
 do not apply aggressively.
 
 If interview is within 2 weeks:
@@ -196,7 +196,7 @@ Main blocker:
 ## Project Milestones
 ...
 
-## Resume/GitHub Milestones
+## Resume/public portfolio Milestones
 ...
 
 ## Weakness Repair Plan
@@ -299,9 +299,9 @@ Remove low-priority tasks if time is limited.
 ```
 
 
-## 9. Personalization Case: If target is remote/international
+## 9. Personalization Case: If Target Role Is More Selective
 
-- Stronger GitHub proof required.
+- Stronger public portfolio proof required.
 - Project README must be excellent.
 - Resume needs measurable impact.
 - Communication must be strong.
@@ -341,7 +341,7 @@ Main goal:
 Skill priority:
 Project priority:
 Mock:
-Resume/GitHub task:
+Resume/public portfolio task:
 Weakness repair:
 Evidence target:
 Score target:
@@ -361,12 +361,12 @@ Skill priority:
 SQL joins, windows, dedupe.
 
 Project priority:
-2-minute finance tracker pitch.
+2-minute portfolio project pitch.
 
 Mock:
 SQL mini mock.
 
-Resume/GitHub task:
+Resume/public portfolio task:
 Collect project evidence.
 
 Weakness repair:
@@ -426,7 +426,7 @@ DSA: 3.5/5 for most Data Engineering roles
 Data Engineering fundamentals: 4/5
 System design: 4/5
 Project deep dive: 4/5
-Resume/GitHub readiness: 4/5
+Resume/public portfolio readiness: 4/5
 Communication: 3.5/5
 ```
 
@@ -446,7 +446,7 @@ interview_ready:
 core scores meet target and mocks are passing
 
 strong_candidate:
-scores >= 4 across core areas, project/resume/GitHub are defensible, and no critical weaknesses are open
+scores >= 4 across core areas, project/resume/public portfolio are defensible, and no critical weaknesses are open
 ```
 
 
@@ -462,7 +462,7 @@ DSA:
 DE fundamentals:
 System design:
 Project deep dive:
-Resume/GitHub:
+Resume/public portfolio:
 Communication:
 
 My target role:
@@ -475,7 +475,7 @@ My deadline:
 ...
 
 My main project:
-Personal Finance Tracking Platform
+Primary Portfolio Data Project
 
 Create:
 1. priority order
@@ -483,7 +483,7 @@ Create:
 3. 30-day plan
 4. mock schedule
 5. project milestones
-6. resume/GitHub tasks
+6. resume/public portfolio tasks
 7. readiness gates
 8. files to update
 
@@ -496,34 +496,34 @@ Be strict.
 After roadmap work, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 active phase, current focus, latest completed task, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 phase/module status, score, evidence, completion %
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 today/this week tasks and repair actions
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 weaknesses discovered, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with completed roadmap work
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 project milestones and evidence
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 if roadmap task included a mock
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if resume evidence or bullets changed
 
-GITHUB_PORTFOLIO_STATE.md:
-if GitHub/README/portfolio changed
+progress/PORTFOLIO_READINESS.md:
+if public portfolio/README/portfolio changed
 
-JOB_SEARCH_STATE.md:
+progress/JOB_SEARCH_READINESS.md:
 if applications/referrals/interviews started
 ```
 

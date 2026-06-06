@@ -617,7 +617,7 @@ repair immediately with simpler example.
 If candidate repeatedly fails:
 
 ```text
-switch to weakness-repair-mode.md.
+switch to modes/weakness-repair-mode.md.
 ```
 
 
@@ -832,20 +832,20 @@ Tutor Mode should hand off when appropriate.
 
 ```text
 Concept understood → relevant drill mode.
-Repeated mistakes → weakness-repair-mode.md.
-Candidate submits answer/code/query → review-mode.md.
-Candidate ready for pressure → interview-mode.md.
-Candidate needs plan → roadmap-mode.md.
-Candidate needs profile diagnosis → profile-assessment-mode.md.
-Candidate needs pattern recognition → pattern-mapper-mode.md.
-Candidate needs project explanation → project-deep-dive-mode.md.
-Candidate needs performance feedback → feedback-mode.md.
+Repeated mistakes → modes/weakness-repair-mode.md.
+Candidate submits answer/code/query → modes/review-mode.md.
+Candidate ready for pressure → modes/interview-mode.md.
+Candidate needs plan → modes/roadmap-mode.md.
+Candidate needs profile diagnosis → modes/profile-assessment-mode.md.
+Candidate needs pattern recognition → modes/pattern-mapper-mode.md.
+Candidate needs project explanation → modes/project-deep-dive-mode.md.
+Candidate needs performance feedback → modes/feedback-mode.md.
 ```
 
 Example:
 
 ```text
-You understand SQL output grain now. Next mode: sql-drill-mode.md with 10 grain-first SQL drills.
+You understand SQL output grain now. Next mode: modes/sql-drill-mode.md with 10 grain-first SQL drills.
 ```
 
 
@@ -1548,13 +1548,13 @@ Visual:
 
 ```text
 raw history
-   ↓
+   ->
 reprocess Jan 1 → Jan 31
-   ↓
+   ->
 overwrite affected partitions
-   ↓
+   ->
 validate totals
-   ↓
+   ->
 refresh downstream
 ```
 
@@ -2502,9 +2502,9 @@ Visual:
 
 ```text
 source DB log
-   ↓
+   ->
 change events: INSERT / UPDATE / DELETE
-   ↓
+   ->
 target warehouse MERGE
 ```
 

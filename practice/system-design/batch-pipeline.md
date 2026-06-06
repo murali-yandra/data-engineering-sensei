@@ -169,19 +169,19 @@ Mental model:
 
 ```text
 Source systems
-    ↓
+    ->
 Ingestion
-    ↓
+    ->
 Raw immutable storage
-    ↓
+    ->
 Validation
-    ↓
+    ->
 Staging / cleaned data
-    ↓
+    ->
 Curated facts and dimensions
-    ↓
+    ->
 Business marts / aggregates / feature tables
-    ↓
+    ->
 Consumers
 ```
 
@@ -490,40 +490,40 @@ Reference architecture:
   SaaS tools
   Partner files
   Logs/events
-        ↓
+        ->
 [Ingestion]
   extract jobs
   API pullers
   file watchers
   CDC capture
-        ↓
+        ->
 [Raw Zone]
   immutable object storage
   source + ingestion_date + batch_id partitions
-        ↓
+        ->
 [Validation]
   schema
   row count
   freshness
   required fields
-        ↓
+        ->
 [Staging]
   typed columns
   normalized timestamps
   deduped source records
   bad rows quarantined
-        ↓
+        ->
 [Curated]
   facts
   dimensions
   SCD history
   current state tables
-        ↓
+        ->
 [Data Marts]
   dashboard tables
   feature tables
   exports
-        ↓
+        ->
 [Consumers]
   BI
   analysts

@@ -187,15 +187,15 @@ Mental model:
 
 ```text
 Data sources / tables / files / streams
-        ↓
+        ->
 DQ rule configuration
-        ↓
+        ->
 DQ execution engine
-        ↓
+        ->
 DQ results store
-        ↓
+        ->
 Quality gates
-        ↓
+        ->
 Alerts / dashboards / remediation
 ```
 
@@ -520,38 +520,38 @@ Reference architecture:
   marts
   streams
   CDC targets
-        ↓
+        ->
 [DQ Rule Config]
   rule metadata
   severity
   threshold
   owner
   schedule
-        ↓
+        ->
 [DQ Execution Engine]
   SQL checks
   Spark checks
   file checks
   schema checks
   API checks
-        ↓
+        ->
 [DQ Results Store]
   check status
   actual value
   expected value
   run metadata
   sample failures
-        ↓
+        ->
 [Quality Gates]
   block / warn / pass
-        ↓
+        ->
 [Actions]
   alerts
   quarantine
   tickets
   dashboards
   remediation
-        ↓
+        ->
 [Consumers]
   pipeline orchestrator
   catalog

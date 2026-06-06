@@ -95,51 +95,28 @@ Expected structure:
 
 ```text
 data-engineering-sensei/
-├── SKILL.md
-├── README.md
-├── CONTRIBUTING.md
-├── modes/
-│   ├── tutor-mode.md
-│   ├── hint-mode.md
-│   ├── review-mode.md
-│   ├── interview-mode.md
-│   ├── pattern-mapper-mode.md
-│   ├── profile-assessment-mode.md
-│   ├── roadmap-mode.md
-│   ├── sql-drill-mode.md
-│   ├── python-drill-mode.md
-│   ├── dsa-drill-mode.md
-│   ├── system-design-mode.md
-│   ├── project-deep-dive-mode.md
-│   └── weakness-repair-mode.md
-├── docs/
-│   ├── data-engineering-interview-roadmap.md
-│   ├── sql-interview-guide.md
-│   ├── python-interview-guide.md
-│   ├── dsa-for-data-engineering.md
-│   ├── data-modeling-guide.md
-│   ├── data-engineering-fundamentals.md
-│   ├── spark-pyspark-guide.md
-│   ├── warehouse-cloud-guide.md
-│   ├── orchestration-airflow-guide.md
-│   ├── system-design-guide.md
-│   ├── project-deep-dive-guide.md
-│   └── assessment-rubric.md
-├── templates/
-│   ├── answer-frameworks/
-│   ├── interview-feedback/
-│   ├── roadmaps/
-│   └── progress/
-├── practice/
-│   ├── sql/
-│   ├── python/
-│   ├── dsa/
-│   ├── system-design/
-│   └── mixed-interviews/
-├── progress/
-├── assets/
-├── scripts/
-└── tests/
++-- SKILL.md
++-- README.md
++-- CONTRIBUTING.md
++-- CHANGELOG.md
++-- docs/
++-- modes/
++-- practice/
+|   +-- sql/
+|   +-- python/
+|   +-- dsa/
+|   +-- system-design/
+|   +-- mixed-interviews/
++-- templates/
+|   +-- answer-frameworks/
+|   +-- assessment/
+|   +-- interview-feedback/
+|   +-- interviews/
+|   +-- progress/
+|   +-- reviews/
+|   +-- roadmaps/
+|   +-- solutions/
++-- progress/
 ```
 
 ---
@@ -330,7 +307,7 @@ Never fabricate:
 - company-specific hiring standards
 - tool behavior
 - benchmark numbers
-- salary data
+- compensation data
 - current trends
 - links
 
@@ -625,7 +602,7 @@ Files in `progress/` should help the AI or candidate continue from where they le
 
 Progress files should be simple and structured.
 
-### 16.1 `CURRENT_STATE.md`
+### 16.1 `progress/CURRENT_STATE.md`
 
 Should track:
 
@@ -640,7 +617,7 @@ Next task:
 Blocked by:
 ```
 
-### 16.2 `REQUIREMENTS.md`
+### 16.2 `progress/REQUIREMENTS.md`
 
 Should track:
 
@@ -655,7 +632,7 @@ File generation rules:
 User decisions:
 ```
 
-### 16.3 `DECISION_LOG.md`
+### 16.3 `progress/DECISION_LOG.md`
 
 Should track:
 
@@ -666,7 +643,7 @@ Impact:
 Date/order:
 ```
 
-### 16.4 `FILE_GENERATION_LOG.md`
+### 16.4 `progress/FILE_GENERATION_LOG.md`
 
 Should track:
 
@@ -677,7 +654,7 @@ Partially generated files:
 Next recommended file:
 ```
 
-### 16.5 `CANDIDATE_PROFILE.md`
+### 16.5 `progress/CANDIDATE_PROFILE.md`
 
 Should track:
 
@@ -692,7 +669,7 @@ Study hours:
 Readiness verdict:
 ```
 
-### 16.6 `ROADMAP_PROGRESS.md`
+### 16.6 `progress/ROADMAP_PROGRESS.md`
 
 Should track:
 

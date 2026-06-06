@@ -3190,7 +3190,7 @@ If these are missing, ask follow-up.
 
 ### Optional Missing Fields
 
-- target companies/countries
+- target role, company type, or location constraints
 - recent difficult question
 - detailed subskill scores
 

@@ -53,7 +53,7 @@ docs/data-modeling-guide.md
 docs/cloud-data-platforms-guide.md
 docs/orchestration-airflow-guide.md
 docs/sql-interview-guide.md
-docs/query-optimization.md
+practice/sql/query-optimization.md
 docs/assessment-rubric.md
 docs/communication-rubric.md
 modes/system-design-mode.md
@@ -194,19 +194,19 @@ Sources
   files
   CDC feeds
   data lake
-      ↓
+      ->
 Staging
   source-shaped, cleaned, typed data
-      ↓
+      ->
 Curated warehouse
   facts and dimensions
-      ↓
+      ->
 Data marts
   business-specific aggregates and wide tables
-      ↓
+      ->
 Semantic layer
   consistent metrics and business definitions
-      ↓
+      ->
 Consumers
   BI dashboards
   analysts
@@ -543,36 +543,36 @@ Reference architecture:
   partner files
   CDC streams
   data lake
-        ↓
+        ->
 [Ingestion]
   batch extract
   CDC capture
   API pull
   file load
-        ↓
+        ->
 [Staging]
   source-shaped
   typed
   cleaned
   deduped
-        ↓
+        ->
 [Curated Warehouse]
   fact tables
   dimension tables
   history tables
-        ↓
+        ->
 [Data Marts]
   sales mart
   finance mart
   product analytics mart
   customer 360
   ML feature tables
-        ↓
+        ->
 [Semantic Layer]
   metric definitions
   dimensions
   certified datasets
-        ↓
+        ->
 [Consumers]
   dashboards
   analysts

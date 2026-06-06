@@ -194,29 +194,29 @@ Event producers
   backend services
   IoT devices
   logs
-      ↓
+      ->
 Collection layer
   SDKs
   APIs
   agents
   collectors
-      ↓
+      ->
 Transport layer
   Kafka
   Kinesis
   Pub/Sub
   queues
-      ↓
+      ->
 Raw storage
   immutable event lake
-      ↓
+      ->
 Processing
   validation
   enrichment
   deduplication
   windowing
   aggregation
-      ↓
+      ->
 Serving
   lake/warehouse
   dashboards
@@ -540,21 +540,21 @@ Reference architecture:
   backend services
   IoT devices
   server logs
-        ↓
+        ->
 [Collection Layer]
   event API
   load balancer
   validation
   auth/rate limit
-        ↓
+        ->
 [Broker / Stream]
   Kafka / Kinesis / PubSub
   topics and partitions
-        ↓
+        ->
 [Raw Sink]
   object storage / lake bronze
   immutable events
-        ↓
+        ->
 [Processing]
   stream jobs
   batch jobs
@@ -562,7 +562,7 @@ Reference architecture:
   dedupe
   enrichment
   windowing
-        ↓
+        ->
 [Serving]
   lakehouse silver/gold
   warehouse marts

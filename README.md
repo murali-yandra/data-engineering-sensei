@@ -986,6 +986,13 @@ This repository includes a `progress/` folder so the AI or candidate can continu
 | `progress/NEXT_STEPS.md` | What to do or generate next |
 | `progress/CANDIDATE_PROFILE.md` | Candidate intake answers and ratings |
 | `progress/ROADMAP_PROGRESS.md` | Roadmap progress and drill status |
+| `progress/PROJECT_PROGRESS.md` | Project evidence and deep-dive readiness |
+| `progress/WEAKNESS_REGISTER.md` | Weaknesses, repair tasks, and exit tests |
+| `progress/SESSION_LOG.md` | Chronological session history |
+| `progress/MOCK_INTERVIEW_HISTORY.md` | Mock interview scores and verdicts |
+| `progress/RESUME_STATE.md` | Resume evidence and defensible claims |
+| `progress/PORTFOLIO_READINESS.md` | Public portfolio artifact readiness |
+| `progress/JOB_SEARCH_READINESS.md` | Optional job-search readiness gates |
 | `progress/SESSION_SUMMARY_TEMPLATE.md` | Standard summary after each training session |
 
 ### Session Summary Format
@@ -1010,100 +1017,59 @@ Recommended drill:
 
 ```text
 data-engineering-sensei/
-├── SKILL.md
-├── README.md
-├── modes/
-│   ├── tutor-mode.md
-│   ├── hint-mode.md
-│   ├── review-mode.md
-│   ├── interview-mode.md
-│   ├── pattern-mapper-mode.md
-│   ├── profile-assessment-mode.md
-│   ├── roadmap-mode.md
-│   ├── sql-drill-mode.md
-│   ├── python-drill-mode.md
-│   ├── dsa-drill-mode.md
-│   ├── system-design-mode.md
-│   ├── project-deep-dive-mode.md
-│   └── weakness-repair-mode.md
-├── docs/
-│   ├── data-engineering-interview-roadmap.md
-│   ├── sql-interview-guide.md
-│   ├── python-interview-guide.md
-│   ├── dsa-for-data-engineering.md
-│   ├── data-modeling-guide.md
-│   ├── data-engineering-fundamentals.md
-│   ├── spark-pyspark-guide.md
-│   ├── warehouse-cloud-guide.md
-│   ├── orchestration-airflow-guide.md
-│   ├── system-design-guide.md
-│   ├── project-deep-dive-guide.md
-│   └── assessment-rubric.md
-├── templates/
-│   ├── answer-frameworks/
-│   │   ├── sql-answer-framework.md
-│   │   ├── python-answer-framework.md
-│   │   └── system-design-answer-framework.md
-│   ├── interview-feedback/
-│   │   └── mock-interview-feedback-template.md
-│   ├── roadmaps/
-│   │   └── personalized-roadmap-template.md
-│   └── progress/
-│       └── session-summary-template.md
-├── practice/
-│   ├── sql/
-│   │   └── sql-drills.md
-│   ├── python/
-│   │   └── python-drills.md
-│   ├── dsa/
-│   │   └── high-roi-leetcode-list.md
-│   ├── system-design/
-│   │   └── system-design-prompts.md
-│   └── mixed-interviews/
-│       └── mixed-interview-sets.md
-├── progress/
-│   ├── CURRENT_STATE.md
-│   ├── REQUIREMENTS.md
-│   ├── DECISION_LOG.md
-│   ├── FILE_GENERATION_LOG.md
-│   ├── NEXT_STEPS.md
-│   ├── CANDIDATE_PROFILE.md
-│   ├── ROADMAP_PROGRESS.md
-│   └── SESSION_SUMMARY_TEMPLATE.md
-├── assets/
-├── scripts/
-└── tests/
++-- SKILL.md
++-- README.md
++-- CONTRIBUTING.md
++-- CHANGELOG.md
++-- docs/
++-- modes/
++-- practice/
+|   +-- sql/
+|   +-- python/
+|   +-- dsa/
+|   +-- system-design/
+|   +-- mixed-interviews/
++-- templates/
+|   +-- answer-frameworks/
+|   +-- assessment/
+|   +-- interview-feedback/
+|   +-- interviews/
+|   +-- progress/
+|   +-- reviews/
+|   +-- roadmaps/
+|   +-- solutions/
++-- progress/
 ```
 
 ---
 
 ## Installation
 
-## Claude Code Personal Skill
+## Local Skill Installation
 
-Clone this repository into your Claude skills directory.
+Clone this repository into the skill directory used by your AI assistant or local skill loader.
 
 ```bash
 git clone <your-repo-url> data-engineering-sensei
-cp -r data-engineering-sensei ~/.claude/skills/
+cp -r data-engineering-sensei <skills-directory>/
 ```
 
-Restart Claude Code.
+Restart or reload the assistant so it can discover the new `SKILL.md`.
 
 ## Project-Level Skill
 
-To add it to a project:
+To vendor the skill into a project repository, copy it into that project's configured skill folder and commit it like any other project artifact.
 
 ```bash
-mkdir -p .claude/skills
-cp -r data-engineering-sensei .claude/skills/
-git add .claude/skills/data-engineering-sensei
+mkdir -p <project-skill-directory>
+cp -r data-engineering-sensei <project-skill-directory>/
+git add <project-skill-directory>/data-engineering-sensei
 git commit -m "Add Data Engineering Sensei interview skill"
 ```
 
-## Claude.ai Project Knowledge
+## Project Knowledge Upload
 
-Upload these files into a Claude project:
+If your assistant supports project knowledge instead of local skill folders, upload these files and directories:
 
 Required:
 
@@ -1369,9 +1335,9 @@ The user may ask:
 ```text
 generate SKILL.md
 generate README.md
-generate assessment-rubric.md
-generate sql-interview-guide.md
-generate tutor-mode.md
+generate docs/assessment-rubric.md
+generate docs/sql-interview-guide.md
+generate modes/tutor-mode.md
 ```
 
 The assistant should generate only the requested file.

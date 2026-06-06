@@ -206,17 +206,17 @@ A warehouse design usually includes multiple layers.
 
 ```text
 Source Systems
-  ↓
+  ->
 Landing / Raw
-  ↓
+  ->
 Staging
-  ↓
+  ->
 Integration / Cleaned
-  ↓
+  ->
 Core Warehouse
-  ↓
+  ->
 Data Marts / Serving
-  ↓
+  ->
 BI / Analytics / ML
 ```
 

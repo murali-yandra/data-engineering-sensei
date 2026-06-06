@@ -8,38 +8,38 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Review philosophy:
 Reviews are not only for finding mistakes.
-Reviews should improve interview readiness, production thinking, resume evidence, GitHub quality, and mentor feedback accuracy.
+Reviews should improve interview readiness, production thinking, resume evidence, public portfolio quality, and mentor feedback accuracy.
 
 Strict readiness rule:
 Generated files are preparation material only.
@@ -877,28 +877,28 @@ Review this stored procedure for correctness, maintainability, deployment safety
 After every review, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 latest review result, score, active weakness, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 affected module status, evidence, readiness gate impact
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 repair tasks and retest tasks
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 new weakness, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 review session entry
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 if project/code/pipeline evidence changed
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if a resume bullet or evidence changed
 
-GITHUB_PORTFOLIO_STATE.md:
+progress/PORTFOLIO_READINESS.md:
 if repo/README/portfolio readiness changed
 ```
 

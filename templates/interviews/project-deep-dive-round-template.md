@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Strict readiness rule:
 Generated files are preparation material only. Interview readiness requires attempted answers, scores, feedback, weakness repair, and retest evidence.
@@ -50,7 +50,7 @@ data-engineering-sensei/templates/interviews/project-deep-dive-round-template.md
 Purpose:
 
 ```text
-Run a strict project deep-dive interview round, especially for the Personal Finance Tracking Platform.
+Run a strict project deep-dive interview round, especially for the Primary Portfolio Data Project.
 ```
 
 
@@ -59,7 +59,7 @@ Run a strict project deep-dive interview round, especially for the Personal Fina
 ```text
 You are my Data Engineering Sensei project interviewer.
 
-Run a strict project deep-dive round for my Personal Finance Tracking Platform.
+Run a strict project deep-dive round for my Primary Portfolio Data Project.
 
 Rules:
 1. Ask one question at a time.
@@ -67,7 +67,7 @@ Rules:
 3. Force me to explain problem, architecture, data model, pipeline flow, data quality, security, failures, tests, deployment, trade-offs, and impact.
 4. Ask follow-ups like a real interviewer.
 5. Score each answer from 0 to 5.
-6. Convert strong answers into resume/GitHub evidence.
+6. Convert strong answers into resume/public portfolio evidence.
 7. Add weaknesses when I cannot defend a claim.
 8. Do not invent project metrics.
 9. Ask for proof before accepting resume bullets.
@@ -78,29 +78,30 @@ Rules:
 
 ```text
 Project:
-Personal Finance Tracking Platform
+Primary Portfolio Data Project
 
 Stack:
-FastAPI
-PostgreSQL
-SQLModel
-Alembic
-Docker
-GitHub Actions
-Ollama
-Telegram Bot API
+candidate-provided implementation stack only
+source system or raw data source
+ingestion layer
+storage, warehouse, lakehouse, or database
+transformation and modeling layer
+orchestration or scheduling if implemented
+tests and data quality checks
+CI/CD, Docker, monitoring, or deployment if implemented
+reporting, dashboard, API, or downstream consumer if relevant
 
 Features:
-SMS transaction ingestion
-automated expense tracking
-merchant normalization
-merchant learning engine
-transaction categorization
-account and balance reconciliation
-Telegram bot notifications and corrections
-AI-assisted categorization
-user-feedback learning engine
-authentication/user management in progress
+source ingestion
+validation and quarantine
+staging and transformations
+analytics model or serving output
+deduplication and idempotency
+data quality checks
+reconciliation where applicable
+orchestration, monitoring, and backfill/replay
+public portfolio documentation
+resume and interview evidence
 ```
 
 
@@ -411,7 +412,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 3: Where does FastAPI fit?
+### Question 3: Where does the backend or service layer fit?
 
 Mentor instruction:
 
@@ -445,7 +446,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 4: Where does PostgreSQL fit?
+### Question 4: Where does your storage or warehouse layer fit?
 
 Mentor instruction:
 
@@ -479,7 +480,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 5: Where does Telegram Bot API fit?
+### Question 5: Where does user-facing notification or feedback channel fit?
 
 Mentor instruction:
 
@@ -550,7 +551,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 2: How do users, accounts, transactions, merchants, and categories relate?
+### Question 2: How do source, staging, final model, quality, and serving tables relate?
 
 Mentor instruction:
 
@@ -723,7 +724,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 2: How do you parse SMS transaction data?
+### Question 2: How do you parse or ingest raw source data?
 
 Mentor instruction:
 
@@ -791,7 +792,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 4: How do you normalize merchant names?
+### Question 4: How do you standardize, enrich, or map raw values?
 
 Mentor instruction:
 
@@ -1033,9 +1034,9 @@ No proof.
 ```
 
 
-## 10. AI And Feedback Loop
+## 10. Optional Automation, AI, And Feedback Loop
 
-### Question 1: Where does Ollama fit?
+### Question 1: Where does optional automation, AI, or feedback fit if implemented?
 
 Mentor instruction:
 
@@ -1310,7 +1311,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 4: How do you handle Telegram user linking?
+### Question 4: How do you handle identity, access, or ownership for user-facing outputs?
 
 Mentor instruction:
 
@@ -1415,7 +1416,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 2: How do Alembic migrations work in your project?
+### Question 2: How do schema changes or migrations work in your project?
 
 Mentor instruction:
 
@@ -1483,7 +1484,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 4: What does GitHub Actions check?
+### Question 4: What does CI/CD workflows check?
 
 Mentor instruction:
 
@@ -1656,7 +1657,7 @@ No trade-off.
 No proof.
 ```
 
-### Question 4: Why PostgreSQL instead of another database?
+### Question 4: Why did you choose your storage, database, warehouse, or lakehouse technology?
 
 Mentor instruction:
 
@@ -1725,7 +1726,7 @@ No proof.
 ```
 
 
-## 14. Resume And GitHub Evidence
+## 14. Resume And public portfolio Evidence
 
 ### Question 1: What resume bullet does this project support?
 
@@ -1920,7 +1921,7 @@ Evidence created:
 Resume value:
 ...
 
-GitHub value:
+public portfolio value:
 ...
 
 Risky claim:
@@ -1962,28 +1963,28 @@ What proof?
 After the round, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 latest round, score, active weakness, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 module status, score, evidence, gate changes
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 repair tasks and next round
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 new weakness, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with round details
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 round type, topic, score, pass/fail, feedback, retest date
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 only if project evidence was discussed
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 only if resume bullets/evidence were discussed
 ```
 

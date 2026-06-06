@@ -1146,21 +1146,21 @@ Example:
 
 ```text
 check_source_ready
-  ↓
+  ->
 extract_source
-  ↓
+  ->
 land_raw
-  ↓
+  ->
 validate_raw
-  ↓
+  ->
 load_staging
-  ↓
+  ->
 transform_curated
-  ↓
+  ->
 run_quality_checks
-  ↓
+  ->
 publish
-  ↓
+  ->
 notify
 ```
 
@@ -1315,9 +1315,9 @@ Example flow:
 
 ```text
 transform_curated
-  ↓
+  ->
 quality_checks
-  ↓
+  ->
 publish_if_passed
 ```
 
@@ -2017,17 +2017,17 @@ Use this template.
 
 ```text
 Sources
-  ↓
+  ->
 Ingestion Layer
-  ↓
+  ->
 Raw/Bronze Storage
-  ↓
+  ->
 Staging/Silver Processing
-  ↓
+  ->
 Curated/Gold Data Model
-  ↓
+  ->
 Serving Layer
-  ↓
+  ->
 Consumers
 
 Cross-cutting:
@@ -2085,15 +2085,15 @@ Use when low latency is required.
 
 ```text
 Event producers
-  ↓
+  ->
 Message broker / streaming ingest
-  ↓
+  ->
 Stream processing
-  ↓
+  ->
 Raw event storage
-  ↓
+  ->
 Real-time serving / aggregates
-  ↓
+  ->
 Batch correction path
 ```
 
@@ -2125,17 +2125,17 @@ CDC pipeline flow:
 
 ```text
 Source database log
-  ↓
+  ->
 CDC capture connector
-  ↓
+  ->
 Change event stream/storage
-  ↓
+  ->
 Staging change table
-  ↓
+  ->
 Apply inserts/updates/deletes
-  ↓
+  ->
 Curated latest-state table or history table
-  ↓
+  ->
 Quality checks and lag monitoring
 ```
 
@@ -2165,19 +2165,19 @@ API ingestion flow:
 
 ```text
 Read cursor/watermark
-  ↓
+  ->
 Call API pages
-  ↓
+  ->
 Handle rate limits/retries
-  ↓
+  ->
 Store raw responses
-  ↓
+  ->
 Normalize JSON
-  ↓
+  ->
 Validate records
-  ↓
+  ->
 Load staging/target
-  ↓
+  ->
 Commit cursor after success
 ```
 
@@ -2206,19 +2206,19 @@ File ingestion flow:
 
 ```text
 Wait/check file arrival
-  ↓
+  ->
 Validate filename/checksum/schema
-  ↓
+  ->
 Copy to raw/archive
-  ↓
+  ->
 Load staging
-  ↓
+  ->
 Validate rows
-  ↓
+  ->
 Transform
-  ↓
+  ->
 Publish
-  ↓
+  ->
 Mark file processed
 ```
 

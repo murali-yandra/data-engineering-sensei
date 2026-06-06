@@ -9,7 +9,7 @@ The roadmap is not a generic study calendar. It must be personalized based on:
 - candidate experience
 - current role
 - interview timeline
-- target companies/countries if provided
+- target role, company type, or location constraints if provided
 - skill ratings
 - weakest areas
 - weekly study hours
@@ -1079,17 +1079,17 @@ Every roadmap should include this loop:
 
 ```text
 Practice
-  ↓
+  ->
 Review
-  ↓
+  ->
 Identify mistake
-  ↓
+  ->
 Repair concept
-  ↓
+  ->
 Retry similar problem
-  ↓
+  ->
 Increase difficulty
-  ↓
+  ->
 Mock interview
 ```
 

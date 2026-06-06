@@ -28,13 +28,13 @@ Data Platform Engineer, later after stronger system design depth
 Default candidate context to preserve unless changed:
 
 ```text
-Candidate is an early-career data professional with around 2 years of experience.
-Candidate is preparing for better Data Engineering roles.
+Candidate is an early-career or transitioning data professional; capture exact experience only from provided facts.
+Candidate is preparing for Data Engineering roles.
 Candidate wants strict, no-sugarcoating, job-focused guidance.
 Candidate prefers visual explanations, structured tables, practical drills, and project-based learning.
-Candidate is building a Data Engineering Sensei skill/repo.
-Candidate's main known project is Personal Finance Tracking Platform.
-Candidate needs SQL, Python, DSA, DE fundamentals, system design, project deep-dive, resume, GitHub, LinkedIn, and job-search readiness.
+Candidate may have one or more portfolio projects; assess them only from provided evidence.
+Candidate primary project should be captured as Primary Portfolio Data Project only when the candidate provides one.
+Candidate needs SQL, Python, DSA, DE fundamentals, system design, project deep-dive, resume, public portfolio, professional profile, and job-search readiness.
 ```
 
 Important:
@@ -42,7 +42,7 @@ Important:
 ```text
 This file is a reusable template.
 The filled live version should be stored in:
-practice/progress/CANDIDATE_PROFILE.md
+progress/CANDIDATE_PROFILE.md
 ```
 
 
@@ -59,16 +59,16 @@ Use the following rules:
 
 1. Be strict and realistic.
 2. Do not sugarcoat my readiness.
-3. Ask one question at a time when information is missing.
+3. Ask concise grouped baseline questions by default; ask one question at a time only during drills, mocks, deep dives, or when requested.
 4. Do not invent facts, metrics, project status, work impact, or scores.
 5. Separate confirmed facts from assumptions.
-6. Track long-term profile details in CANDIDATE_PROFILE.md.
-7. Track current state in CURRENT_STATE.md.
-8. Track roadmap completion in ROADMAP_PROGRESS.md.
-9. Track immediate tasks in NEXT_STEPS.md.
-10. Track weaknesses in WEAKNESS_REGISTER.md.
-11. Track sessions in SESSION_LOG.md.
-12. Track project evidence in PROJECT_PROGRESS.md.
+6. Track long-term profile details in progress/CANDIDATE_PROFILE.md.
+7. Track current state in progress/CURRENT_STATE.md.
+8. Track roadmap completion in progress/ROADMAP_PROGRESS.md.
+9. Track immediate tasks in progress/NEXT_STEPS.md.
+10. Track weaknesses in progress/WEAKNESS_REGISTER.md.
+11. Track sessions in progress/SESSION_LOG.md.
+12. Track project evidence in progress/PROJECT_PROGRESS.md.
 
 Build my profile around:
 - target roles
@@ -79,17 +79,17 @@ Build my profile around:
 - weaknesses
 - projects
 - resume evidence
-- GitHub portfolio
+- public portfolio
 - learning preferences
 - job-search direction
 - next roadmap phase
 
 Important candidate context:
 I am preparing for Data Engineering roles.
-I have around 2 years of experience.
-I want to crack better jobs.
+I am early-career or transitioning into Data Engineering.
+I want to become a stronger, evidence-backed Data Engineering candidate.
 I want practical preparation, not generic motivation.
-My main project is a Personal Finance Tracking Platform using FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, and Telegram Bot API.
+My main project is a Primary Portfolio Data Project using a candidate-provided implementation stack with ingestion, storage, transformations, tests, documentation, CI/CD, and monitoring or reporting where relevant.
 I need help becoming interview-ready in SQL, Python, DSA patterns, data engineering fundamentals, system design, and project explanations.
 
 Start by creating a structured candidate profile.
@@ -116,14 +116,14 @@ primary_target_role: ""
 secondary_target_roles:
   - ""
 target_locations:
-  - "India"
+  - "local market"
   - "Remote"
-  - "EU"
-  - "Japan"
+  - "target market"
+  - "target market"
 current_job_search_status: "preparation / applying / interviewing / offer-stage"
 notice_period: ""
-current_salary_or_ctc: ""
-expected_salary_or_ctc: ""
+current_compensation_optional: ""
+expected_compensation_optional: ""
 portfolio_link: ""
 github_link: ""
 linkedin_link: ""
@@ -137,7 +137,7 @@ Ask me for missing candidate identity details one by one.
 Do not ask all questions at once.
 After each answer, update the profile.
 Do not store sensitive details unless I explicitly want them stored.
-If salary or location is unknown, keep it blank.
+If compensation or location is unknown, keep it blank.
 ```
 
 
@@ -220,7 +220,7 @@ Use 0 to 5 scale.
 | System design communication | 0 | 4 | not assessed | not_started |
 | Project deep dive | 0 | 4 | not assessed | not_started |
 | Resume readiness | 0 | 4 | not assessed | not_started |
-| GitHub portfolio | 0 | 4 | not assessed | not_started |
+| public portfolio | 0 | 4 | not assessed | not_started |
 | Behavioral communication | 0 | 3.5 | not assessed | not_started |
 
 AI mentor prompt:
@@ -249,9 +249,9 @@ Use this to track strengths with proof.
 | Strength ID | Area | Strength | Evidence | Interview Use | Confidence |
 |---|---|---|---|---|---|
 | STR-001 | SQL/Data Work | SQL Server/stored procedure exposure | needs details | work experience story | medium |
-| STR-002 | Project | Personal Finance Tracking Platform | project in progress | portfolio project | medium |
+| STR-002 | Project | Primary Portfolio Data Project | project in progress | portfolio project | medium |
 | STR-003 | Learning | Structured repo and mentor system | generated skill files | preparation discipline | high |
-| STR-004 | Backend/Data Product | FastAPI + PostgreSQL project stack | project context | project deep dive | medium |
+| STR-004 | Backend/Data Product | candidate-selected project stack | project context | project deep dive | medium |
 
 AI mentor prompt:
 
@@ -261,7 +261,7 @@ For each strength, ask:
 1. What evidence proves this?
 2. Can I defend it in an interview?
 3. Can it become a resume bullet?
-4. Is it strong enough for LinkedIn/GitHub?
+4. Is it strong enough for professional profile/public portfolio?
 5. Does it match my target role?
 
 Do not count a strength if there is no evidence.
@@ -300,54 +300,54 @@ For each risk:
 Main known project:
 
 ```yaml
-project_name: "Personal Finance Tracking Platform"
-project_type: "Data Engineering / Backend Data Product"
-status: "Sprint 0 completed, Sprint 1 authentication/user management in progress"
+project_name: "Primary Portfolio Data Project"
+project_type: "Data Engineering / Analytics / Data Platform Portfolio Project"
+status: "unknown / planned / in progress / implemented / reviewed"
 tech_stack:
-  - "FastAPI"
-  - "PostgreSQL"
-  - "SQLModel"
-  - "Alembic"
-  - "Docker"
-  - "GitHub Actions"
-  - "Ollama"
-  - "Telegram Bot API"
+  - "candidate-provided implementation stack"
+  - "source system or raw data source"
+  - "storage, warehouse, lakehouse, or database"
+  - "transformation and modeling layer"
+  - "orchestration or scheduling if implemented"
+  - "tests and data quality checks"
+  - "CI/CD, Docker, monitoring, or deployment if implemented"
+  - "reporting, dashboard, API, or downstream consumer if relevant"
 features:
-  - "SMS-based transaction ingestion"
-  - "automated expense tracking"
-  - "merchant learning engine"
-  - "merchant normalization"
-  - "transaction categorization"
-  - "account and balance reconciliation"
-  - "Telegram bot notifications and corrections"
-  - "AI-assisted transaction categorization"
-  - "user-feedback learning engine"
+  - "source ingestion"
+  - "validation and quarantine"
+  - "staging and transformations"
+  - "analytics model or serving output"
+  - "deduplication and idempotency"
+  - "data quality checks"
+  - "reconciliation where applicable"
+  - "orchestration, monitoring, and backfill/replay"
+  - "public portfolio documentation"
 ```
 
 AI mentor prompt:
 
 ```text
-Assess my Personal Finance Tracking Platform as an interview project.
+Assess my Primary Portfolio Data Project as an interview project.
 Ask me one question at a time.
 
 You must evaluate:
 1. problem clarity
 2. architecture
-3. database design
-4. transaction ingestion flow
-5. merchant normalization
-6. categorization logic
-7. user feedback loop
-8. account reconciliation
-9. Telegram bot flow
-10. authentication/security
+3. data model and grain
+4. ingestion flow
+5. validation and quarantine
+6. transformations
+7. data quality checks
+8. idempotency and reruns
+9. orchestration, monitoring, or backfill if applicable
+10. security and privacy if applicable
 11. testing
-12. deployment
+12. deployment or reproducibility
 13. failure handling
 14. data quality
 15. scalability
 16. resume value
-17. GitHub README quality
+17. public portfolio README quality
 
 Score each area from 0 to 5.
 Do not let me describe the project as only a tool list.
@@ -364,7 +364,7 @@ resume_status: "not reviewed"
 resume_score: 0
 target_resume_title: "Data Engineer"
 target_resume_theme: "SQL + Python + ETL/ELT + Data Warehousing + Project Evidence"
-main_project_on_resume: "Personal Finance Tracking Platform"
+main_project_on_resume: "Primary Portfolio Data Project"
 resume_risks:
   - "bullets may lack metrics"
   - "project may not have enough proof"
@@ -461,7 +461,7 @@ When the AI mentor finishes profile assessment, output this structure.
 ## Main Project Readiness
 ...
 
-## Resume/GitHub Readiness
+## Resume/public portfolio Readiness
 ...
 
 ## Best Target Roles Right Now
@@ -477,12 +477,12 @@ When the AI mentor finishes profile assessment, output this structure.
 ...
 
 ## Files To Update
-- CANDIDATE_PROFILE.md
-- CURRENT_STATE.md
-- ROADMAP_PROGRESS.md
-- NEXT_STEPS.md
-- WEAKNESS_REGISTER.md
-- PROJECT_PROGRESS.md
+- progress/CANDIDATE_PROFILE.md
+- progress/CURRENT_STATE.md
+- progress/ROADMAP_PROGRESS.md
+- progress/NEXT_STEPS.md
+- progress/WEAKNESS_REGISTER.md
+- progress/PROJECT_PROGRESS.md
 ```
 
 Strict final line:
@@ -515,14 +515,14 @@ Classify it as:
 - job search update
 
 Update the correct file:
-- CANDIDATE_PROFILE.md for stable long-term profile
-- CURRENT_STATE.md for live snapshot
-- ROADMAP_PROGRESS.md for phase/module completion
-- NEXT_STEPS.md for task queue
-- WEAKNESS_REGISTER.md for weaknesses
-- PROJECT_PROGRESS.md for project evidence
-- RESUME_STATE.md for resume bullets
-- JOB_SEARCH_STATE.md for applications
+- progress/CANDIDATE_PROFILE.md for stable long-term profile
+- progress/CURRENT_STATE.md for live snapshot
+- progress/ROADMAP_PROGRESS.md for phase/module completion
+- progress/NEXT_STEPS.md for task queue
+- progress/WEAKNESS_REGISTER.md for weaknesses
+- progress/PROJECT_PROGRESS.md for project evidence
+- progress/RESUME_STATE.md for resume bullets
+- progress/JOB_SEARCH_READINESS.md for applications
 
 Do not duplicate information unnecessarily.
 Ask if unclear.

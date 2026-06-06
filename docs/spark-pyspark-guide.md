@@ -191,17 +191,17 @@ Basic execution flow:
 
 ```text
 User submits Spark application
-  ↓
+  ->
 Driver starts
-  ↓
+  ->
 Driver requests resources from cluster manager
-  ↓
+  ->
 Executors start on worker nodes
-  ↓
+  ->
 Driver builds execution plan
-  ↓
+  ->
 Executors run tasks on partitions
-  ↓
+  ->
 Output is written or small results are returned
 ```
 
@@ -2207,15 +2207,15 @@ Pattern:
 
 ```text
 orchestrator checks dependencies
-  ↓
+  ->
 submits Spark job
-  ↓
+  ->
 monitors status
-  ↓
+  ->
 runs quality checks
-  ↓
+  ->
 publishes output
-  ↓
+  ->
 alerts on failure
 ```
 

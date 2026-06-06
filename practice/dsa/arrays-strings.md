@@ -3488,7 +3488,7 @@ For hard variation:
 If candidate cannot identify pattern in 5 minutes:
 
 ```text
-Stop and switch to pattern-mapper-mode.md or weakness-repair-mode.md.
+Stop and switch to modes/pattern-mapper-mode.md or modes/weakness-repair-mode.md.
 ```
 
 
@@ -3542,12 +3542,11 @@ Use this map when candidate fails.
 | Cannot parse strings | Log parsing and normalization drills |
 | Cannot explain | Communication structure drill |
 | Memorizes solution | Variation drill with changed requirement |
-```
 
 If weakness repeats:
 
 ```text
-Switch to weakness-repair-mode.md.
+Switch to modes/weakness-repair-mode.md.
 ```
 
 
@@ -4019,7 +4018,7 @@ Week 4: DE custom + mixed mock
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for the failed pattern.
+Run modes/weakness-repair-mode.md for the failed pattern.
 ```
 
 

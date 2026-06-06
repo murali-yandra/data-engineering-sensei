@@ -2234,49 +2234,49 @@ After interview, choose next mode.
 If weak in concepts:
 
 ```text
-data-engineering-fundamentals-mode.md
+modes/data-engineering-fundamentals-mode.md
 ```
 
 If weak in SQL:
 
 ```text
-sql-drill-mode.md
+modes/sql-drill-mode.md
 ```
 
 If weak in Python:
 
 ```text
-python-drill-mode.md
+modes/python-drill-mode.md
 ```
 
 If weak in DSA:
 
 ```text
-dsa-drill-mode.md
+modes/dsa-drill-mode.md
 ```
 
 If weak in design:
 
 ```text
-system-design-mode.md
+modes/system-design-mode.md
 ```
 
 If weak in project explanation:
 
 ```text
-project-deep-dive-mode.md
+modes/project-deep-dive-mode.md
 ```
 
 If weak across many areas:
 
 ```text
-roadmap-mode.md
+modes/roadmap-mode.md
 ```
 
 If score 4+:
 
 ```text
-interview-mode.md again at harder level
+modes/interview-mode.md again at harder level
 ```
 
 
@@ -2649,7 +2649,7 @@ How are data contracts and lineage handled?
 Avoid weak questions:
 
 ```text
-What is the salary?
+What compensation or level expectation is relevant, if voluntarily shared?
 Can I work less?
 Is the work easy?
 ```

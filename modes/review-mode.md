@@ -1835,7 +1835,7 @@ Worked on ETL pipelines using Python and SQL.
 Better bullet:
 
 ```text
-Built SQL-based transaction transformation logic to deduplicate records, normalize merchant/category fields, and publish account-level expense summaries with validation checks for duplicate transaction IDs and missing required fields.
+Built SQL-based transaction transformation logic to deduplicate records, standardize classification fields, and publish curated analytics summaries with validation checks for duplicate transaction IDs and missing required fields.
 ```
 
 Do not invent metrics.
@@ -2492,7 +2492,7 @@ Recommend Weakness Repair Mode.
 Example:
 
 ```text
-Next mode: weakness-repair-mode.md for SQL output grain.
+Next mode: modes/weakness-repair-mode.md for SQL output grain.
 ```
 
 
@@ -2531,7 +2531,7 @@ Score: 2.5/5
 Critical: LEFT JOIN broken by WHERE filter
 Major: no output grain stated
 Repair: 5 LEFT JOIN filter placement drills
-Next: sql-drill-mode.md
+Next: modes/sql-drill-mode.md
 ```
 
 
@@ -2540,16 +2540,16 @@ Next: sql-drill-mode.md
 Choose next mode after review.
 
 ```text
-SQL issue → sql-drill-mode.md
-Python issue → python-drill-mode.md
-DSA issue → dsa-drill-mode.md
-System design issue → system-design-mode.md
-Project issue → project-deep-dive-mode.md
-Fundamentals issue → data-engineering-fundamentals-mode.md
-Pattern confusion → pattern-mapper-mode.md
-Broad weakness → roadmap-mode.md
-Needs pressure test → interview-mode.md
-Repeated mistake → weakness-repair-mode.md
+SQL issue → modes/sql-drill-mode.md
+Python issue → modes/python-drill-mode.md
+DSA issue → modes/dsa-drill-mode.md
+System design issue → modes/system-design-mode.md
+Project issue → modes/project-deep-dive-mode.md
+Fundamentals issue → modes/data-engineering-fundamentals-mode.md
+Pattern confusion → modes/pattern-mapper-mode.md
+Broad weakness → modes/roadmap-mode.md
+Needs pressure test → modes/interview-mode.md
+Repeated mistake → modes/weakness-repair-mode.md
 ```
 
 Review Mode diagnoses.

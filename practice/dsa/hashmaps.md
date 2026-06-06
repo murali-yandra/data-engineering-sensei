@@ -4381,7 +4381,7 @@ Complexity and follow-up.
 If candidate cannot define key/value:
 
 ```text
-Stop and switch to tutor-mode.md or weakness-repair-mode.md.
+Stop and switch to modes/tutor-mode.md or modes/weakness-repair-mode.md.
 ```
 
 
@@ -4444,7 +4444,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -4538,7 +4538,7 @@ Week 4: sliding window + DE mock
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed pattern.
+Run modes/weakness-repair-mode.md for failed pattern.
 ```
 
 

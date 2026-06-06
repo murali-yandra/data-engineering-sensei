@@ -191,17 +191,17 @@ Mental model:
 
 ```text
 Source systems
-    ↓
+    ->
 Raw / staging
-    ↓
+    ->
 Curated warehouse facts and dimensions
-    ↓
+    ->
 Reporting marts
-    ↓
+    ->
 Semantic / metrics layer
-    ↓
+    ->
 Reports, dashboards, exports, scorecards
-    ↓
+    ->
 Business decisions
 ```
 
@@ -506,28 +506,28 @@ Reference architecture:
   files
   CDC streams
   data lake
-        ↓
+        ->
 [Curated Data]
   warehouse facts
   dimensions
   certified base tables
-        ↓
+        ->
 [Reporting Transformations]
   metric calculation
   aggregation
   filtering
   business rules
-        ↓
+        ->
 [Reporting Marts]
   dashboard-ready tables
   report snapshots
   export tables
-        ↓
+        ->
 [Semantic Layer]
   metric definitions
   dimensions
   access policies
-        ↓
+        ->
 [Delivery]
   BI dashboards
   scheduled exports
@@ -3987,7 +3987,7 @@ Passing score:
 4/5 or higher.
 ```
 
-### Mini Scenario 18: Currency totals mix USD and EUR
+### Mini Scenario 18: Currency totals mix USD and target marketR
 
 Recommended direction:
 

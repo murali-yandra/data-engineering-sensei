@@ -31,7 +31,7 @@ Spark/PySpark
 Cloud data platforms
 System design
 Project deep dive
-Resume/GitHub
+Resume/public portfolio
 Communication
 ```
 
@@ -77,13 +77,13 @@ Assess these areas:
 - Cloud data platforms
 - System design
 - Project deep dive
-- Resume/GitHub readiness
+- Resume/public portfolio readiness
 - Communication
 
 Use my context:
 I am targeting Data Engineering roles.
-I have around 2 years of experience.
-My main project is Personal Finance Tracking Platform.
+I am early-career or transitioning into Data Engineering.
+My main project is Primary Portfolio Data Project.
 I need job-focused preparation and practical feedback.
 
 At the end:
@@ -130,7 +130,7 @@ System design:
 Project deep dive:
 4/5
 
-Resume/GitHub:
+Resume/public portfolio:
 4/5
 
 Communication:
@@ -2333,7 +2333,7 @@ Add weakness if score is below target.
 
 ## 12. Project Deep Dive Assessment
 
-### Question 1: Explain your Personal Finance Tracking Platform in 2 minutes.
+### Question 1: Explain your Primary Portfolio Data Project in 2 minutes.
 
 Skill tag:
 
@@ -2724,7 +2724,7 @@ Add weakness if score is below target.
 ```
 
 
-## 13. Resume/GitHub/Communication Assessment
+## 13. Resume/public portfolio/Communication Assessment
 
 ### Question 1: Walk me through your resume in 90 seconds.
 
@@ -2778,12 +2778,12 @@ Score strictly from 0 to 5.
 Add weakness if score is below target.
 ```
 
-### Question 3: What makes your GitHub useful for recruiters?
+### Question 3: What makes your public portfolio useful for recruiters?
 
 Skill tag:
 
 ```text
-GitHub
+public portfolio
 ```
 
 Expected evaluation:
@@ -3030,7 +3030,7 @@ A candidate who gives a good first answer but fails follow-ups should not receiv
 | Spark/PySpark | 0 | 3.5 | not_assessed | none | unknown |
 | Cloud | 0 | 3.5 | not_assessed | none | unknown |
 | Project Deep Dive | 0 | 4 | not_assessed | none | unknown |
-| Resume/GitHub | 0 | 4 | not_assessed | none | unknown |
+| Resume/public portfolio | 0 | 4 | not_assessed | none | unknown |
 | Communication | 0 | 3.5 | not_assessed | none | unknown |
 ```
 
@@ -3110,13 +3110,13 @@ Day 4:
 Practice batch pipeline system design.
 
 Day 5:
-Project deep dive: finance tracker architecture.
+Project deep dive: portfolio project architecture.
 
 Day 6:
 Mock interview retest.
 
 Day 7:
-Update resume/GitHub evidence and roadmap.
+Update resume/public portfolio evidence and roadmap.
 ```
 
 Customize based on actual scores.
@@ -3143,7 +3143,7 @@ Week 3:
 System design mocks and project deep dive.
 
 Week 4:
-Mock interview loop, resume/GitHub polish, job-search preparation.
+Mock interview loop, resume/public portfolio polish, job-search preparation.
 ```
 
 For each week include:
@@ -3165,15 +3165,15 @@ Use this after assessment.
 Update my Data Engineering Sensei progress files from this assessment.
 
 Update:
-1. CANDIDATE_PROFILE.md with stable skill scores and risk profile.
-2. CURRENT_STATE.md with latest assessment summary and active next step.
-3. ROADMAP_PROGRESS.md with phase/module status.
-4. NEXT_STEPS.md with repair tasks.
-5. WEAKNESS_REGISTER.md with weaknesses and severity.
-6. SESSION_LOG.md with assessment session entry.
-7. MOCK_INTERVIEW_HISTORY.md if this was a mock.
-8. PROJECT_PROGRESS.md if project was assessed.
-9. RESUME_STATE.md if resume was assessed.
+1. progress/CANDIDATE_PROFILE.md with stable skill scores and risk profile.
+2. progress/CURRENT_STATE.md with latest assessment summary and active next step.
+3. progress/ROADMAP_PROGRESS.md with phase/module status.
+4. progress/NEXT_STEPS.md with repair tasks.
+5. progress/WEAKNESS_REGISTER.md with weaknesses and severity.
+6. progress/SESSION_LOG.md with assessment session entry.
+7. progress/MOCK_INTERVIEW_HISTORY.md if this was a mock.
+8. progress/PROJECT_PROGRESS.md if project was assessed.
+9. progress/RESUME_STATE.md if resume was assessed.
 
 Do not duplicate full feedback everywhere.
 Put detailed feedback in the right file.

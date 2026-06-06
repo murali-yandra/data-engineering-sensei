@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Important templates already created:
 templates/assessment/*
@@ -70,14 +70,14 @@ Create a strict 60-day roadmap.
 
 Use my context:
 I am targeting Data Engineering roles with around 2 years of experience.
-I need SQL, Python, DSA patterns, DE fundamentals, system design, project deep dive, resume/GitHub, and mock interview readiness.
-My main project is Personal Finance Tracking Platform.
+I need SQL, Python, DSA patterns, DE fundamentals, system design, project deep dive, resume/public portfolio, and mock interview readiness.
+My main project is Primary Portfolio Data Project.
 
 Rules:
 1. Start with baseline if missing.
 2. Divide the plan into 8 weeks.
 3. Include weekly score targets.
-4. Include practice, mocks, project work, and resume/GitHub work.
+4. Include practice, mocks, project work, and resume/public portfolio work.
 5. Include weakness repair weeks.
 6. Include retests.
 7. Include application readiness gate at the end.
@@ -107,7 +107,7 @@ DSA: 3.5/5 for most Data Engineering roles
 Data Engineering fundamentals: 4/5
 System design: 4/5
 Project deep dive: 4/5
-Resume/GitHub readiness: 4/5
+Resume/public portfolio readiness: 4/5
 Communication: 3.5/5
 ```
 
@@ -127,7 +127,7 @@ interview_ready:
 core scores meet target and mocks are passing
 
 strong_candidate:
-scores >= 4 across core areas, project/resume/GitHub are defensible, and no critical weaknesses are open
+scores >= 4 across core areas, project/resume/public portfolio are defensible, and no critical weaknesses are open
 ```
 
 
@@ -138,7 +138,7 @@ Core roadmap rules:
 ```text
 1. Do not mark anything complete only because a file was generated.
 2. Mark complete only when there is evidence.
-3. Evidence can be solved problems, code, mock scores, project proof, resume bullets, GitHub updates, or retest results.
+3. Evidence can be solved problems, code, mock scores, project proof, resume bullets, public portfolio updates, or retest results.
 4. If score is below target, create a weakness and repair task.
 5. If a weakness is repaired, retest before marking it repaired.
 6. Keep tasks small, time-boxed, and measurable.
@@ -154,8 +154,8 @@ High-ROI preparation order for this candidate:
 3. Python data scripting
 4. Data Engineering fundamentals
 5. Batch pipeline + data warehouse + data quality system design
-6. Personal Finance Tracking Platform deep dive
-7. Resume/GitHub evidence
+6. Primary Portfolio Data Project deep dive
+7. Resume/public portfolio evidence
 8. Mock interview loop
 9. Targeted job applications
 ```
@@ -185,7 +185,7 @@ Week 6:
 Pipeline system design
 
 Week 7:
-Project deep dive + resume/GitHub
+Project deep dive + resume/public portfolio
 
 Week 8:
 Mock interview loop + application readiness
@@ -202,8 +202,8 @@ Selective applications can start if score gates are met.
 ## 5. Week 1: Baseline And Plan
 
 - Run intake and skill-level assessment.
-- Record scores in CANDIDATE_PROFILE.md.
-- Create active weaknesses in WEAKNESS_REGISTER.md.
+- Record scores in progress/CANDIDATE_PROFILE.md.
+- Create active weaknesses in progress/WEAKNESS_REGISTER.md.
 - Set roadmap module statuses.
 - Create NEXT_STEPS for Week 2.
 - Run a short SQL baseline and Python baseline.
@@ -308,7 +308,7 @@ At least one score, one weakness update, one session log, and one next-step upda
 
 ## 11. Week 7: Project Deep Dive And Portfolio
 
-- Personal Finance Tracking Platform 2-minute pitch.
+- Primary Portfolio Data Project 2-minute pitch.
 - Architecture explanation.
 - Database schema explanation.
 - Transaction ingestion flow.
@@ -316,7 +316,7 @@ At least one score, one weakness update, one session log, and one next-step upda
 - Security/authentication explanation.
 - Testing/deployment explanation.
 - README and resume bullet improvement.
-- Output: project score, GitHub/README plan, 3-5 resume bullets.
+- Output: project score, public portfolio/README plan, 3-5 resume bullets.
 
 Weekly evidence required:
 
@@ -332,7 +332,7 @@ At least one score, one weakness update, one session log, and one next-step upda
 - System design mock retest.
 - Project deep-dive mock.
 - Behavioral mock.
-- Resume/GitHub final review.
+- Resume/public portfolio final review.
 - Application readiness verdict.
 - Output: readiness gate decision, next 30 days, application strategy.
 
@@ -345,7 +345,7 @@ At least one score, one weakness update, one session log, and one next-step upda
 
 ## 13. 60-Day Weekly Score Targets
 
-| Week | SQL | Python | DSA | DE Fundamentals | System Design | Project | Resume/GitHub |
+| Week | SQL | Python | DSA | DE Fundamentals | System Design | Project | Resume/public portfolio |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Week 1 | baseline | baseline | baseline | baseline | baseline | baseline | baseline |
 | Week 2 | 3.5 | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -416,7 +416,7 @@ DSA >= 3.5
 DE fundamentals >= 4
 System design >= 4 in core cases
 Project deep dive >= 4
-Resume/GitHub >= 4
+Resume/public portfolio >= 4
 Communication >= 3.5
 No critical weakness open
 ```
@@ -433,34 +433,34 @@ Create 30-day weakness repair roadmap.
 After roadmap work, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 active phase, current focus, latest completed task, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 phase/module status, score, evidence, completion %
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 today/this week tasks and repair actions
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 weaknesses discovered, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with completed roadmap work
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 project milestones and evidence
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 if roadmap task included a mock
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if resume evidence or bullets changed
 
-GITHUB_PORTFOLIO_STATE.md:
-if GitHub/README/portfolio changed
+progress/PORTFOLIO_READINESS.md:
+if public portfolio/README/portfolio changed
 
-JOB_SEARCH_STATE.md:
+progress/JOB_SEARCH_READINESS.md:
 if applications/referrals/interviews started
 ```
 

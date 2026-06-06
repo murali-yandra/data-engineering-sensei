@@ -2068,7 +2068,7 @@ what score is required
 ```
 
 
-## 38. ROADMAP_PROGRESS.md Structure
+## 38. progress/ROADMAP_PROGRESS.md Structure
 
 Use this structure for `progress/ROADMAP_PROGRESS.md`.
 
@@ -2139,7 +2139,7 @@ Next mode:
 ```
 
 
-## 39. NEXT_STEPS.md Structure
+## 39. progress/NEXT_STEPS.md Structure
 
 Use this structure for `progress/NEXT_STEPS.md`.
 
@@ -2189,7 +2189,7 @@ Communication:
 ```
 
 
-## 40. DECISION_LOG.md Structure
+## 40. progress/DECISION_LOG.md Structure
 
 Use this structure for `progress/DECISION_LOG.md`.
 
@@ -3408,7 +3408,7 @@ Must discuss architecture, trade-offs, cost, governance, reliability, and cross-
 If roadmap inputs are missing:
 
 ```text
-Next mode: profile-assessment-mode.md
+Next mode: modes/profile-assessment-mode.md
 ```
 
 Handoff prompt:
@@ -3425,7 +3425,7 @@ Do not build a fake precise roadmap from no data unless candidate asks for a gen
 When candidate is ready for pressure testing:
 
 ```text
-Next mode: interview-mode.md
+Next mode: modes/interview-mode.md
 ```
 
 Handoff prompt:
@@ -3448,7 +3448,7 @@ interview is near
 When repeated weakness appears:
 
 ```text
-Next mode: weakness-repair-mode.md
+Next mode: modes/weakness-repair-mode.md
 ```
 
 Handoff prompt:
@@ -3474,15 +3474,15 @@ communication rambling
 Use module handoffs:
 
 ```text
-SQL weak → sql-drill-mode.md
-Python weak → python-drill-mode.md
-DSA weak → dsa-drill-mode.md
-Pattern confusion → pattern-mapper-mode.md
-Fundamentals weak → data-engineering-fundamentals-mode.md
-System design weak → system-design-mode.md
-Project weak → project-deep-dive-mode.md
-Review needed → review-mode.md
-Feedback needed → feedback-mode.md
+SQL weak → modes/sql-drill-mode.md
+Python weak → modes/python-drill-mode.md
+DSA weak → modes/dsa-drill-mode.md
+Pattern confusion → modes/pattern-mapper-mode.md
+Fundamentals weak → modes/data-engineering-fundamentals-mode.md
+System design weak → modes/system-design-mode.md
+Project weak → modes/project-deep-dive-mode.md
+Review needed → modes/review-mode.md
+Feedback needed → modes/feedback-mode.md
 ```
 
 Each handoff should include:
@@ -3603,7 +3603,7 @@ project explanation
 Suggested project:
 
 ```text
-Personal finance tracking platform
+Primary portfolio data pipeline
 sales analytics pipeline
 vendor file ingestion system
 clickstream analytics mini-pipeline
@@ -4177,7 +4177,7 @@ Minimum passing output:
 ### Drill 15: Progress Tracking
 
 ```text
-Create ROADMAP_PROGRESS.md content after one week.
+Create progress/ROADMAP_PROGRESS.md content after one week.
 ```
 
 Minimum passing output:

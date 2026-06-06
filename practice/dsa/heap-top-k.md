@@ -3367,7 +3367,7 @@ When heap solution fails, check:
 Strict repair:
 
 ```text
-If candidate repeatedly confuses min-heap vs max-heap, run weakness-repair-mode.md with K largest/K smallest contrast drills.
+If candidate repeatedly confuses min-heap vs max-heap, run modes/weakness-repair-mode.md with K largest/K smallest contrast drills.
 ```
 
 
@@ -3765,7 +3765,7 @@ Complexity and follow-up.
 If candidate cannot explain min-heap vs max-heap:
 
 ```text
-Switch to tutor-mode.md or weakness-repair-mode.md.
+Switch to modes/tutor-mode.md or modes/weakness-repair-mode.md.
 ```
 
 
@@ -3828,7 +3828,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -3923,7 +3923,7 @@ Week 4: median stream + mixed mock
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed pattern.
+Run modes/weakness-repair-mode.md for failed pattern.
 ```
 
 

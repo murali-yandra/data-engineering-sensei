@@ -191,16 +191,16 @@ Sources
   streams
   SaaS
   logs
-      ↓
+      ->
 Raw / Bronze
   immutable source-shaped data
-      ↓
+      ->
 Silver / Staging
   typed, cleaned, deduplicated data
-      ↓
+      ->
 Gold / Curated / Marts
   business-ready tables and aggregates
-      ↓
+      ->
 Consumers
   BI
   data science
@@ -520,36 +520,36 @@ Reference architecture:
   partner files
   clickstream/logs
   IoT/events
-        ↓
+        ->
 [Ingestion]
   batch jobs
   file watchers
   API pullers
   Kafka/Kinesis/PubSub
   CDC connectors
-        ↓
+        ->
 [Raw / Bronze Zone]
   immutable source-shaped data
   partitioned by source/table/ingestion_date
-        ↓
+        ->
 [Validation and Quarantine]
   schema checks
   bad record isolation
   file checks
-        ↓
+        ->
 [Silver Zone]
   typed
   cleaned
   deduped
   standardized
   ACID tables if needed
-        ↓
+        ->
 [Gold Zone]
   aggregates
   facts/dimensions
   ML features
   data marts
-        ↓
+        ->
 [Serving]
   SQL engines
   warehouse external tables

@@ -4204,7 +4204,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -4312,7 +4312,7 @@ Week 4: atomic writes + checkpoint + PII-safe invalid output
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed topic.
+Run modes/weakness-repair-mode.md for failed topic.
 ```
 
 

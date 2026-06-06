@@ -64,7 +64,7 @@ Progress files:
 - `progress/ROADMAP_PROGRESS.md`
 - `progress/NEXT_STEPS.md`
 - `progress/DECISION_LOG.md`
-- `progress/WEAKNESS_LOG.md`
+- `progress/WEAKNESS_REGISTER.md`
 
 Default target standard if target companies are not provided:
 
@@ -2249,7 +2249,7 @@ Fact grain must be explicit before dimensions or metrics.
 Original drill:
 
 ```text
-Design fact_transactions for personal finance tracking.
+Design fact_transactions for a neutral transaction analytics pipeline.
 Expected grain: one row per transaction.
 ```
 
@@ -3120,7 +3120,7 @@ Candidate leads with reasoning, not buzzwords.
 
 ## 64. Weakness Log
 
-Create or update `progress/WEAKNESS_LOG.md` when this mode is used.
+Create or update `progress/WEAKNESS_REGISTER.md` when this mode is used.
 
 Suggested structure:
 
@@ -3180,7 +3180,7 @@ Files:
 progress/CURRENT_STATE.md
 progress/ROADMAP_PROGRESS.md
 progress/NEXT_STEPS.md
-progress/WEAKNESS_LOG.md
+progress/WEAKNESS_REGISTER.md
 progress/DECISION_LOG.md
 ```
 
@@ -3204,7 +3204,7 @@ roadmap adjustment
 If weakness is P0:
 
 ```text
-Update NEXT_STEPS.md so the next action is the repair drill, not a new topic.
+Update progress/NEXT_STEPS.md so the next action is the repair drill, not a new topic.
 ```
 
 If weakness is repaired:

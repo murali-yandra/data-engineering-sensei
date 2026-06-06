@@ -105,11 +105,11 @@ Data is transformed before being loaded into the final target.
 
 ```text
 Source
-  ↓
+  ->
 Extract
-  ↓
+  ->
 Transform in processing layer
-  ↓
+  ->
 Load cleaned data into target
 ```
 
@@ -159,13 +159,13 @@ Data is loaded first, often into object storage or a warehouse, then transformed
 
 ```text
 Source
-  ↓
+  ->
 Extract
-  ↓
+  ->
 Load raw data
-  ↓
+  ->
 Transform inside warehouse/lakehouse
-  ↓
+  ->
 Publish curated data
 ```
 
@@ -257,19 +257,19 @@ A common pipeline architecture:
 
 ```text
 Source Systems
-  ↓
+  ->
 Ingestion Layer
-  ↓
+  ->
 Raw / Landing Layer
-  ↓
+  ->
 Staging Layer
-  ↓
+  ->
 Transformation Layer
-  ↓
+  ->
 Curated / Warehouse Layer
-  ↓
+  ->
 Serving / BI / ML Layer
-  ↓
+  ->
 Monitoring / Governance
 ```
 

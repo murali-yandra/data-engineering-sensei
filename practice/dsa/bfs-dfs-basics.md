@@ -3865,13 +3865,13 @@ Follow-up variation.
 If candidate cannot identify representation in 5 minutes:
 
 ```text
-Switch to pattern-mapper-mode.md.
+Switch to modes/pattern-mapper-mode.md.
 ```
 
 If candidate forgets visited repeatedly:
 
 ```text
-Switch to weakness-repair-mode.md.
+Switch to modes/weakness-repair-mode.md.
 ```
 
 
@@ -3931,7 +3931,7 @@ Use this map when the candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -4025,7 +4025,7 @@ Week 4: mixed mock
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed pattern.
+Run modes/weakness-repair-mode.md for failed pattern.
 ```
 
 

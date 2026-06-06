@@ -89,17 +89,17 @@ A Data Engineer should mentally divide cloud data platforms into these layers:
 
 ```text
 Sources
-  ↓
+  ->
 Ingestion
-  ↓
+  ->
 Raw Storage
-  ↓
+  ->
 Processing
-  ↓
+  ->
 Curated Storage / Warehouse
-  ↓
+  ->
 Serving / BI / ML / Apps
-  ↓
+  ->
 Monitoring / Governance / Security
 ```
 

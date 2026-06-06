@@ -8,38 +8,38 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Review philosophy:
 Reviews are not only for finding mistakes.
-Reviews should improve interview readiness, production thinking, resume evidence, GitHub quality, and mentor feedback accuracy.
+Reviews should improve interview readiness, production thinking, resume evidence, public portfolio quality, and mentor feedback accuracy.
 
 Strict readiness rule:
 Generated files are preparation material only.
@@ -55,8 +55,8 @@ data-engineering-sensei/templates/reviews/project-review-template.md
 Purpose:
 
 ```text
-Review the candidate's project as a portfolio, resume, GitHub, and interview asset.
-Primary project context is Personal Finance Tracking Platform.
+Review the candidate's project as a portfolio, resume, public portfolio, and interview asset.
+Primary project context is Primary Portfolio Data Project.
 ```
 
 
@@ -74,13 +74,13 @@ Rules:
 4. Identify what is strong, weak, missing, or exaggerated.
 5. Ask for evidence before accepting claims.
 6. Convert real evidence into resume bullets.
-7. Tell me what to improve in GitHub README.
+7. Tell me what to improve in public portfolio README.
 8. Add project weaknesses and next tasks.
 9. Do not invent metrics or implementation status.
 10. Be direct and practical.
 
 Use my main project:
-Personal Finance Tracking Platform with FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Primary Portfolio Data Project with Use only the stack the candidate provides; otherwise mark unknown.
 ```
 
 
@@ -141,7 +141,7 @@ Collect:
 
 ```text
 Project name:
-GitHub link:
+public portfolio link:
 README available:
 Current status:
 Implemented features:
@@ -206,7 +206,7 @@ Interview verdict:
 ## Testing/Deployment Review
 ...
 
-## README/GitHub Review
+## README/public portfolio Review
 ...
 
 ## Resume Bullet Review
@@ -223,26 +223,26 @@ Interview verdict:
 ```
 
 
-## 5. Personal Finance Tracking Platform Context
+## 5. Primary Portfolio Data Project Context
 
 Known context:
 
 ```text
 Problem:
-Manual finance tracking is painful because transactions need ingestion, merchant cleanup, categorization, correction, and reconciliation.
+Operational analytics is difficult because raw events or transactions need ingestion, validation, cleanup, enrichment, correction workflows, and reconciliation.
 
 Possible value:
-Automates transaction tracking, normalizes messy merchant names, categorizes expenses, reconciles accounts, and improves from user corrections.
+Turns raw source data into reliable analytics-ready outputs with validation, transformation, modeling, quality checks, reconciliation, and documented serving.
 
 Tech:
-FastAPI backend
-PostgreSQL database
-SQLModel ORM
-Alembic migrations
-Docker setup
-GitHub Actions CI/CD
-Ollama AI categorization
-Telegram Bot API for notifications/corrections
+candidate-provided ingestion or service layer
+candidate-provided storage or warehouse
+transformation and modeling code
+orchestration or scheduling if implemented
+tests and data quality checks
+Docker or reproducible setup if implemented
+CI/CD workflows if implemented
+monitoring, docs, and public portfolio artifacts
 ```
 
 Review warning:
@@ -552,7 +552,7 @@ Interview impact:
 If weak, candidate may fail project deep-dive follow-ups.
 ```
 
-### Check 4: How are merchants normalized?
+### Check 4: How is raw data standardized or enriched?
 
 Review instruction:
 
@@ -1047,7 +1047,7 @@ Recruiter/interviewer cannot understand project depth quickly.
 
 Fix:
 Add architecture section with:
-source → FastAPI → PostgreSQL → categorization → reconciliation → Telegram feedback loop.
+source -> ingestion layer -> storage or warehouse -> transformations -> data quality checks -> serving/reporting layer.
 
 Evidence needed:
 diagram or ASCII architecture + explanation.
@@ -1080,28 +1080,28 @@ If feature is planned but not implemented, do not write it as completed.
 After every review, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 latest review result, score, active weakness, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 affected module status, evidence, readiness gate impact
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 repair tasks and retest tasks
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 new weakness, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 review session entry
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 if project/code/pipeline evidence changed
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if a resume bullet or evidence changed
 
-GITHUB_PORTFOLIO_STATE.md:
+progress/PORTFOLIO_READINESS.md:
 if repo/README/portfolio readiness changed
 ```
 

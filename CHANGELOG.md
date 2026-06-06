@@ -329,7 +329,7 @@ A strict, no-sugarcoating Data Engineering interview mentor.
 
 The README established that Data Engineering Sensei is:
 
-- interview-focused only
+- job-focused and interview-evidence-focused
 - SQL-first
 - Python-focused for Data Engineering coding
 - high-ROI DSA focused
@@ -418,20 +418,17 @@ The project moved from a DSA/LeetCode-style mentor idea into a complete Data Eng
 
 Created the initial `data-engineering-sensei` folder structure.
 
-The structure included empty placeholders for:
+The structure included placeholders for:
 
 ```text
 data-engineering-sensei/
-├── SKILL.md
-├── README.md
-├── modes/
-├── docs/
-├── templates/
-├── practice/
-├── progress/
-├── assets/
-├── scripts/
-└── tests/
++-- SKILL.md
++-- README.md
++-- modes/
++-- docs/
++-- templates/
++-- practice/
++-- progress/
 ```
 
 #### Added Progress Folder
@@ -520,7 +517,7 @@ It must ask:
 - years of experience
 - current role
 - interview timeline
-- optional target companies/countries
+- optional target role, company type, or location constraints
 - skill ratings from 0 to 5
 - weakest interview area
 - optional difficult recent question
@@ -667,53 +664,53 @@ Every generated file should contain:
 | `CONTRIBUTING.md` | Generated | Contribution rules and standards |
 | `CHANGELOG.md` | Generated | Version history and change tracking |
 
-### Placeholder / Pending
+### Filled / Generated
 
 | File | Status |
 |---|---|
-| `docs/assessment-rubric.md` | Pending |
-| `progress/REQUIREMENTS.md` | Pending |
-| `progress/DECISION_LOG.md` | Pending |
-| `progress/FILE_GENERATION_LOG.md` | Pending |
-| `progress/NEXT_STEPS.md` | Pending |
-| `progress/CANDIDATE_PROFILE.md` | Pending |
-| `progress/ROADMAP_PROGRESS.md` | Pending |
-| `progress/CURRENT_STATE.md` | Pending |
-| `modes/profile-assessment-mode.md` | Pending |
-| `modes/roadmap-mode.md` | Pending |
-| `modes/sql-drill-mode.md` | Pending |
-| `modes/python-drill-mode.md` | Pending |
-| `modes/dsa-drill-mode.md` | Pending |
-| `modes/system-design-mode.md` | Pending |
-| `modes/project-deep-dive-mode.md` | Pending |
-| `modes/weakness-repair-mode.md` | Pending |
-| `modes/tutor-mode.md` | Pending |
-| `modes/hint-mode.md` | Pending |
-| `modes/review-mode.md` | Pending |
-| `modes/interview-mode.md` | Pending |
-| `modes/pattern-mapper-mode.md` | Pending |
-| `docs/sql-interview-guide.md` | Pending |
-| `docs/python-interview-guide.md` | Pending |
-| `docs/dsa-for-data-engineering.md` | Pending |
-| `docs/data-engineering-interview-roadmap.md` | Pending |
-| `docs/data-modeling-guide.md` | Pending |
-| `docs/data-engineering-fundamentals.md` | Pending |
-| `docs/spark-pyspark-guide.md` | Pending |
-| `docs/warehouse-cloud-guide.md` | Pending |
-| `docs/orchestration-airflow-guide.md` | Pending |
-| `docs/system-design-guide.md` | Pending |
-| `docs/project-deep-dive-guide.md` | Pending |
-| `templates/answer-frameworks/sql-answer-framework.md` | Pending |
-| `templates/answer-frameworks/python-answer-framework.md` | Pending |
-| `templates/answer-frameworks/system-design-answer-framework.md` | Pending |
-| `templates/interview-feedback/mock-interview-feedback-template.md` | Pending |
-| `templates/roadmaps/personalized-roadmap-template.md` | Pending |
-| `templates/progress/session-summary-template.md` | Pending |
-| `practice/sql/sql-drills.md` | Pending |
-| `practice/python/python-drills.md` | Pending |
-| `practice/dsa/high-roi-leetcode-list.md` | Pending |
-| `practice/system-design/system-design-prompts.md` | Pending |
-| `practice/mixed-interviews/mixed-interview-sets.md` | Pending |
+| `docs/assessment-rubric.md` | Generated |
+| `progress/REQUIREMENTS.md` | Generated |
+| `progress/DECISION_LOG.md` | Generated |
+| `progress/FILE_GENERATION_LOG.md` | Generated |
+| `progress/NEXT_STEPS.md` | Generated |
+| `progress/CANDIDATE_PROFILE.md` | Generated |
+| `progress/ROADMAP_PROGRESS.md` | Generated |
+| `progress/CURRENT_STATE.md` | Generated |
+| `modes/profile-assessment-mode.md` | Generated |
+| `modes/roadmap-mode.md` | Generated |
+| `modes/sql-drill-mode.md` | Generated |
+| `modes/python-drill-mode.md` | Generated |
+| `modes/dsa-drill-mode.md` | Generated |
+| `modes/system-design-mode.md` | Generated |
+| `modes/project-deep-dive-mode.md` | Generated |
+| `modes/weakness-repair-mode.md` | Generated |
+| `modes/tutor-mode.md` | Generated |
+| `modes/hint-mode.md` | Generated |
+| `modes/review-mode.md` | Generated |
+| `modes/interview-mode.md` | Generated |
+| `modes/pattern-mapper-mode.md` | Generated |
+| `docs/sql-interview-guide.md` | Generated |
+| `docs/python-interview-guide.md` | Generated |
+| `docs/dsa-for-data-engineering.md` | Generated |
+| `docs/data-engineering-interview-roadmap.md` | Generated |
+| `docs/data-modeling-guide.md` | Generated |
+| `docs/data-engineering-fundamentals.md` | Generated |
+| `docs/spark-pyspark-guide.md` | Generated |
+| `docs/warehouse-cloud-guide.md` | Generated |
+| `docs/orchestration-airflow-guide.md` | Generated |
+| `docs/system-design-guide.md` | Generated |
+| `docs/project-deep-dive-guide.md` | Generated |
+| `templates/answer-frameworks/sql-answer-framework.md` | Generated |
+| `templates/answer-frameworks/python-answer-framework.md` | Generated |
+| `templates/answer-frameworks/system-design-answer-framework.md` | Generated |
+| `templates/interview-feedback/mock-interview-feedback-template.md` | Generated |
+| `templates/roadmaps/personalized-roadmap-template.md` | Generated |
+| `templates/progress/session-summary-template.md` | Generated |
+| `practice/sql/sql-drills.md` | Generated |
+| `practice/python/python-drills.md` | Generated |
+| `practice/dsa/high-roi-leetcode-list.md` | Generated |
+| `practice/system-design/system-design-prompts.md` | Generated |
+| `practice/mixed-interviews/mixed-interview-sets.md` | Generated |
 
 ---
 
@@ -725,7 +722,7 @@ The next useful files to generate are:
 
 Reason:
 
-The user mentioned `assessment-rubric.md` earlier, and it is foundational for scoring candidates.
+The user mentioned `docs/assessment-rubric.md` earlier, and it is foundational for scoring candidates.
 
 It should define:
 

@@ -14,41 +14,41 @@ Candidate context preserved from the complete Data Engineering Sensei setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured, practical preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured, practical preparation.
 
 Mentor style:
-Strict, no sugarcoating, evidence-based, interview-focused, one-question-at-a-time, visual when useful, and focused on real job readiness.
+Strict, no sugarcoating, evidence-based, interview-focused, visual when useful, and focused on real job readiness. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Learning preference:
 Visual explanations, pattern-based teaching, tables, checklists, scored drills, mock interviews, project-based examples, and clear next steps.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Primary preparation areas:
-SQL, Python, DSA patterns, Data Engineering fundamentals, ETL/ELT, data modeling, warehouse, data lake, orchestration, Spark/PySpark, cloud platforms, data quality, system design, project deep dive, resume/GitHub/LinkedIn, mock interviews, and job search readiness.
+SQL, Python, DSA patterns, Data Engineering fundamentals, ETL/ELT, data modeling, warehouse, data lake, orchestration, Spark/PySpark, cloud platforms, data quality, system design, project deep dive, resume/public portfolio/professional profile, mock interviews, and job search readiness.
 
 Critical progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Important rule:
 Generated files and reading materials do not equal interview readiness.
-Readiness requires attempted answers, scored feedback, weakness repair, retest evidence, project proof, and resume/GitHub evidence.
+Readiness requires attempted answers, scored feedback, weakness repair, retest evidence, project proof, and resume/public portfolio evidence.
 ```
 
 Path:
@@ -60,8 +60,8 @@ data-engineering-sensei/templates/solutions/project-explanation-template.md
 Purpose:
 
 ```text
-This template tells the mentor how to help the candidate explain projects clearly for interviews, GitHub, resume, and LinkedIn.
-Primary context: Personal Finance Tracking Platform.
+This template tells the mentor how to help the candidate explain projects clearly for interviews, public portfolio, resume, and professional profile.
+Primary context: Primary Portfolio Data Project.
 ```
 
 
@@ -78,10 +78,10 @@ Your goal is to make me interview-ready for Data Engineering roles.
 
 Understand my full preparation context:
 
-I am an early-career candidate with around 2 years of experience.
+I am an early-career or transitioning Data Engineering candidate.
 I am targeting Data Engineer / Analytics Engineer / ETL Developer / Cloud Data Engineer / BI Data Warehouse Engineer roles.
-I want to crack better jobs, eventually remote/international if my proof becomes strong enough.
-My main portfolio project is a Personal Finance Tracking Platform using FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, and Telegram Bot API.
+I want to become a stronger, evidence-backed Data Engineering candidate and qualify for more selective roles as my proof improves.
+My main portfolio project is a Primary Portfolio Data Project using a candidate-provided implementation stack with ingestion, storage, transformations, tests, documentation, CI/CD, and monitoring or reporting where relevant.
 I prefer strict, practical, visual, no-sugarcoating guidance.
 I want clear scoring, weaknesses, repair drills, and next actions.
 Do not give vague motivation.
@@ -106,7 +106,7 @@ For every answer, connect it back to Data Engineering interviews:
 - Python should connect to scripts, files, APIs, JSON/CSV, logging, errors, tests, and clean pipeline code.
 - DSA should focus on reusable patterns useful for interviews, not random competitive programming.
 - System design should include requirements, architecture, data model, processing, DQ, idempotency, backfills, monitoring, security, cost, and trade-offs.
-- Project explanations should convert real project evidence into interview stories, resume bullets, and GitHub proof.
+- Project explanations should convert real project evidence into interview stories, resume bullets, and public portfolio proof.
 
 If I ask for only the answer, still include enough explanation for learning.
 If I ask for a hint, give only a hint and do not reveal the full solution.
@@ -184,7 +184,7 @@ Do not create fake metrics or claim features are completed if they are only plan
 ## 12. Resume Bullets
 ...
 
-## 13. GitHub README Section
+## 13. public portfolio README Section
 ...
 
 ## 14. Follow-Up Questions And Answers
@@ -195,29 +195,29 @@ Do not create fake metrics or claim features are completed if they are only plan
 ```
 
 
-## Personal Finance Tracking Platform: One-Line Pitch
+## Primary Portfolio Data Project: One-Line Pitch
 
-Use this as a starting version:
+Use this as a starting version and replace bracketed details with candidate-provided facts.
 
 ```text
-I am building a personal finance tracking platform that ingests transaction messages, normalizes merchants, categorizes expenses, reconciles account balances, and lets users correct transactions through a Telegram bot with an AI-assisted feedback loop.
+I built or am building a primary data engineering portfolio project that ingests [source data], validates and transforms it, models it for analytics, applies data quality checks, and produces [reporting, warehouse, lakehouse, API, dashboard, or downstream data product] outputs.
 ```
 
 Mentor instruction:
 
 ```text
-Ask candidate what is actually implemented today before finalizing this for resume or interviews.
+Ask what is actually implemented today before finalizing this for resume, public portfolio, or interviews.
 ```
 
 
-## Personal Finance Tracking Platform: 2-Minute Version
+## Primary Portfolio Data Project: 2-Minute Version
 
 ```text
-I am building a personal finance tracking platform to reduce manual expense tracking.
+The project solves [business or analytical problem] by turning raw [source data] into reliable, analytics-ready data.
 
-The system ingests transaction messages, extracts transaction details, stores them in PostgreSQL, normalizes merchant names, categorizes expenses, and supports account/balance reconciliation. I am also building a Telegram bot flow so users can receive transaction notifications and correct categories or merchant information. Those corrections become feedback for improving future categorization. The backend is built using FastAPI, PostgreSQL, SQLModel, and Alembic, with Docker for repeatable setup and GitHub Actions for CI/CD. I am also exploring Ollama for AI-assisted transaction categorization.
+The main flow starts with ingestion, then validation, staging, transformation, modeling, quality checks, and final serving through [warehouse tables, dashboards, APIs, files, or downstream consumers]. The candidate-provided implementation stack is [tools], but the interview explanation should focus on data grain, correctness, reliability, trade-offs, and evidence instead of tool names.
 
-From a Data Engineering perspective, the project covers ingestion, cleaning, normalization, categorization, reconciliation, data quality, user-feedback loops, and production-style backend practices like migrations and Docker. The most important design goal is not just storing transactions, but making the data reliable enough for reporting and user decisions.
+From a Data Engineering perspective, the project should demonstrate ingestion design, schema decisions, idempotency, deduplication, data quality, orchestration or scheduling, observability, testing, documentation, and a clear public portfolio story. If any part is only planned, say planned or in progress instead of claiming it as complete.
 ```
 
 Mentor follow-up:
@@ -227,38 +227,39 @@ Now ask the candidate:
 What is implemented?
 What is planned?
 What evidence exists?
-What can be shown on GitHub?
+What can be shown in a public portfolio?
+What claim should be removed until proof exists?
 ```
 
 
 ## Architecture Explanation Template
 
 ```text
-Transaction source / SMS data
-    ↓
-Parsing and validation layer
-    ↓
-FastAPI backend
-    ↓
-PostgreSQL database
-    ↓
-Merchant normalization
-    ↓
-Categorization engine
-    ↓
-Account/balance reconciliation
-    ↓
-Telegram notification/correction flow
-    ↓
-User feedback storage
-    ↓
-Improved future categorization/reporting
+Source system or raw files
+    ->
+ingestion layer
+    ->
+validation and quarantine
+    ->
+staging storage
+    ->
+transformations and business rules
+    ->
+analytics model or serving layer
+    ->
+quality checks and reconciliation
+    ->
+monitoring, documentation, and reporting
+    ->
+serving outputs for downstream consumers
+    ->
+public portfolio evidence
 ```
 
 Interview explanation:
 
 ```text
-I separated ingestion, storage, normalization, categorization, reconciliation, and feedback so that each part can be tested and improved independently.
+I separated ingestion, validation, storage, transformation, modeling, quality checks, and serving so each part can be tested, rerun, monitored, and explained independently.
 ```
 
 
@@ -267,27 +268,21 @@ I separated ingestion, storage, normalization, categorization, reconciliation, a
 Possible entities:
 
 ```text
-users
-accounts
-transactions
-merchants
-merchant_aliases
-categories
-transaction_feedback
-balance_snapshots
-telegram_users
+source_events_or_records
+staging_records
+clean_records
+dimension_tables
+fact_tables
+quality_results
+pipeline_runs
+error_quarantine
 audit_logs
 ```
 
 How to explain:
 
 ```text
-Users own accounts.
-Accounts have transactions.
-Transactions reference merchants and categories.
-Merchant aliases map messy raw merchant names to canonical merchants.
-Feedback stores user corrections so future categorization can improve.
-Balance snapshots help reconcile whether transactions match account state.
+The model starts from raw source records, preserves lineage in staging, applies cleaning and business rules, then produces fact and dimension tables or another serving model with a clear grain. Quality results, pipeline runs, quarantine records, and audit logs make failures traceable.
 ```
 
 Mentor warning:
@@ -302,17 +297,17 @@ Confirm actual schema before using this as final.
 Strong explanation:
 
 ```text
-For data quality, I would validate required fields like amount, transaction date, account, and merchant. I would deduplicate transactions using a transaction fingerprint or source transaction ID. I would quarantine failed parses for review instead of silently dropping them. For reconciliation, I would compare account balance changes against transaction sums and flag mismatches. User corrections also act as a quality feedback loop because they improve merchant normalization and categorization.
+For data quality, I validate required fields, data types, accepted ranges, uniqueness, referential integrity, freshness, and source-to-target counts. I deduplicate records with a stable business key or fingerprint. Bad records go to quarantine with error reasons instead of being silently dropped. Reconciliation checks compare raw, staged, and final outputs so the pipeline can be trusted.
 ```
 
 Interview follow-ups:
 
 ```text
-How do you detect duplicate transactions?
-What happens if parsing fails?
-What happens if categorization confidence is low?
-How do you audit user corrections?
-How do you prevent wrong balance updates?
+How do you detect duplicate records?
+What happens if validation fails?
+What freshness SLA do you target?
+How do you reconcile source and target counts?
+How do you make reruns idempotent?
 ```
 
 
@@ -321,7 +316,7 @@ How do you prevent wrong balance updates?
 Strong explanation:
 
 ```text
-Because the project handles financial data, I need user authentication, user-level data isolation, protected secrets, and safe logging. I should avoid logging raw transaction messages or sensitive financial details. Telegram user linking must be verified so one user cannot access another user's transactions. Database queries should always be scoped by user_id.
+If the project handles sensitive data, I protect secrets, avoid logging raw sensitive values, apply least-privilege access, separate environments, and document which fields are safe to expose publicly. Public portfolio artifacts should use synthetic, anonymized, or non-sensitive sample data.
 ```
 
 Mentor warning:
@@ -336,15 +331,15 @@ If security is not implemented yet, say planned or in progress. Do not claim com
 Draft bullets:
 
 ```text
-Built a personal finance tracking backend using FastAPI and PostgreSQL to ingest transaction data, normalize merchants, categorize expenses, and support reconciliation workflows.
+Built a data pipeline using [tools] to ingest, validate, transform, and serve [source data] for [analytical or business use case].
 ```
 
 ```text
-Designed a merchant normalization and user-feedback loop to improve transaction categorization through Telegram-based corrections.
+Designed data quality checks for uniqueness, freshness, schema validity, and source-to-target reconciliation, with failed records routed to a quarantine path for review.
 ```
 
 ```text
-Implemented production-style backend practices using SQLModel, Alembic migrations, Docker, and GitHub Actions for repeatable setup and database change management.
+Documented architecture, data model, run steps, testing strategy, and trade-offs so the project can be defended in interviews and inspected in a public portfolio.
 ```
 
 Before using, mentor must ask:
@@ -363,21 +358,19 @@ Can you quantify anything without inventing?
 Explain your project in 30 seconds.
 Explain your project in 2 minutes.
 What problem does it solve?
-Why did you choose FastAPI?
-Why PostgreSQL?
-How does transaction ingestion work?
-How do you parse messages?
+What source data does it use?
+What is the output and who consumes it?
+What is the grain of the main table or dataset?
+How does ingestion work?
+How do you validate data?
+How do you handle bad records?
 How do you handle duplicates?
-How do you normalize merchants?
-How does categorization work?
-Where does AI/Ollama fit?
-How does user feedback improve the system?
-How does account reconciliation work?
-How do you secure financial data?
+How do you make reruns idempotent?
+How do you orchestrate or schedule the pipeline?
+How do you monitor failures and freshness?
+How do you secure sensitive data?
 How do you test this project?
-How do migrations work?
-How does Docker help?
-How would you scale this to 10,000 users?
+How would you scale it?
 What would break first?
 What did you learn?
 What would you improve next?
@@ -436,27 +429,27 @@ No data engineering connection where relevant: max 3.5
 If this solution template is used during real practice, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 latest solved topic, score, active weakness, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 module status, score, evidence
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 next drill or repair task
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 weakness, severity, repair plan, retest method if candidate struggled
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 if used in a mock
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 if project evidence was created
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if a resume bullet or project evidence was improved
 ```

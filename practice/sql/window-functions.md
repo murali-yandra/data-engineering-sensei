@@ -33,7 +33,7 @@ Window functions are high-ROI because Data Engineering interviews often ask:
 - Detect status changes.
 - Find gaps between events.
 - Rank customers by revenue.
-- Find second highest salary or second latest event.
+- Find second highest compensation or second latest event.
 - Validate SCD current records.
 - Explain why filtering window results needs CTE/QUALIFY.
 
@@ -4890,7 +4890,7 @@ Use this map when candidate fails.
 If weakness repeats:
 
 ```text
-Use weakness-repair-mode.md.
+Use modes/weakness-repair-mode.md.
 ```
 
 
@@ -5016,7 +5016,7 @@ Week 4: sessionization/streaks/CDC/optimization
 If score drops below 4:
 
 ```text
-Run weakness-repair-mode.md for failed topic.
+Run modes/weakness-repair-mode.md for failed topic.
 ```
 
 

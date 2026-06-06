@@ -177,19 +177,19 @@ Basic flow:
 
 ```text
 Source database
-    ↓
+    ->
 Transaction log / binlog / WAL / redo log
-    ↓
+    ->
 CDC connector
-    ↓
+    ->
 Message bus or raw storage
-    ↓
+    ->
 CDC raw landing
-    ↓
+    ->
 Staging normalization
-    ↓
+    ->
 Current-state merge / history construction
-    ↓
+    ->
 Warehouse tables / lake tables / marts
 ```
 
@@ -497,27 +497,27 @@ Reference architecture:
 ```text
 [Source DB]
   tables + transaction log
-        ↓
+        ->
 [CDC Connector]
   Debezium / DMS / Datastream / Fivetran / custom log reader
-        ↓
+        ->
 [Transport]
   Kafka / Pub/Sub / Kinesis / object storage micro-batches
-        ↓
+        ->
 [Raw CDC Landing]
   immutable events partitioned by source/table/ingestion date
-        ↓
+        ->
 [Staging]
   normalized schema, operation type, key, source sequence, timestamps
-        ↓
+        ->
 [Processing]
   dedupe, order, merge, history construction
-        ↓
+        ->
 [Targets]
   current-state tables
   history/SCD tables
   downstream marts
-        ↓
+        ->
 [Consumers]
   BI, ML, analysts, services
 ```

@@ -8,34 +8,34 @@ Candidate context preserved from previous setup:
 
 ```text
 Target candidate:
-Early-career Data Engineer / Analytics Engineer / ETL Developer candidate with around 2 years of experience.
+Early-career or transitioning Data Engineer / Analytics Engineer / ETL Developer candidate. Capture exact experience only from user-provided facts.
 
 Primary goal:
-Crack better Data Engineering jobs through strict, structured preparation.
+Become a stronger, evidence-backed candidate for Data Engineering roles through strict, structured preparation.
 
 Mentor style:
-Strict, no sugarcoating, practical, interview-focused, evidence-based, one question at a time.
+Strict, no sugarcoating, practical, interview-focused, evidence-based, and paced to the task. Ask grouped baseline questions by default; ask one question at a time during drills, mocks, or when requested.
 
 Known learning preference:
 Visual explanations, step-by-step patterns, tables, checklists, project examples, and scored drills.
 
 Main project:
-Personal Finance Tracking Platform.
+Primary Portfolio Data Project.
 
 Known project stack:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Ollama, Telegram Bot API.
+Use only the stack the candidate provides; otherwise mark unknown.
 
 Known project features:
-SMS transaction ingestion, automated expense tracking, merchant normalization, merchant learning engine, transaction categorization, account/balance reconciliation, Telegram corrections, AI-assisted categorization, user-feedback learning loop.
+Source data ingestion, validation, transformation, data modeling, data quality checks, orchestration or scheduling, durable storage or warehouse/lakehouse, monitoring, documentation, CI/CD, and reporting or stakeholder feedback loops when relevant.
 
 Important progress files:
-practice/progress/CANDIDATE_PROFILE.md
-practice/progress/CURRENT_STATE.md
-practice/progress/ROADMAP_PROGRESS.md
-practice/progress/NEXT_STEPS.md
-practice/progress/WEAKNESS_REGISTER.md
-practice/progress/SESSION_LOG.md
-practice/progress/PROJECT_PROGRESS.md
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md
+progress/SESSION_LOG.md
+progress/PROJECT_PROGRESS.md
 
 Important templates already created:
 templates/assessment/*
@@ -76,7 +76,7 @@ Rules:
 4. Create targeted drills.
 5. Set retest conditions.
 6. Do not mark repaired without retest.
-7. Update WEAKNESS_REGISTER.md and NEXT_STEPS.md.
+7. Update progress/WEAKNESS_REGISTER.md and progress/NEXT_STEPS.md.
 8. Keep repair focused and time-boxed.
 9. Do not switch topics until critical weakness is repaired.
 10. Be direct and practical.
@@ -109,7 +109,7 @@ DSA: 3.5/5 for most Data Engineering roles
 Data Engineering fundamentals: 4/5
 System design: 4/5
 Project deep dive: 4/5
-Resume/GitHub readiness: 4/5
+Resume/public portfolio readiness: 4/5
 Communication: 3.5/5
 ```
 
@@ -129,7 +129,7 @@ interview_ready:
 core scores meet target and mocks are passing
 
 strong_candidate:
-scores >= 4 across core areas, project/resume/GitHub are defensible, and no critical weaknesses are open
+scores >= 4 across core areas, project/resume/public portfolio are defensible, and no critical weaknesses are open
 ```
 
 
@@ -241,11 +241,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -266,11 +266,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -291,11 +291,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -316,11 +316,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -341,11 +341,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -366,11 +366,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -391,11 +391,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -416,11 +416,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -441,11 +441,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -466,11 +466,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -491,11 +491,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -516,11 +516,11 @@ Candidate passes retest at or above target score.
 Progress files:
 
 ```text
-WEAKNESS_REGISTER.md
-NEXT_STEPS.md
-SESSION_LOG.md
-ROADMAP_PROGRESS.md
-CURRENT_STATE.md
+progress/WEAKNESS_REGISTER.md
+progress/NEXT_STEPS.md
+progress/SESSION_LOG.md
+progress/ROADMAP_PROGRESS.md
+progress/CURRENT_STATE.md
 ```
 
 
@@ -642,34 +642,34 @@ Be strict.
 After roadmap work, update or recommend updates to:
 
 ```text
-CURRENT_STATE.md:
+progress/CURRENT_STATE.md:
 active phase, current focus, latest completed task, next action
 
-ROADMAP_PROGRESS.md:
+progress/ROADMAP_PROGRESS.md:
 phase/module status, score, evidence, completion %
 
-NEXT_STEPS.md:
+progress/NEXT_STEPS.md:
 today/this week tasks and repair actions
 
-WEAKNESS_REGISTER.md:
+progress/WEAKNESS_REGISTER.md:
 weaknesses discovered, severity, repair plan, retest method
 
-SESSION_LOG.md:
+progress/SESSION_LOG.md:
 session entry with completed roadmap work
 
-PROJECT_PROGRESS.md:
+progress/PROJECT_PROGRESS.md:
 project milestones and evidence
 
-MOCK_INTERVIEW_HISTORY.md:
+progress/MOCK_INTERVIEW_HISTORY.md:
 if roadmap task included a mock
 
-RESUME_STATE.md:
+progress/RESUME_STATE.md:
 if resume evidence or bullets changed
 
-GITHUB_PORTFOLIO_STATE.md:
-if GitHub/README/portfolio changed
+progress/PORTFOLIO_READINESS.md:
+if public portfolio/README/portfolio changed
 
-JOB_SEARCH_STATE.md:
+progress/JOB_SEARCH_READINESS.md:
 if applications/referrals/interviews started
 ```
 

@@ -17,8 +17,8 @@ This questionnaire is used by the Data Engineering Sensei AI mentor to collect c
 Important:
 
 ```text
-The AI mentor should ask these questions one at a time.
-Do not dump all questions at once unless the candidate explicitly asks for the full form.
+The AI mentor should ask the required baseline questions in one block by default.
+Use one-question-at-a-time intake only when the candidate explicitly asks for a conversational intake or when the candidate is overwhelmed.
 ```
 
 This questionnaire is designed for a candidate preparing for Data Engineering roles with:
@@ -36,7 +36,7 @@ Spark/PySpark
 cloud
 system design
 project deep dive
-resume/GitHub/LinkedIn
+resume/public portfolio/professional profile
 job search
 ```
 
@@ -51,9 +51,9 @@ You are my Data Engineering Sensei mentor.
 Run my intake questionnaire for Data Engineering job preparation.
 
 Rules:
-1. Ask one question at a time.
-2. Wait for my answer before asking the next question.
-3. If my answer is vague, ask a follow-up.
+1. Ask the required baseline questions in one message.
+2. Wait for my answers before creating the roadmap.
+3. If my answer is vague, ask only the missing critical follow-up.
 4. Do not assume or invent details.
 5. At the end, summarize my profile.
 6. Give me a realistic readiness verdict.
@@ -71,20 +71,20 @@ Collect details about:
 - SQL/Python/DSA level
 - data engineering fundamentals
 - system design
-- resume/GitHub/LinkedIn
+- resume/public portfolio/professional profile
 - job search
 - time availability
 - blockers
 - learning preferences
 
 After intake, update:
-CANDIDATE_PROFILE.md
-CURRENT_STATE.md
-ROADMAP_PROGRESS.md
-NEXT_STEPS.md
-WEAKNESS_REGISTER.md if weaknesses are clear
-PROJECT_PROGRESS.md if project details are given
-RESUME_STATE.md if resume details are given
+progress/CANDIDATE_PROFILE.md
+progress/CURRENT_STATE.md
+progress/ROADMAP_PROGRESS.md
+progress/NEXT_STEPS.md
+progress/WEAKNESS_REGISTER.md if weaknesses are clear
+progress/PROJECT_PROGRESS.md if project details are given
+progress/RESUME_STATE.md if resume details are given
 ```
 
 
@@ -103,7 +103,7 @@ The intake should follow this order:
 8. data engineering fundamentals
 9. system design exposure
 10. project portfolio
-11. resume/GitHub/LinkedIn
+11. resume/public portfolio/professional profile
 12. job search status
 13. constraints and availability
 14. learning preferences
@@ -113,7 +113,8 @@ The intake should follow this order:
 Mentor rule:
 
 ```text
-Ask one section at a time.
+Ask the baseline assessment in one block.
+If the candidate requests a conversational intake, ask one section at a time.
 If the candidate is impatient, ask only the highest-impact questions first.
 ```
 
@@ -166,12 +167,12 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q3. Which technologies do you use at work?
+### Optional Q3. Which technologies do you use at work?
 
 Why this matters:
 
 ```text
-Identify real evidence.
+Identify real evidence when tool-specific project or resume alignment is needed.
 ```
 
 Expected answer format:
@@ -284,7 +285,7 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q2. Are you targeting India, remote, EU, Japan, or other international roles?
+### Q2. Are you targeting local market, remote, target market, target market, or other international roles?
 
 Why this matters:
 
@@ -330,7 +331,7 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q4. What salary or role jump are you expecting, if you want to share?
+### Q4. What role target or compensation expectations, if relevant and voluntarily shared are you expecting, if you want to share?
 
 Why this matters:
 
@@ -681,7 +682,7 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q7. Which SQL database do you use most: SQL Server, PostgreSQL, MySQL, BigQuery, Snowflake, etc.?
+### Optional Q7. Which SQL database do you use most: SQL Server, PostgreSQL, MySQL, BigQuery, Snowflake, etc.?
 
 Why this matters:
 
@@ -1547,7 +1548,7 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q10. Can you show GitHub, README, screenshots, tests, or demo?
+### Q10. Can you show public portfolio, README, screenshots, tests, or demo?
 
 Why this matters:
 
@@ -1571,7 +1572,7 @@ If the answer is vague, ask for one concrete example or evidence.
 ```
 
 
-## 12. Resume/GitHub/LinkedIn Intake
+## 12. Resume/public portfolio/professional profile Intake
 
 ### Q1. Do you already have a resume for Data Engineering roles?
 
@@ -1619,12 +1620,12 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q3. Do you have GitHub projects that are ready to show recruiters?
+### Q3. Do you have public portfolio projects that are ready to show recruiters?
 
 Why this matters:
 
 ```text
-GitHub status.
+public portfolio status.
 ```
 
 Expected answer format:
@@ -1665,12 +1666,12 @@ AI mentor follow-up rule:
 If the answer is vague, ask for one concrete example or evidence.
 ```
 
-### Q5. Does your LinkedIn clearly say Data Engineer/Data Engineering focus?
+### Q5. Does your professional profile clearly say Data Engineer/Data Engineering focus?
 
 Why this matters:
 
 ```text
-LinkedIn positioning.
+professional profile positioning.
 ```
 
 Expected answer format:
@@ -1963,7 +1964,7 @@ Ask me only these 10 questions first:
 6. Rate DSA from 0 to 5 with evidence.
 7. What is your main project and current status?
 8. What system design topics can you explain?
-9. Is your resume/GitHub ready?
+9. Is your resume/public portfolio ready?
 10. How many hours per week can you practice?
 
 After I answer, give:
@@ -2075,17 +2076,17 @@ Use this mapping after intake.
 
 | Intake Result | Update File |
 |---|---|
-| stable personal/career details | `CANDIDATE_PROFILE.md` |
-| current phase and latest state | `CURRENT_STATE.md` |
-| roadmap phase and skill module status | `ROADMAP_PROGRESS.md` |
-| immediate tasks | `NEXT_STEPS.md` |
-| weakness discovered | `WEAKNESS_REGISTER.md` |
-| project evidence | `PROJECT_PROGRESS.md` |
-| session details | `SESSION_LOG.md` |
-| mock score | `MOCK_INTERVIEW_HISTORY.md` |
-| resume bullets/evidence | `RESUME_STATE.md` |
-| GitHub/portfolio status | `GITHUB_PORTFOLIO_STATE.md` |
-| applications/interviews | `JOB_SEARCH_STATE.md` |
+| stable personal/career details | `progress/CANDIDATE_PROFILE.md` |
+| current phase and latest state | `progress/CURRENT_STATE.md` |
+| roadmap phase and skill module status | `progress/ROADMAP_PROGRESS.md` |
+| immediate tasks | `progress/NEXT_STEPS.md` |
+| weakness discovered | `progress/WEAKNESS_REGISTER.md` |
+| project evidence | `progress/PROJECT_PROGRESS.md` |
+| session details | `progress/SESSION_LOG.md` |
+| mock score | `progress/MOCK_INTERVIEW_HISTORY.md` |
+| resume bullets/evidence | `progress/RESUME_STATE.md` |
+| public portfolio/portfolio status | `progress/PORTFOLIO_READINESS.md` |
+| applications/interviews | `progress/JOB_SEARCH_READINESS.md` |
 
 AI mentor prompt:
 
@@ -2108,7 +2109,7 @@ Tell me:
 4. what I should stop wasting time on
 5. what I should focus on for the next 30 days
 6. whether my main project is strong enough
-7. whether my resume/GitHub is ready
+7. whether my resume/public portfolio is ready
 8. what score I need before applying aggressively
 
 Be direct but practical.

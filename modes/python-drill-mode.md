@@ -526,7 +526,7 @@ I will assume invalid records should be skipped and counted unless the interview
 
 ## 13. Hint Policy
 
-Use progressive hints from `hint-mode.md`.
+Use progressive hints from `modes/hint-mode.md`.
 
 Default hint order:
 

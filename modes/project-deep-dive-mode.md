@@ -129,7 +129,7 @@ Use Project Deep Dive Mode when the candidate asks:
 - Create project deep dive answers.
 - Mock interview me on my project.
 - What questions can interviewer ask from my project?
-- How do I explain my finance tracker/data pipeline/project?
+- How do I explain my portfolio project/data pipeline/project?
 - How do I explain my ETL/Spark/Airflow/SQL project?
 
 Also use this mode when:
@@ -461,7 +461,7 @@ If the candidate cannot answer at least 70% of these, project deep dive is not r
 ### Weak
 
 ```text
-I worked on a finance project using Python, SQL, FastAPI, PostgreSQL, Docker, and AI integration.
+I worked on a data project using Python, SQL, and several tools.
 ```
 
 Why weak:
@@ -473,7 +473,7 @@ It names tools but does not explain business problem, data flow, contribution, d
 ### Strong
 
 ```text
-I worked on a personal finance tracking platform that ingests transaction data, normalizes merchants, categorizes expenses, and produces account-level and category-level spending insights. The main data flow starts with transaction ingestion, then staging/validation, merchant normalization, categorization, and final reporting tables. My main contribution was designing the backend data model and transaction processing flow using FastAPI, PostgreSQL, SQLModel, Alembic, Docker, and SQL transformations. I focused on deduplication, account reconciliation, category learning, and preparing the system for notifications through Telegram. The main transaction table grain is one row per transaction. I would validate duplicate transaction IDs, null account/category fields, balance mismatches, and category assignment accuracy. If I rebuilt it, I would add stronger data quality checks, idempotent ingestion, and a proper backfill/reprocessing strategy.
+I worked on a primary portfolio data project that ingests raw operational records, validates and stages them, transforms them into analytics-ready tables, and serves them for reporting or downstream consumers. The main data flow starts with source ingestion, then validation/quarantine, staging, transformation, modeling, quality checks, and final serving. My main contribution was designing the pipeline flow, data model, quality checks, and proof artifacts using the candidate-provided implementation stack. I focused on stable keys, deduplication, clear table grain, source-to-target reconciliation, and safe reruns. If I rebuilt it, I would add stronger observability, a formal backfill workflow, and clearer public documentation.
 ```
 
 This is stronger because it explains project purpose, data flow, grain, contribution, validation, and improvement.
@@ -498,16 +498,16 @@ Example:
 
 ```text
 Context:
-The business needed reliable daily expense visibility.
+The business needed reliable daily operational analytics.
 
 Problem:
-Transactions were hard to track and categorize manually.
+Raw records were hard to clean, classify, reconcile, and trust manually.
 
 Data:
-The system used transaction records, account data, merchant information, and category mappings.
+The system used source records, reference data, classification rules, and quality results.
 
 Pipeline:
-Data was ingested, staged, normalized, categorized, reconciled, and served to reports/notifications.
+Data was ingested, staged, validated, transformed, reconciled, and served to analytics outputs.
 
 My contribution:
 I designed the backend models, transformation flow, validation logic, and integration structure.
@@ -516,10 +516,10 @@ Reliability:
 I planned duplicate checks, reconciliation checks, idempotent ingestion, and correction workflows.
 
 Impact:
-The project reduced manual tracking and created a foundation for automated finance insights.
+The project reduced manual reporting effort and created a foundation for reliable analytics.
 
 Learning:
-I learned how important data quality, idempotency, and clear transaction grain are.
+I learned how important data quality, idempotency, and clear output grain are.
 ```
 
 
@@ -1107,7 +1107,7 @@ If exact metrics are unavailable, use honest qualitative impact.
 Strong answer:
 
 ```text
-It automated manual transaction tracking and gave users consistent category-level expense reporting. It also created a foundation for notification and correction workflows.
+It automated manual data preparation and gave users consistent analytical outputs. It also created a foundation for validation, reconciliation, and correction workflows.
 ```
 
 Weak answer:
@@ -1648,7 +1648,7 @@ Impact can be:
 Interview-ready sentence:
 
 ```text
-The pipeline automated manual expense categorization and gave users consistent category-level spending insights without manually maintaining spreadsheets.
+The pipeline automated manual data preparation and gave users consistent analytical insights without manually maintaining spreadsheets.
 ```
 
 
@@ -1717,69 +1717,69 @@ PostgreSQL over warehouse because this was an application backend, not BI-scale 
 ```
 
 
-## 49. Personal Finance Tracking Project Template
+## 49. Portfolio Data Project Template
 
-Use this template for a personal finance tracking platform if applicable.
+Use this template for a primary data engineering portfolio project if applicable.
 
 ```text
 Project name:
-Personal Finance Tracking Platform
+Primary Portfolio Data Project
 
 Business problem:
-Users need automated transaction tracking, merchant normalization, categorization, and account-level visibility instead of manual expense tracking.
+[Stakeholders or users] need reliable, timely, analytics-ready data from [source systems] instead of manual, inconsistent, or untrusted reporting.
 
 Data sources:
-Transaction records, account data, merchant data, category rules/user corrections, optional SMS/Telegram inputs.
+[Raw files, database tables, APIs, events, logs, CDC streams, or other candidate-provided sources.]
 
 Pipeline/data flow:
-Transaction ingestion → staging/validation → merchant normalization → category assignment → account reconciliation → reporting/notification layer.
+Source ingestion -> validation/quarantine -> staging -> transformations -> analytics model -> quality checks -> serving/reporting layer.
 
 Tools:
-FastAPI, PostgreSQL, SQLModel, Alembic, Docker, GitHub Actions, Telegram Bot API, AI-assisted categorization if implemented.
+Candidate-provided implementation stack only. If tools are unknown, mark them unknown instead of assuming them.
 
 Main output:
-Transaction fact table, account balances, category spend summaries, merchant normalization table, notifications/correction workflow.
+[Fact/dimension tables, curated datasets, warehouse/lakehouse tables, dashboards, APIs, files, or documented data products.]
 
 Main grain:
-One row per transaction in the transaction fact table.
+State the exact grain of each important output table or dataset.
 
 Candidate contribution:
-Designed backend models, transaction ingestion flow, SQL transformations, category/merchant logic, validation checks, and API/bot integration depending on actual work.
+Describe only confirmed work: ingestion, modeling, transformations, quality checks, orchestration, testing, documentation, monitoring, deployment, or review.
 
 Data quality:
-Duplicate transaction check, required account/date/amount/category checks, accepted transaction status/category checks, balance reconciliation, merchant mapping validation.
+Required-field checks, schema checks, uniqueness, referential integrity, freshness, accepted ranges, source-to-target counts, and reconciliation where applicable.
 
 Failure handling:
-Invalid transactions quarantined or flagged, retries for ingestion/API failures, idempotent transaction insert by unique transaction key.
+Invalid records quarantined or flagged, retries for transient failures, clear error messages, idempotent reruns, and documented recovery steps.
 
 Backfill:
-Reprocess transactions for a date range from raw/staging and recalculate category/account summaries.
+Reprocess a defined range from raw or staged data and rebuild affected downstream outputs safely.
 
 Monitoring:
-Pipeline/API logs, transaction counts, failed categorization count, reconciliation mismatches.
+Pipeline run status, row counts, freshness, validation failures, reconciliation mismatches, runtime, and alert-worthy failures.
 
 Impact:
-Automates manual tracking and creates reliable expense visibility.
+Improves reliability, repeatability, data trust, analytical usability, or delivery speed. Quantify only when evidence exists.
 
 Improvement:
 Add stronger data quality framework, idempotent ingestion, backfill command, dashboard, lineage, and monitoring.
 ```
 
 
-## 50. Finance Tracker Interview Answer Example
+## 50. Portfolio Project Interview Answer Example
 
 Example 90-second answer:
 
 ```text
-My project is a Personal Finance Tracking Platform. The goal is to automate transaction tracking, merchant normalization, expense categorization, and account-level reconciliation so users can understand spending without manually maintaining spreadsheets.
+My project is a Primary Portfolio Data Project. The goal is to turn raw [source data] into reliable, analytics-ready outputs for [business or analytical use case].
 
-The main data flow starts with transaction ingestion, then staging and validation, merchant normalization, category assignment, account/balance reconciliation, and finally reporting or Telegram notifications. The main transaction table has one row per transaction, which is important because all category and account summaries are aggregated from that grain.
+The main data flow starts with ingestion, then validation and quarantine, staging, transformations, analytics modeling, quality checks, and final serving through [warehouse tables, dashboard, API, files, or downstream consumer]. The most important table or dataset has the grain [state grain], which matters because all downstream metrics depend on that grain.
 
-My contribution was designing the backend data model and pipeline flow using FastAPI, PostgreSQL, SQLModel, Alembic, Docker, and API/bot integration. I focused on transaction ingestion, merchant/category logic, correction workflow, and preparing the system for reliable reporting.
+My contribution was [confirmed contribution]. I focused on [ingestion/modeling/SQL transformations/data quality/orchestration/testing/documentation], and I can show [code, README, data model, tests, demo, or run logs] as proof.
 
-For quality, I would check duplicate transaction IDs, null required fields like account/date/amount, invalid categories, and reconciliation mismatches between transactions and balances. For reliability, ingestion should be idempotent using a stable transaction key, and backfills should reprocess affected date ranges safely.
+For quality, I check required fields, schema validity, duplicates, freshness, source-to-target counts, and reconciliation rules where applicable. For reliability, the pipeline should be idempotent, rerunnable, and recoverable with a documented backfill or replay path.
 
-The impact is that the system reduces manual expense tracking and creates a foundation for automated insights. If I rebuilt it, I would add a stronger quality gate, monitoring dashboard, and formal backfill/reprocessing workflow.
+The impact is [evidence-backed outcome]. If I rebuilt it, I would improve [observability, tests, backfill, performance, data model, documentation, security, or deployment] based on the current weakest evidence.
 ```
 
 This answer should be customized to match what the candidate actually built.
@@ -2397,7 +2397,7 @@ Example:
 
 ```text
 Project Deep Dive Mode
-Project: Personal Finance Tracking Platform
+Project: Primary Portfolio Data Project
 Score: 3/5
 Strength: clear business problem and tools
 Weakness: data quality, backfill, monitoring, output grain
