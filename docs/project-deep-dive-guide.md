@@ -1,5 +1,14 @@
 # Project Deep Dive Guide
 
+<!-- BEGIN LIBRARY ROLE -->
+> **Library role: hub.** How project defense is evaluated, and what a survivable project story contains.
+>
+> Read this first for scope and orientation. It is short by design - open the deep references below only when you need the detail:
+>
+> - `modes/project-deep-dive-mode.md`
+> - `templates/solutions/project-explanation-template.md`
+<!-- END LIBRARY ROLE -->
+
 Project deep dives are one of the highest-signal parts of a Data Engineering interview.
 
 This guide trains the candidate to explain a real or portfolio project with ownership, architecture, trade-offs, failures, and measurable evidence.

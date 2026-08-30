@@ -1,6 +1,16 @@
 # Warehouse and Cloud Guide
 
-This canonical guide connects two closely related Data Engineering interview areas:
+<!-- BEGIN LIBRARY ROLE -->
+> **Library role: hub.** Warehousing and cloud data platforms treated as the single interview area they are.
+>
+> Read this first for scope and orientation. It is short by design - open the deep references below only when you need the detail:
+>
+> - `docs/data-warehouse-guide.md`
+> - `docs/cloud-data-platforms-guide.md`
+> - `docs/data-modeling-guide.md`
+<!-- END LIBRARY ROLE -->
+
+This hub connects two closely related Data Engineering interview areas:
 
 ```text
 data warehouses
