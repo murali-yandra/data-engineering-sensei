@@ -1,0 +1,185 @@
+{
+  "skill_name": "data-engineering-sensei",
+  "evals": [
+    {
+      "id": 0,
+      "name": "sql-review-adaptive-intake",
+      "prompt": "quick sanity check before my screen thursday. i wrote this to get the latest status per order and my teammate says its fine but idk\n\n```sql\nSELECT o.order_id, o.status, o.updated_at\nFROM orders o\nJOIN (\n  SELECT order_id, MAX(updated_at) AS mx\n  FROM orders\n  GROUP BY order_id\n) l ON o.order_id = l.order_id AND o.updated_at = l.mx\n```\n\nwould this pass at a real DE interview or would they tear it apart",
+      "expected_output": "An immediate strict review of the query (not an intake questionnaire) that catches the duplicate-row bug when updated_at ties, gives a corrected ROW_NUMBER version, names the interview risk, and ends with a concrete next drill.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a0_no_intake_wall",
+          "text": "Reviews the query immediately instead of opening with an intake questionnaire",
+          "kind": "auto"
+        },
+        {
+          "id": "a0_tie_bug",
+          "text": "Catches that the self-join returns duplicate rows when two rows share the same max updated_at",
+          "kind": "auto"
+        },
+        {
+          "id": "a0_fixed_query",
+          "text": "Supplies a corrected query using ROW_NUMBER / QUALIFY / DISTINCT ON",
+          "kind": "auto"
+        },
+        {
+          "id": "a0_opens_mode",
+          "text": "Opens a modes/ file from the skill library",
+          "kind": "auto"
+        },
+        {
+          "id": "a0_opens_sql_resource",
+          "text": "Opens a SQL-specific docs/ or practice/sql/ file",
+          "kind": "auto"
+        },
+        {
+          "id": "a0_next_action",
+          "text": "Ends with a concrete next drill or action",
+          "kind": "judge"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "roadmap-context-already-given",
+      "prompt": "ive got 2 years as a data analyst (mostly sql + some python scripting), interviewing for DE roles in about 6 weeks. spark is easily my weakest area, ive barely touched it. realistically 10-12 hrs a week. where do i start?",
+      "expected_output": "A prioritized 6-week roadmap that uses the experience, timeline, weak area and hours the user already supplied instead of re-asking them. Should push back if 6 weeks is tight, prioritize SQL, and give a first concrete task.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a1_no_reask",
+          "text": "Does not re-ask for experience, timeline, weak area or study hours the user already gave",
+          "kind": "auto"
+        },
+        {
+          "id": "a1_week_plan",
+          "text": "Produces a week-by-week plan spanning the stated 6 weeks",
+          "kind": "auto"
+        },
+        {
+          "id": "a1_sql_over_spark",
+          "text": "Puts SQL ahead of Spark and explains why, rather than leading with the self-declared weak area",
+          "kind": "judge"
+        },
+        {
+          "id": "a1_opens_mode",
+          "text": "Opens modes/roadmap-mode.md",
+          "kind": "auto"
+        },
+        {
+          "id": "a1_opens_template",
+          "text": "Opens a roadmap template or roadmap doc",
+          "kind": "auto"
+        },
+        {
+          "id": "a1_first_task",
+          "text": "Gives a first concrete task to start on now",
+          "kind": "judge"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "mock-system-design-round",
+      "prompt": "can you run me a mock system design round? 30 min, the kind where they ask you to design something realtime. i want you to actually grill me, not just hand me the answer",
+      "expected_output": "An actual interview round: a scoped realtime scenario, requirements the candidate must clarify, and a handoff back to them to answer. Should NOT dump a full model solution up front.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a2_starts_round",
+          "text": "Actually starts an interview round instead of handing over a model answer",
+          "kind": "judge"
+        },
+        {
+          "id": "a2_scenario",
+          "text": "Presents a scoped realtime design scenario with constraints",
+          "kind": "auto"
+        },
+        {
+          "id": "a2_hands_back",
+          "text": "Ends by handing control to the candidate with an explicit ask",
+          "kind": "judge"
+        },
+        {
+          "id": "a2_opens_mode",
+          "text": "Opens modes/interview-mode.md or modes/system-design-mode.md",
+          "kind": "auto"
+        },
+        {
+          "id": "a2_opens_practice",
+          "text": "Opens a practice/system-design/ file",
+          "kind": "auto"
+        },
+        {
+          "id": "a2_rubric",
+          "text": "States how the answer will be scored",
+          "kind": "auto"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "deep-topic-rows-vs-range",
+      "prompt": "i keep getting confused between ROWS and RANGE in window frames. bombed this in an interview last week, they asked for a running total and there were duplicate dates in the data. explain it properly",
+      "expected_output": "A precise explanation of the ROWS vs RANGE distinction, specifically why RANGE collapses peer rows with duplicate dates and gives a different running total than ROWS, with an example, the interview framing, and a drill.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a3_range_peers",
+          "text": "Explains that RANGE treats tied ORDER BY values as peers and includes all of them in the frame",
+          "kind": "auto"
+        },
+        {
+          "id": "a3_rows_physical",
+          "text": "Explains that ROWS counts physical rows regardless of ties",
+          "kind": "auto"
+        },
+        {
+          "id": "a3_connects_failure",
+          "text": "Connects the distinction to the duplicate-date running total the user actually got wrong",
+          "kind": "judge"
+        },
+        {
+          "id": "a3_opens_sql_resource",
+          "text": "Opens practice/sql/window-functions.md or docs/sql-interview-guide.md",
+          "kind": "auto"
+        },
+        {
+          "id": "a3_worked_example",
+          "text": "Shows a worked example with the differing outputs side by side",
+          "kind": "auto"
+        },
+        {
+          "id": "a3_drill",
+          "text": "Ends with a drill or practice task",
+          "kind": "judge"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "scope-boundary-production-work",
+      "prompt": "were standing up a new ingestion pipeline at work, kafka -> s3 -> snowflake, and i need to pick the partitioning strategy for the s3 landing zone. what should i go with?",
+      "expected_output": "Engages usefully but reframes toward the interview-relevant version (how to reason about and defend a partitioning choice) rather than either refusing or silently becoming a production consulting session.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "a4_engages",
+          "text": "Engages with the substance instead of refusing the question",
+          "kind": "judge"
+        },
+        {
+          "id": "a4_reframes",
+          "text": "Reframes toward the interview-relevant version rather than becoming a production consulting session",
+          "kind": "judge"
+        },
+        {
+          "id": "a4_tradeoffs",
+          "text": "Names real partitioning trade-offs (date/hour granularity, small-file problem, cardinality)",
+          "kind": "auto"
+        }
+      ]
+    }
+  ]
+}
